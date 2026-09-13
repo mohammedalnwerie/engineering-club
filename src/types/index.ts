@@ -1,0 +1,162 @@
+export interface College {
+  id: string;
+  code: string;
+  name: string;
+  shortName: string;
+  tagline: string;
+  description: string;
+  accentColor: string;
+  gradient: string;
+  coordinator: {
+    name: string;
+    role: string;
+    title: string;
+    avatar: string;
+    email: string;
+  };
+  majors: string[];
+  labsCount: number;
+  studentsCount: number;
+  projectsCount: number;
+  featuredLabs: string[];
+  flagshipAchievement: string;
+}
+
+export interface Major {
+  id: string;
+  code: string;
+  name: string;
+  collegeId: string;
+  collegeName: string;
+  tagline: string;
+  description: string;
+  iconName: string;
+  accentColor: string;
+  techStack: string[];
+  careerPaths: string[];
+  keyCourses: string[];
+  featuredProjectTitle: string;
+}
+
+export interface ProjectCaseStudy {
+  id: string;
+  title: string;
+  tagline: string;
+  category: 'software' | 'ai' | 'robotics' | 'architecture' | 'civil' | 'iot';
+  collegeId: string;
+  collegeName: string;
+  featured: boolean;
+  award?: string;
+  problem: string;
+  solution: string;
+  impactMetrics: { label: string; value: string }[];
+  techStack: string[];
+  team: { name: string; role: string; major: string }[];
+  demoUrl?: string;
+  githubUrl?: string;
+  schematicType: string;
+  status: 'Deployed' | 'Prototyped' | 'In Testing';
+}
+
+export interface EventItem {
+  id: string;
+  title: string;
+  category: 'Hackathon' | 'Workshop' | 'Site Visit' | 'Conference';
+  date: string;
+  time: string;
+  location: string;
+  capacity: number;
+  registeredCount: number;
+  speakers: { name: string; title: string }[];
+  description: string;
+  prerequisites: string[];
+  badgeColor: string;
+}
+
+export interface TrainingCourse {
+  id: string;
+  title: string;
+  instructor: {
+    name: string;
+    title: string;
+    avatar: string;
+  };
+  level: 'مبتدئ' | 'متوسط' | 'متقدم';
+  duration: string;
+  totalHours: number;
+  totalSeats: number;
+  availableSeats: number;
+  startDate: string;
+  skillsGained: string[];
+  syllabusWeeks: { week: number; title: string; topics: string[] }[];
+  category: string;
+}
+
+export interface LeaderMember {
+  id: string;
+  name: string;
+  role: string;
+  tier: 'executive' | 'college-lead' | 'committee-lead';
+  department: string;
+  avatar: string;
+  quote: string;
+  linkedin?: string;
+  github?: string;
+  email: string;
+  skills: string[];
+}
+
+export interface ClubApplication {
+  fullName: string;
+  studentId: string;
+  email: string;
+  phone: string;
+  academicYear: string;
+  college: string;
+  major: string;
+  skills: string[];
+  customSkill?: string;
+  portfolioUrl?: string;
+  personalStatement: string;
+  targetCommittee: string;
+  weeklyCommitmentHours: number;
+}
+
+export interface StoredApplication extends ClubApplication {
+  id: string;
+  status: 'قيد المراجعة' | 'مقابلة مجدولة' | 'تم القبول' | 'مرفوض';
+  submittedAt: string;
+}
+
+export interface EventTicket {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  attendeeName: string;
+  studentId?: string;
+  ticketNumber: string;
+  qrHash: string;
+  registeredAt: string;
+  checkedIn: boolean;
+}
+
+export interface SiteSettings {
+  heroTitle: string;
+  heroHighlight: string;
+  heroSubheadline1: string;
+  heroSubheadline2: string;
+  operatingSystemVersion: string;
+}
+
+export interface StudentSpotlightData {
+  name: string;
+  major: string;
+  achievement: string;
+  avatar: string;
+  quote: string;
+  projectsCount: number;
+  awardsCount: number;
+  publicationsCount: number;
+}
+
+
