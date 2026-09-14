@@ -398,6 +398,21 @@ class DataService {
     }
   }
 
+  public deleteApplication(id: string) {
+    const list = this.getApplications().filter((a) => a.id !== id);
+    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+    this.notify();
+  }
+
+  public deleteRejectedApplications(): number {
+    const original = this.getApplications();
+    const list = original.filter((a) => a.status !== 'مرفوض');
+    const removedCount = original.length - list.length;
+    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+    this.notify();
+    return removedCount;
+  }
+
   // --- TRAINING COURSES ---
   public getCourses(): TrainingCourse[] {
     try {

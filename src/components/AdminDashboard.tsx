@@ -42,41 +42,65 @@ import {
 } from 'lucide-react';
 
 // Client-side image compressor & lightweight base64 converter
-const processImageFile = (file: File, callback: (base64Url: string) => void) => {
+const processImageFile = (
+  file: File,
+  callback: (base64Url: string) => void,
+  onError?: (err: string) => void
+) => {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    onError?.('الرجاء اختيار ملف صورة مدعوم (JPG, PNG, WebP)');
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (readerEvent) => {
+    const rawResult = readerEvent.target?.result as string;
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 400;
-      const MAX_HEIGHT = 400;
-      let width = img.width;
-      let height = img.height;
+      try {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
 
-      if (width > height) {
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round(height * (MAX_WIDTH / width));
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round(width * (MAX_HEIGHT / height));
+            height = MAX_HEIGHT;
+          }
         }
-      } else {
-        if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height;
-          height = MAX_HEIGHT;
-        }
-      }
 
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        callback(dataUrl);
-      } else {
-        callback(readerEvent.target?.result as string);
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          callback(dataUrl);
+        } else {
+          callback(rawResult);
+        }
+      } catch {
+        callback(rawResult);
       }
     };
-    img.src = readerEvent.target?.result as string;
+    img.onerror = () => {
+      if (rawResult) {
+        callback(rawResult);
+      } else {
+        onError?.('تعذر قراءة ملف الصورة');
+      }
+    };
+    img.src = rawResult;
+  };
+  reader.onerror = () => {
+    onError?.('حدث خطأ أثناء قراءة الملف من الجهاز');
   };
   reader.readAsDataURL(file);
 };
@@ -289,13 +313,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   };
 
   const handleDirectAvatarUpload = (leader: LeaderMember, file: File) => {
-    processImageFile(file, (dataUrl) => {
-      const updated: LeaderMember = { ...leader, avatar: dataUrl };
-      dataService.saveLeader(updated);
-      setLeadership(dataService.getLeadership());
-      sound.playSuccess();
-      showToast(`تم تحديث صورة المهندس (${leader.name}) بنجاح`);
-    });
+    processImageFile(
+      file,
+      (dataUrl) => {
+        const updated: LeaderMember = { ...leader, avatar: dataUrl };
+        dataService.saveLeader(updated);
+        setLeadership(dataService.getLeadership());
+        sound.playSuccess();
+        showToast(`تم تحديث صورة المهندس (${leader.name}) بنجاح`);
+      },
+      (err) => showToast(err)
+    );
   };
 
   const handleSaveLeader = (e: React.FormEvent) => {
@@ -399,6 +427,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const handleUpdateAppStatus = (id: string, status: StoredApplication['status']) => {
     sound.playClick();
     dataService.updateApplicationStatus(id, status);
+  };
+
+  // Delete single application
+  const handleDeleteApplication = (id: string, name: string) => {
+    if (window.confirm(`هل أنت متأكد من حذف طلب الانضمام الخاص بـ (${name}) نهائياً؟`)) {
+      sound.playClick();
+      dataService.deleteApplication(id);
+      showToast(`تم حذف طلب (${name}) بنجاح`);
+      if (inspectApp?.id === id) {
+        setInspectApp(null);
+      }
+    }
+  };
+
+  // Batch delete all rejected applications
+  const handleDeleteAllRejected = () => {
+    const rejectedList = applications.filter((a) => a.status === 'مرفوض');
+    if (rejectedList.length === 0) return;
+    if (window.confirm(`هل أنت متأكد من حذف كافة الطلبات المرفوضة (${rejectedList.length} طلب) نهائياً من النظام؟`)) {
+      sound.playClick();
+      const removedCount = dataService.deleteRejectedApplications();
+      showToast(`تم حذف ${removedCount} طلب مرفوض بنجاح`);
+      if (inspectApp?.status === 'مرفوض') {
+        setInspectApp(null);
+      }
+    }
   };
 
   // Add Project
@@ -594,20 +648,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
           /* Main Authenticated Dashboard */
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Nav Tabs */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-black/40 text-xs overflow-x-auto">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-white/10 bg-black/40 text-xs gap-3">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 min-w-0">
                 <button
                   onClick={() => {
                     sound.playClick();
                     setActiveTab('applications');
                   }}
-                  className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     activeTab === 'applications'
                       ? 'bg-cyan-400 text-black shadow-md'
                       : 'text-gray-300 hover:bg-white/5'
                   }`}
                 >
-                  <Users className="w-4 h-4" />
+                  <Users className="w-4 h-4 shrink-0" />
                   <span>طلبات الانضمام ({applications.length})</span>
                 </button>
 
@@ -616,13 +670,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     sound.playClick();
                     setActiveTab('projects');
                   }}
-                  className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     activeTab === 'projects'
                       ? 'bg-cyan-400 text-black shadow-md'
                       : 'text-gray-300 hover:bg-white/5'
                   }`}
                 >
-                  <Layers className="w-4 h-4" />
+                  <Layers className="w-4 h-4 shrink-0" />
                   <span>المشاريع ودراسات الحالة ({projects.length})</span>
                 </button>
 
@@ -631,13 +685,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     sound.playClick();
                     setActiveTab('events');
                   }}
-                  className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     activeTab === 'events'
                       ? 'bg-cyan-400 text-black shadow-md'
                       : 'text-gray-300 hover:bg-white/5'
                   }`}
                 >
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-4 h-4 shrink-0" />
                   <span>الفعاليات والحضور ({events.length})</span>
                 </button>
 
@@ -646,13 +700,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     sound.playClick();
                     setActiveTab('leadership');
                   }}
-                  className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     activeTab === 'leadership'
                       ? 'bg-cyan-400 text-black shadow-md'
                       : 'text-gray-300 hover:bg-white/5'
                   }`}
                 >
-                  <Award className="w-4 h-4" />
+                  <Award className="w-4 h-4 shrink-0" />
                   <span>الكادر القيادي ({leadership.length})</span>
                 </button>
 
@@ -661,13 +715,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     sound.playClick();
                     setActiveTab('colleges');
                   }}
-                  className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     activeTab === 'colleges'
                       ? 'bg-cyan-400 text-black shadow-md'
                       : 'text-gray-300 hover:bg-white/5'
                   }`}
                 >
-                  <Building2 className="w-4 h-4" />
+                  <Building2 className="w-4 h-4 shrink-0" />
                   <span>الكليات والتخصصات</span>
                 </button>
 
@@ -676,13 +730,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     sound.playClick();
                     setActiveTab('settings');
                   }}
-                  className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     activeTab === 'settings'
                       ? 'bg-cyan-400 text-black shadow-md'
                       : 'text-gray-300 hover:bg-white/5'
                   }`}
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 shrink-0" />
                   <span>الرؤية وهوية الموقع</span>
                 </button>
 
@@ -691,23 +745,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     sound.playClick();
                     setActiveTab('cloud');
                   }}
-                  className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     activeTab === 'cloud'
                       ? 'bg-cyan-400 text-black shadow-md'
                       : 'text-gray-300 hover:bg-white/5'
                   }`}
                 >
-                  <Database className="w-4 h-4" />
+                  <Database className="w-4 h-4 shrink-0" />
                   <span>السحابة والنسخ الاحتياطي</span>
                 </button>
               </div>
 
               {/* Status Telemetry */}
-              <div className="hidden md:flex items-center gap-3 font-mono text-[11px] text-gray-400">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>LIVE REPOSITORIES ACTIVE</span>
-                </span>
+              <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] text-gray-400 shrink-0 border-r border-white/10 pr-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>ONLINE</span>
               </div>
             </div>
 
@@ -731,7 +783,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <select
                       value={appStatusFilter}
                       onChange={(e) => setAppStatusFilter(e.target.value)}
-                      className="px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-gray-300 focus:outline-none"
+                      className="px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-gray-300 focus:outline-none cursor-pointer"
                     >
                       <option value="all">كافة الحالات</option>
                       <option value="قيد المراجعة">قيد المراجعة</option>
@@ -741,29 +793,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </select>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      sound.playClick();
-                      dataService.exportToCSV(applications, `club_applicants_${new Date().toISOString().split('T')[0]}`);
-                    }}
-                    className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs text-cyan-300 flex items-center gap-2 transition-colors cursor-pointer shrink-0"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>تصدير المتقدمين إلى Excel (CSV)</span>
-                  </button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    {/* Delete all rejected button if any exist */}
+                    {applications.some((a) => a.status === 'مرفوض') && (
+                      <button
+                        onClick={handleDeleteAllRejected}
+                        className="px-3 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-xs text-red-300 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                        title="حذف جميع الطلبات التي تم رفضها دفعة واحدة"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                        <span>حذف المرفوضين ({applications.filter((a) => a.status === 'مرفوض').length})</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        sound.playClick();
+                        dataService.exportToCSV(applications, `club_applicants_${new Date().toISOString().split('T')[0]}`);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs text-cyan-300 flex items-center gap-2 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>تصدير Excel (CSV)</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Applications Table */}
-                <div className="rounded-2xl border border-white/10 overflow-hidden bg-black/30">
-                  <table className="w-full text-right text-xs">
+                <div className="rounded-2xl border border-white/10 overflow-hidden bg-black/30 overflow-x-auto">
+                  <table className="w-full min-w-[760px] table-fixed text-right text-xs">
                     <thead className="bg-white/[0.04] text-gray-400 font-mono text-[11px] border-b border-white/10">
                       <tr>
-                        <th className="p-3">اسم المتقدم</th>
-                        <th className="p-3">الرقم الجامعي</th>
-                        <th className="p-3">التخصص والكلية</th>
-                        <th className="p-3">اللجنة المستهدفة</th>
-                        <th className="p-3">حالة الطلب</th>
-                        <th className="p-3 text-center">الإجراءات</th>
+                        <th className="p-3 w-[24%] text-right font-medium">اسم المتقدم</th>
+                        <th className="p-3 w-[15%] text-right font-medium">الرقم الجامعي</th>
+                        <th className="p-3 w-[22%] text-right font-medium">التخصص والكلية</th>
+                        <th className="p-3 w-[17%] text-right font-medium">اللجنة المستهدفة</th>
+                        <th className="p-3 w-[10%] text-center font-medium">حالة الطلب</th>
+                        <th className="p-3 w-[12%] text-center font-medium">الإجراءات</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-gray-300">
@@ -779,19 +845,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         })
                         .map((app) => (
                           <tr key={app.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="p-3 font-bold text-white">
-                              {app.fullName}
-                              <div className="text-[10px] text-gray-400 font-mono mt-0.5">{app.email}</div>
+                            <td className="p-3 w-[24%] text-right">
+                              <div className="font-bold text-white truncate">{app.fullName}</div>
+                              <div className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">{app.email}</div>
                             </td>
-                            <td className="p-3 font-mono text-cyan-400">{app.studentId}</td>
-                            <td className="p-3">
-                              <div>{app.major}</div>
+                            <td className="p-3 w-[15%] text-right font-mono text-cyan-400 font-semibold">{app.studentId}</td>
+                            <td className="p-3 w-[22%] text-right">
+                              <div className="truncate text-gray-200">{app.major}</div>
                               <div className="text-[10px] text-gray-400">{app.academicYear}</div>
                             </td>
-                            <td className="p-3 text-cyan-300">{app.targetCommittee}</td>
-                            <td className="p-3">
+                            <td className="p-3 w-[17%] text-right text-cyan-300 font-medium truncate">{app.targetCommittee}</td>
+                            <td className="p-3 w-[10%] text-center">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                                   app.status === 'تم القبول'
                                     ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
                                     : app.status === 'مقابلة مجدولة'
@@ -804,8 +870,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                 {app.status}
                               </span>
                             </td>
-                            <td className="p-3 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
+                            <td className="p-3 w-[12%] text-center">
+                              <div className="flex items-center justify-center gap-1">
                                 <button
                                   onClick={() => setInspectApp(app)}
                                   className="p-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-gray-300 hover:text-cyan-300 transition-colors"
@@ -828,6 +894,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                   title="تحديد موعد مقابلة"
                                 >
                                   <Clock className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteApplication(app.id, app.fullName)}
+                                  className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                                  title="حذف هذا الطلب نهائياً"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
@@ -1318,27 +1392,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         >
                           <div>
                             <div className="flex items-start gap-3.5 mb-3">
-                              {/* Avatar with Hover Upload Action */}
+                              {/* Avatar with Direct Upload Button */}
                               <div className="relative group/avatar shrink-0">
                                 <img
                                   src={leader.avatar}
                                   alt={leader.name}
-                                  className="w-16 h-16 rounded-2xl object-cover border-2 border-white/10 shadow-md group-hover/avatar:brightness-75 transition-all"
+                                  className="w-16 h-16 rounded-2xl object-cover border-2 border-white/10 shadow-md group-hover/avatar:border-cyan-400/60 transition-all"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src =
                                       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
                                   }}
                                 />
                                 <label
-                                  className="absolute inset-0 rounded-2xl bg-black/65 backdrop-blur-xs flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer text-cyan-300 text-[10px] font-bold"
+                                  className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black flex items-center justify-center shadow-lg border border-cyan-100 cursor-pointer transition-transform hover:scale-110 active:scale-95"
                                   title="تغيير الصورة من جهازك فوراً"
                                 >
-                                  <Camera className="w-4 h-4 mb-0.5" />
-                                  <span>تغيير</span>
+                                  <Camera className="w-3.5 h-3.5" />
                                   <input
                                     type="file"
                                     accept="image/*"
                                     className="hidden"
+                                    onClick={(e) => {
+                                      (e.target as HTMLInputElement).value = '';
+                                    }}
                                     onChange={(e) => {
                                       const file = e.target.files?.[0];
                                       if (file) {
@@ -1730,14 +1806,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               type="file"
                               accept="image/*"
                               className="hidden"
+                              onClick={(e) => {
+                                (e.target as HTMLInputElement).value = '';
+                              }}
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  processImageFile(file, (dataUrl) => {
-                                    setSpotlight({ ...spotlight, avatar: dataUrl });
-                                    sound.playSuccess();
-                                    showToast('تم تحميل صورة نجم الشهر بنجاح');
-                                  });
+                                  processImageFile(
+                                    file,
+                                    (dataUrl) => {
+                                      setSpotlight({ ...spotlight, avatar: dataUrl });
+                                      sound.playSuccess();
+                                      showToast('تم تحميل صورة نجم الشهر بنجاح');
+                                    },
+                                    (err) => showToast(err)
+                                  );
                                 }
                               }}
                             />
@@ -1754,14 +1837,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <img
-                          src={spotlight.avatar}
-                          alt={spotlight.name}
-                          className="w-14 h-14 rounded-2xl object-cover border-2 border-amber-400/40 shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = AVATAR_PRESETS[1].url;
-                          }}
-                        />
+                        <div className="relative shrink-0">
+                          <img
+                            src={spotlight.avatar}
+                            alt={spotlight.name}
+                            className="w-14 h-14 rounded-2xl object-cover border-2 border-amber-400/40 shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = AVATAR_PRESETS[1].url;
+                            }}
+                          />
+                          <label
+                            className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-amber-400 hover:bg-amber-300 text-black flex items-center justify-center cursor-pointer shadow-md"
+                            title="تغيير الصورة"
+                          >
+                            <Camera className="w-3 h-3" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onClick={(e) => {
+                                (e.target as HTMLInputElement).value = '';
+                              }}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  processImageFile(
+                                    file,
+                                    (dataUrl) => {
+                                      setSpotlight({ ...spotlight, avatar: dataUrl });
+                                      sound.playSuccess();
+                                      showToast('تم تحميل صورة نجم الشهر بنجاح');
+                                    },
+                                    (err) => showToast(err)
+                                  );
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
                         <div className="flex-1 min-w-0">
                           {showSpotlightUrlInput ? (
                             <input
@@ -1993,33 +2106,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 )}
               </div>
 
-              <div className="flex gap-2 pt-4 border-t border-white/10">
+              <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/10">
                 <button
                   onClick={() => {
                     handleUpdateAppStatus(inspectApp.id, 'تم القبول');
+                    showToast(`تم قبول عضوية (${inspectApp.fullName}) بنجاح`);
                     setInspectApp(null);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer shadow-md"
+                  className="flex-1 min-w-[100px] py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer shadow-md"
                 >
                   قبول العضوية
                 </button>
                 <button
                   onClick={() => {
                     handleUpdateAppStatus(inspectApp.id, 'مقابلة مجدولة');
+                    showToast(`تم جدولة مقابلة لـ (${inspectApp.fullName})`);
                     setInspectApp(null);
                   }}
-                  className="flex-1 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-xs cursor-pointer"
+                  className="flex-1 min-w-[100px] py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-xs cursor-pointer"
                 >
                   تحديد مقابلة
                 </button>
                 <button
                   onClick={() => {
                     handleUpdateAppStatus(inspectApp.id, 'مرفوض');
+                    showToast(`تم تغيير حالة الطلب إلى (مرفوض)`);
                     setInspectApp(null);
                   }}
-                  className="px-4 py-2 rounded-xl bg-red-950 text-red-400 hover:bg-red-900 text-xs cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-amber-950/60 border border-amber-500/30 text-amber-300 hover:bg-amber-900 text-xs cursor-pointer"
+                  title="وضع حالة الطلب كمرفوض دون حذفه فوراً"
                 >
-                  رفض
+                  رفض الطلب
+                </button>
+                <button
+                  onClick={() => {
+                    handleDeleteApplication(inspectApp.id, inspectApp.fullName);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-red-950/80 border border-red-500/40 text-red-400 hover:bg-red-900 text-xs cursor-pointer flex items-center gap-1.5"
+                  title="حذف الطلب نهائياً من قاعدة البيانات"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>حذف نهائي</span>
                 </button>
               </div>
             </div>
@@ -2051,45 +2178,100 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               </div>
 
               <form onSubmit={handleSaveLeader} className="space-y-4 text-xs">
-                {/* Avatar Studio Box */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/10">
-                  <div className="relative group/modalAvatar shrink-0">
+                {/* Avatar Studio Box with Drag & Drop */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      processImageFile(
+                        file,
+                        (dataUrl) => {
+                          setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
+                          sound.playSuccess();
+                          showToast('تم سحب وإدراج الصورة بنجاح');
+                        },
+                        (err) => showToast(err)
+                      );
+                    }
+                  }}
+                  className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-dashed border-cyan-500/30 hover:border-cyan-400/60 transition-colors relative"
+                >
+                  {/* Tap-to-Upload Avatar Image */}
+                  <label
+                    className="relative group/modalAvatar shrink-0 cursor-pointer"
+                    title="انقر لتغيير الصورة مباشرة"
+                  >
                     <img
                       src={leaderForm.avatar || AVATAR_PRESETS[0].url}
                       alt="معاينة الصورة"
-                      className="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.25)]"
+                      className="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.25)] group-hover/modalAvatar:brightness-90 transition-all"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = AVATAR_PRESETS[0].url;
                       }}
                     />
-                    <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-cyan-400 text-black shadow-md">
+                    <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-cyan-400 text-black shadow-md transition-transform group-hover/modalAvatar:scale-110">
                       <Camera className="w-3.5 h-3.5" />
                     </div>
-                  </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onClick={(e) => {
+                        (e.target as HTMLInputElement).value = '';
+                      }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          processImageFile(
+                            file,
+                            (dataUrl) => {
+                              setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
+                              sound.playSuccess();
+                              showToast('تم تحميل وتحديث الصورة بنجاح');
+                            },
+                            (err) => showToast(err)
+                          );
+                        }
+                      }}
+                    />
+                  </label>
 
                   <div className="flex-1 text-center sm:text-right space-y-2 w-full">
                     <div className="text-xs font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
                       <span>صورة البطاقة الشخصية</span>
-                      <span className="text-[10px] font-mono text-cyan-400">(مباشرة أو جاهزة)</span>
+                      <span className="text-[10px] font-mono text-cyan-400">(اسحب وأفلت أو اختر ملفاً)</span>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                      {/* Upload from device */}
-                      <label className="px-3.5 py-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all">
+                      {/* Upload from device button */}
+                      <label className="px-3.5 py-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all active:scale-95">
                         <Upload className="w-3.5 h-3.5" />
                         <span>رفع صورة من جهازك</span>
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
+                          onClick={(e) => {
+                            (e.target as HTMLInputElement).value = '';
+                          }}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              processImageFile(file, (dataUrl) => {
-                                setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
-                                sound.playSuccess();
-                                showToast('تم تحميل الصورة ومعالجتها بنجاح');
-                              });
+                              processImageFile(
+                                file,
+                                (dataUrl) => {
+                                  setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
+                                  sound.playSuccess();
+                                  showToast('تم تحميل الصورة بنجاح');
+                                },
+                                (err) => showToast(err)
+                              );
                             }
                           }}
                         />
