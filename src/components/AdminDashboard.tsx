@@ -34,9 +34,115 @@ import {
   Building2,
   Edit3,
   Save,
-  Check
+  Check,
+  Camera,
+  Upload,
+  Link as LinkIcon,
+  LogOut
 } from 'lucide-react';
 
+// Client-side image compressor & lightweight base64 converter
+const processImageFile = (file: File, callback: (base64Url: string) => void) => {
+  const reader = new FileReader();
+  reader.onload = (readerEvent) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 400;
+      const MAX_HEIGHT = 400;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        callback(dataUrl);
+      } else {
+        callback(readerEvent.target?.result as string);
+      }
+    };
+    img.src = readerEvent.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+};
+
+const AVATAR_PRESETS = [
+  { label: 'رسمي 1', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80' },
+  { label: 'رسمية 1', url: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&auto=format&fit=crop&q=80' },
+  { label: 'رسمي 2', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80' },
+  { label: 'رسمي 3', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80' },
+  { label: 'رسمي 4', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80' },
+  { label: 'رسمية 2', url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80' },
+  { label: 'رسمية 3', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80' },
+  { label: 'رسمي 5', url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&auto=format&fit=crop&q=80' },
+];
+
+const ROLE_TEMPLATES = [
+  {
+    role: 'رئيس النادي الهندسي',
+    tier: 'executive' as const,
+    department: 'رئاسة النادي',
+    skills: 'القيادة الاستراتيجية, إدارة الابتكار الهندسي, الحوكمة وصناعة القرار',
+    quote: 'نؤمن أن المهندس لا ينتظر الفرصة، بل يبتكر أدوات بنائها ويقود التحول التقني.'
+  },
+  {
+    role: 'نائب رئيس النادي',
+    tier: 'executive' as const,
+    department: 'الهيئة الإدارية',
+    skills: 'الإدارة التنفيذية, التنسيق والمتابعة, تطوير الخطط والمبادرات',
+    quote: 'التكامل بين التخطيط الاستراتيجي والتنفيذ الميداني هو سر استدامة التميز.'
+  },
+  {
+    role: 'أمين سر النادي',
+    tier: 'executive' as const,
+    department: 'الهيئة الإدارية',
+    skills: 'إدارة المحاضر والتوثيق, التنظيم الإداري, الحوكمة ومتابعة القرارات',
+    quote: 'التوثيق الدقيق وإدارة المحاضر والتدفقات التنظيمية هما البوصلة الإدارية للنادي.'
+  },
+  {
+    role: 'أمين صندوق النادي',
+    tier: 'executive' as const,
+    department: 'الهيئة الإدارية',
+    skills: 'الإدارة المالية والموازنات, التدقيق والشفافية, إدارة الرعايات والعهد',
+    quote: 'حوكمة الميزانيات وتوجيه الموارد المالية بكفاءة يضمن نجاح واستدامة كل مبادرة.'
+  },
+  {
+    role: 'رئيس لجنة الفعاليات والأنشطة',
+    tier: 'committee-lead' as const,
+    department: 'لجنة الفعاليات والأنشطة',
+    skills: 'إدارة الحشود والفعاليات, تنظيم الهاكاثونات, التخطيط اللوجستي الميداني',
+    quote: 'نبتكر فعاليات ومسابقات غير مسبوقة تصنع تجربة هندسية ثرية لجميع الطلاب.'
+  },
+  {
+    role: 'رئيسة لجنة العلاقات والتدريب',
+    tier: 'committee-lead' as const,
+    department: 'لجنة العلاقات والتدريب',
+    skills: 'الشراكات الاستراتيجية, تطوير المسارات التدريبية, استقطاب الخبراء والمدربين',
+    quote: 'نبني جسوراً متينة من الشراكات الصناعية والبرامج التدريبية لتأهيل الكفاءات.'
+  },
+  {
+    role: 'رئيسة اللجنة الإعلامية',
+    tier: 'committee-lead' as const,
+    department: 'اللجنة الإعلامية',
+    skills: 'صناعة المحتوى الرقمي, التغطيات الإعلامية, الهوية والتصميم والإنتاج المرئي',
+    quote: 'نترجم الإنجازات والابتكارات الهندسية إلى قصص بصرية ومحتوى رقمي ملهم.'
+  }
+];
 
 interface AdminDashboardProps {
   isOpen: boolean;
@@ -66,15 +172,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [editingCollege, setEditingCollege] = useState<College | null>(null);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
 
-  // Leadership modal / editing
+  // Leadership modal / editing & filtering
   const [showLeaderModal, setShowLeaderModal] = useState(false);
   const [editingLeader, setEditingLeader] = useState<LeaderMember | null>(null);
+  const [leaderFilter, setLeaderFilter] = useState<'all' | 'executive' | 'committee-lead'>('all');
+  const [leaderSearch, setLeaderSearch] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
   const [leaderForm, setLeaderForm] = useState<Partial<LeaderMember>>({
     name: '',
     role: '',
-    tier: 'college-lead',
+    tier: 'committee-lead',
     department: '',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    avatar: AVATAR_PRESETS[0].url,
     quote: '',
     email: '',
     linkedin: '',
@@ -86,6 +202,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   // Settings feedback
   const [settingsSavedMsg, setSettingsSavedMsg] = useState(false);
   const [spotlightSavedMsg, setSpotlightSavedMsg] = useState(false);
+  const [showSpotlightUrlInput, setShowSpotlightUrlInput] = useState(false);
 
   // Filters & Search
   const [appSearch, setAppSearch] = useState('');
@@ -149,9 +266,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setLeaderForm({
       name: '',
       role: '',
-      tier: 'college-lead',
+      tier: 'committee-lead',
       department: '',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      avatar: AVATAR_PRESETS[0].url,
       quote: '',
       email: '',
       linkedin: '',
@@ -159,6 +276,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       skills: ['قيادة فرق', 'تطوير حلول']
     });
     setLeaderSkillsInput('قيادة فرق, تطوير حلول');
+    setShowUrlInput(false);
     setShowLeaderModal(true);
   };
 
@@ -166,7 +284,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setEditingLeader(leader);
     setLeaderForm({ ...leader });
     setLeaderSkillsInput(leader.skills.join(', '));
+    setShowUrlInput(false);
     setShowLeaderModal(true);
+  };
+
+  const handleDirectAvatarUpload = (leader: LeaderMember, file: File) => {
+    processImageFile(file, (dataUrl) => {
+      const updated: LeaderMember = { ...leader, avatar: dataUrl };
+      dataService.saveLeader(updated);
+      setLeadership(dataService.getLeadership());
+      sound.playSuccess();
+      showToast(`تم تحديث صورة المهندس (${leader.name}) بنجاح`);
+    });
   };
 
   const handleSaveLeader = (e: React.FormEvent) => {
@@ -182,9 +311,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       id: editingLeader ? editingLeader.id : `leader-${Date.now()}`,
       name: leaderForm.name || '',
       role: leaderForm.role || '',
-      tier: leaderForm.tier || 'college-lead',
+      tier: leaderForm.tier || 'committee-lead',
       department: leaderForm.department || '',
-      avatar: leaderForm.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      avatar: leaderForm.avatar || AVATAR_PRESETS[0].url,
       quote: leaderForm.quote || '',
       email: leaderForm.email || '',
       linkedin: leaderForm.linkedin,
@@ -193,15 +322,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     };
 
     dataService.saveLeader(saved);
+    setLeadership(dataService.getLeadership());
     sound.playSuccess();
     setShowLeaderModal(false);
     setEditingLeader(null);
+    showToast(`تم حفظ بيانات المهندس (${saved.name}) بنجاح`);
   };
 
   const handleDeleteLeader = (id: string, name: string) => {
     if (window.confirm(`هل أنت متأكد من حذف عضو الكادر (${name})؟`)) {
       dataService.deleteLeader(id);
+      setLeadership(dataService.getLeadership());
       sound.playClick();
+      showToast(`تم حذف عضو الكادر (${name})`);
     }
   };
 
@@ -360,23 +493,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-500/30">
                   ENG-ADMIN v2.6
                 </span>
+                {isAuthenticated && (
+                  <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    جلسة نشطة
+                  </span>
+                )}
               </div>
               <div className="font-mono text-[11px] text-gray-400">
-                إدارة المشاريع، الفعاليات، واعتماد طلبات العضوية اللحظية
+                إدارة المشاريع، الكادر القيادي، الفعاليات، ومزامنة السحابة
               </div>
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              sound.playClick();
-              onClose();
-            }}
-            className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setIsAuthenticated(false);
+                  setPasscode('');
+                  showToast('تم تسجيل الخروج من لوحة الإدارة');
+                }}
+                className="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-red-950/40 border border-white/10 hover:border-red-500/30 text-gray-400 hover:text-red-300 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+                title="تسجيل الخروج"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">تسجيل خروج</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                sound.playClick();
+                onClose();
+              }}
+              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              title="إغلاق لوحة التحكم"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
+        {/* Global Toast Notification */}
+        {toastMsg && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-cyan-950/90 border border-cyan-400/50 text-cyan-300 text-xs font-mono shadow-2xl flex items-center gap-2 backdrop-blur-md animate-in fade-in slide-in-from-top-2">
+            <CheckCircle className="w-4 h-4 text-cyan-400" />
+            <span>{toastMsg}</span>
+          </div>
+        )}
 
         {/* Authentication Gate */}
         {!isAuthenticated ? (
@@ -386,11 +552,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             </div>
 
             <h3 className="text-2xl font-bold text-white mb-2">تسجيل دخول المشرفين وقادة اللجان</h3>
-            <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-6">
-              أدخل كلمة سر الإدارة للوصول إلى أدوات التحكم وإدارة بيانات الطلاب والفعاليات.
-              <br />
-              <span className="font-mono text-cyan-400/80 mt-1 inline-block">[الرمز الافتراضي للتجربة: eng2026]</span>
+            <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-4">
+              أدخل كلمة سر الإدارة للوصول إلى أدوات التحكم وإدارة بيانات الكادر والفعاليات.
             </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPasscode('eng2026');
+                sound.playClick();
+              }}
+              className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/70 border border-cyan-500/30 px-3 py-1.5 rounded-xl font-mono cursor-pointer mb-6 transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>انقر للتعبئة السريعة: eng2026</span>
+            </button>
 
             <form onSubmit={handleLogin} className="w-full max-w-xs space-y-3">
               <input
@@ -999,114 +1175,248 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
             {/* Tab: Leadership Management */}
             {activeTab === 'leadership' && (
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Header & Stats Banner */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-white">إدارة الكادر القيادي والمهندسين</h3>
-                      <span className="font-mono text-xs px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
-                        {leadership.length} مهندس قيادي
+                      <h3 className="text-lg font-bold text-white">إدارة الكادر القيادي والهيكل التنظيمي</h3>
+                      <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                        {leadership.length} قيادي
                       </span>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
-                      التحكم ببيانات بطاقات الهيئة الإدارية والتنفيذية ورؤساء اللجان والمنسقين المعروضة في المنصة.
+                      التحكم ببيانات وصور رئيس النادي، الهيئة الإدارية (النائب، أمين السر، أمين الصندوق)، ورؤساء اللجان.
                     </p>
                   </div>
 
                   <button
                     onClick={handleOpenAddLeader}
-                    className="px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md shrink-0"
+                    className="px-4 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.25)] shrink-0"
                   >
                     <Plus className="w-4 h-4" />
                     <span>إضافة قائد / مهندس جديد</span>
                   </button>
                 </div>
 
-                {/* Leader Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {leadership.map((leader) => (
-                    <div
-                      key={leader.id}
-                      className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-cyan-500/30 transition-all flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-start gap-3 mb-3">
-                          <img
-                            src={leader.avatar}
-                            alt={leader.name}
-                            className="w-14 h-14 rounded-2xl object-cover border border-white/10 shadow-md shrink-0"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src =
-                                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
-                            }}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-white text-sm truncate">{leader.name}</h4>
-                            <div className="text-xs text-cyan-400 font-medium truncate mt-0.5">
-                              {leader.role}
-                            </div>
-                            <span
-                              className={`inline-block font-mono text-[10px] px-2 py-0.5 rounded mt-1.5 border ${
-                                leader.tier === 'executive'
-                                  ? 'bg-amber-950/50 text-amber-300 border-amber-500/30'
-                                  : leader.tier === 'college-lead'
-                                  ? 'bg-cyan-950/50 text-cyan-300 border-cyan-500/30'
-                                  : 'bg-purple-950/50 text-purple-300 border-purple-500/30'
-                              }`}
-                            >
-                              {leader.tier === 'executive'
-                                ? 'الرئاسة / الهيئة الإدارية'
-                                : leader.tier === 'college-lead'
-                                ? 'منسق كلية'
-                                : 'رئيس لجنة تنفيذي'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="text-xs text-gray-300 italic bg-white/[0.02] p-2.5 rounded-xl border border-white/5 mb-3 line-clamp-2">
-                          "{leader.quote}"
-                        </div>
-
-                        <div className="space-y-1 text-xs text-gray-400 mb-3">
-                          <div className="truncate">
-                            <span className="text-gray-500">القسم:</span> {leader.department}
-                          </div>
-                          <div className="truncate font-mono text-[11px] text-gray-400">
-                            <span className="text-gray-500">البريد:</span> {leader.email}
-                          </div>
-                        </div>
-
-                        {/* Skills */}
-                        <div className="flex flex-wrap gap-1 mb-4">
-                          {leader.skills.slice(0, 4).map((skill, sIdx) => (
-                            <span
-                              key={sIdx}
-                              className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/5"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-3 border-t border-white/5">
-                        <button
-                          onClick={() => handleOpenEditLeader(leader)}
-                          className="flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-cyan-400 hover:text-black text-cyan-300 text-xs font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>تعديل</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLeader(leader.id, leader.name)}
-                          className="p-1.5 rounded-xl bg-red-950/30 hover:bg-red-950 text-red-400 text-xs transition-colors cursor-pointer"
-                          title="حذف القائد"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                {/* Quick Stats / Hierarchy Summary */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] font-mono text-amber-300/80">رئاسة ومجلس الإدارة</div>
+                      <div className="text-base font-bold text-white mt-0.5">
+                        {leadership.filter((l) => l.tier === 'executive').length} قيادات
                       </div>
                     </div>
-                  ))}
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-sm">
+                      👑
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] font-mono text-cyan-300/80">رؤساء اللجان التنفيذية</div>
+                      <div className="text-base font-bold text-white mt-0.5">
+                        {leadership.filter((l) => l.tier === 'committee-lead').length} لجان
+                      </div>
+                    </div>
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-sm">
+                      ⚡
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/30 flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] font-mono text-purple-300/80">تغيير الصور الفوري</div>
+                      <div className="text-xs text-gray-300 mt-0.5">
+                        انقر على أيقونة الكاميرا على أي بطاقة
+                      </div>
+                    </div>
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                      <Camera className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filters & Search Toolbar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-2 rounded-2xl bg-black/40 border border-white/10">
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+                    <button
+                      onClick={() => setLeaderFilter('all')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        leaderFilter === 'all'
+                          ? 'bg-cyan-400 text-black shadow-sm'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      الكل ({leadership.length})
+                    </button>
+                    <button
+                      onClick={() => setLeaderFilter('executive')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        leaderFilter === 'executive'
+                          ? 'bg-amber-400 text-black shadow-sm'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      الرئاسة والإدارة ({leadership.filter((l) => l.tier === 'executive').length})
+                    </button>
+                    <button
+                      onClick={() => setLeaderFilter('committee-lead')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                        leaderFilter === 'committee-lead'
+                          ? 'bg-purple-400 text-black shadow-sm'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      رؤساء اللجان ({leadership.filter((l) => l.tier === 'committee-lead').length})
+                    </button>
+                  </div>
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="ابحث بالاسم أو المسمى أو القسم..."
+                      value={leaderSearch}
+                      onChange={(e) => setLeaderSearch(e.target.value)}
+                      className="w-full pl-3 pr-9 py-1.5 rounded-xl bg-black/50 border border-white/10 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Leader Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {leadership
+                    .filter((l) => {
+                      if (leaderFilter === 'executive') return l.tier === 'executive';
+                      if (leaderFilter === 'committee-lead') return l.tier === 'committee-lead';
+                      return true;
+                    })
+                    .filter((l) => {
+                      if (!leaderSearch.trim()) return true;
+                      const q = leaderSearch.toLowerCase();
+                      return (
+                        l.name.toLowerCase().includes(q) ||
+                        l.role.toLowerCase().includes(q) ||
+                        l.department.toLowerCase().includes(q) ||
+                        l.email.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((leader) => {
+                      const isPresident = leader.id === 'pres-1' || leader.role.includes('رئيس النادي');
+                      return (
+                        <div
+                          key={leader.id}
+                          className={`p-5 rounded-2xl bg-black/40 border transition-all flex flex-col justify-between group ${
+                            isPresident
+                              ? 'border-amber-500/40 hover:border-amber-400/80 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+                              : leader.tier === 'executive'
+                              ? 'border-blue-500/30 hover:border-blue-400/60'
+                              : 'border-white/10 hover:border-cyan-500/40'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start gap-3.5 mb-3">
+                              {/* Avatar with Hover Upload Action */}
+                              <div className="relative group/avatar shrink-0">
+                                <img
+                                  src={leader.avatar}
+                                  alt={leader.name}
+                                  className="w-16 h-16 rounded-2xl object-cover border-2 border-white/10 shadow-md group-hover/avatar:brightness-75 transition-all"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src =
+                                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+                                  }}
+                                />
+                                <label
+                                  className="absolute inset-0 rounded-2xl bg-black/65 backdrop-blur-xs flex flex-col items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer text-cyan-300 text-[10px] font-bold"
+                                  title="تغيير الصورة من جهازك فوراً"
+                                >
+                                  <Camera className="w-4 h-4 mb-0.5" />
+                                  <span>تغيير</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        handleDirectAvatarUpload(leader, file);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-white text-sm truncate">{leader.name}</h4>
+                                <div className="text-xs text-cyan-400 font-medium truncate mt-0.5">
+                                  {leader.role}
+                                </div>
+                                <span
+                                  className={`inline-block font-mono text-[10px] px-2 py-0.5 rounded-md mt-1.5 border ${
+                                    isPresident
+                                      ? 'bg-amber-950/60 text-amber-300 border-amber-500/40'
+                                      : leader.tier === 'executive'
+                                      ? 'bg-blue-950/60 text-blue-300 border-blue-500/40'
+                                      : 'bg-purple-950/60 text-purple-300 border-purple-500/40'
+                                  }`}
+                                >
+                                  {isPresident
+                                    ? '👑 رئيس النادي'
+                                    : leader.tier === 'executive'
+                                    ? '🏛️ الهيئة الإدارية'
+                                    : '⚡ رئيس لجنة تنفيذي'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-gray-300 italic bg-white/[0.02] p-2.5 rounded-xl border border-white/5 mb-3 line-clamp-2">
+                              "{leader.quote}"
+                            </div>
+
+                            <div className="space-y-1 text-xs text-gray-400 mb-3 font-mono">
+                              <div className="truncate">
+                                <span className="text-gray-500">القسم:</span> {leader.department}
+                              </div>
+                              <div className="truncate text-[11px] text-gray-400">
+                                <span className="text-gray-500">البريد:</span> {leader.email}
+                              </div>
+                            </div>
+
+                            {/* Skills */}
+                            <div className="flex flex-wrap gap-1 mb-4">
+                              {leader.skills.slice(0, 4).map((skill, sIdx) => (
+                                <span
+                                  key={sIdx}
+                                  className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/5"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-3 border-t border-white/5">
+                            <button
+                              onClick={() => handleOpenEditLeader(leader)}
+                              className="flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-cyan-400 hover:text-black text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>تعديل البطاقة والصورة</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteLeader(leader.id, leader.name)}
+                              className="p-2 rounded-xl bg-red-950/30 hover:bg-red-950 text-red-400 text-xs transition-colors cursor-pointer"
+                              title="حذف القائد"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -1406,15 +1716,85 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs text-gray-300 mb-1 font-mono">رابط صورة المهندس:</label>
-                      <input
-                        type="url"
-                        required
-                        value={spotlight.avatar}
-                        onChange={(e) => setSpotlight({ ...spotlight, avatar: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white font-mono"
-                      />
+                    <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs text-gray-300 font-mono flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5 text-amber-400" />
+                          <span>صورة نجم الشهر الهندسي:</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs flex items-center gap-1 cursor-pointer transition-all">
+                            <Upload className="w-3 h-3" />
+                            <span>رفع صورة من جهازك</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  processImageFile(file, (dataUrl) => {
+                                    setSpotlight({ ...spotlight, avatar: dataUrl });
+                                    sound.playSuccess();
+                                    showToast('تم تحميل صورة نجم الشهر بنجاح');
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowSpotlightUrlInput(!showSpotlightUrlInput)}
+                            className="px-2.5 py-1 rounded-xl bg-white/5 text-gray-300 text-xs flex items-center gap-1 border border-white/10 cursor-pointer"
+                          >
+                            <LinkIcon className="w-3 h-3" />
+                            <span>{showSpotlightUrlInput ? 'إخفاء الرابط' : 'رابط URL'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={spotlight.avatar}
+                          alt={spotlight.name}
+                          className="w-14 h-14 rounded-2xl object-cover border-2 border-amber-400/40 shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = AVATAR_PRESETS[1].url;
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          {showSpotlightUrlInput ? (
+                            <input
+                              type="url"
+                              value={spotlight.avatar}
+                              onChange={(e) => setSpotlight({ ...spotlight, avatar: e.target.value })}
+                              className="w-full px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white font-mono"
+                              placeholder="https://..."
+                            />
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {AVATAR_PRESETS.slice(0, 6).map((p, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    setSpotlight({ ...spotlight, avatar: p.url });
+                                    sound.playClick();
+                                  }}
+                                  className={`w-7 h-7 rounded-lg overflow-hidden border transition-all cursor-pointer ${
+                                    spotlight.avatar === p.url
+                                      ? 'border-amber-400 ring-2 ring-amber-400/40 scale-105'
+                                      : 'border-white/10 opacity-70 hover:opacity-100'
+                                  }`}
+                                  title={p.label}
+                                >
+                                  <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2">
@@ -1649,7 +2029,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         {/* Leadership Add/Edit Modal */}
         {showLeaderModal && (
           <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-xl rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
+            <div className="w-full max-w-xl rounded-3xl glass-panel border border-cyan-500/40 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[92vh] overflow-y-auto">
               <button
                 onClick={() => {
                   setShowLeaderModal(false);
@@ -1661,23 +2041,156 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               </button>
 
               <div className="mb-4">
-                <span className="font-mono text-xs text-cyan-400">إدارة القيادات الهندسية</span>
+                <span className="font-mono text-xs text-cyan-400">استوديو القيادات الهندسية</span>
                 <h3 className="text-xl font-bold text-white mt-1">
-                  {editingLeader ? `تعديل بيانات: ${editingLeader.name}` : 'إضافة مهندس قيادي جديد'}
+                  {editingLeader ? `تعديل بطاقة: ${editingLeader.name}` : 'إضافة مهندس / قائد جديد'}
                 </h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  يمكنك رفع صورة مباشرة من جهازك أو اختيار نموذج جاهز أو إدخال رابط خارجي.
+                </p>
               </div>
 
               <form onSubmit={handleSaveLeader} className="space-y-4 text-xs">
+                {/* Avatar Studio Box */}
+                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/10">
+                  <div className="relative group/modalAvatar shrink-0">
+                    <img
+                      src={leaderForm.avatar || AVATAR_PRESETS[0].url}
+                      alt="معاينة الصورة"
+                      className="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.25)]"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = AVATAR_PRESETS[0].url;
+                      }}
+                    />
+                    <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-cyan-400 text-black shadow-md">
+                      <Camera className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 text-center sm:text-right space-y-2 w-full">
+                    <div className="text-xs font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
+                      <span>صورة البطاقة الشخصية</span>
+                      <span className="text-[10px] font-mono text-cyan-400">(مباشرة أو جاهزة)</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      {/* Upload from device */}
+                      <label className="px-3.5 py-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>رفع صورة من جهازك</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              processImageFile(file, (dataUrl) => {
+                                setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
+                                sound.playSuccess();
+                                showToast('تم تحميل الصورة ومعالجتها بنجاح');
+                              });
+                            }
+                          }}
+                        />
+                      </label>
+
+                      {/* Toggle manual URL input */}
+                      <button
+                        type="button"
+                        onClick={() => setShowUrlInput(!showUrlInput)}
+                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs flex items-center gap-1.5 border border-white/10 transition-all cursor-pointer"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5" />
+                        <span>{showUrlInput ? 'إخفاء الرابط' : 'رابط URL خارجي'}</span>
+                      </button>
+                    </div>
+
+                    {/* URL Input if toggled */}
+                    {showUrlInput && (
+                      <div className="pt-1">
+                        <input
+                          type="url"
+                          placeholder="https://example.com/avatar.jpg"
+                          value={leaderForm.avatar || ''}
+                          onChange={(e) => setLeaderForm({ ...leaderForm, avatar: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-xl bg-black/50 border border-cyan-500/40 text-white font-mono text-[11px] focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {/* Presets Row */}
+                    <div className="pt-1">
+                      <div className="text-[10px] text-gray-400 mb-1 font-mono">أو اختر نموذجاً جاهزاً:</div>
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+                        {AVATAR_PRESETS.map((p, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              setLeaderForm((prev) => ({ ...prev, avatar: p.url }));
+                              sound.playClick();
+                            }}
+                            className={`w-7 h-7 rounded-lg overflow-hidden border transition-all cursor-pointer ${
+                              leaderForm.avatar === p.url
+                                ? 'border-cyan-400 ring-2 ring-cyan-400/50 scale-110'
+                                : 'border-white/10 hover:border-white/40 opacity-70 hover:opacity-100'
+                            }`}
+                            title={p.label}
+                          >
+                            <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Role Templates */}
+                <div className="p-3 rounded-2xl bg-black/30 border border-white/5 space-y-1.5">
+                  <div className="text-[11px] text-gray-300 font-mono flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>تعبئة سريعة حسب الهيكل المعتمد للنادي:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ROLE_TEMPLATES.map((tmpl, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          sound.playClick();
+                          setLeaderForm((prev) => ({
+                            ...prev,
+                            role: tmpl.role,
+                            tier: tmpl.tier,
+                            department: tmpl.department,
+                            quote: tmpl.quote,
+                          }));
+                          setLeaderSkillsInput(tmpl.skills);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer border ${
+                          leaderForm.role === tmpl.role
+                            ? 'bg-cyan-400/20 text-cyan-300 border-cyan-400/50 font-bold'
+                            : 'bg-white/[0.03] text-gray-400 hover:text-white border-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        {tmpl.role}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Name & Role Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-gray-300 mb-1 font-mono">الاسم الكامل:</label>
                     <input
                       type="text"
                       required
-                      placeholder="مثال: المهندس حمزة الصالح"
+                      placeholder="مثال: م. بدر بن عبدالعزيز المنصور"
                       value={leaderForm.name || ''}
                       onChange={(e) => setLeaderForm({ ...leaderForm, name: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
                     />
                   </div>
 
@@ -1686,14 +2199,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <input
                       type="text"
                       required
-                      placeholder="مثال: رئيس لجنة الذكاء الاصطناعي"
+                      placeholder="مثال: رئيس النادي الهندسي"
                       value={leaderForm.role || ''}
                       onChange={(e) => setLeaderForm({ ...leaderForm, role: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
                     />
                   </div>
                 </div>
 
+                {/* Tier & Department Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-gray-300 mb-1 font-mono">المستوى التنظيمي (Tier):</label>
@@ -1705,7 +2219,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           tier: e.target.value as LeaderMember['tier'],
                         })
                       }
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
                     >
                       <option value="executive">الرئاسة والهيئة الإدارية (رئيس، نائب، أمين سر، أمين صندوق)</option>
                       <option value="committee-lead">رئيس لجنة (فعاليات وأنشطة، علاقات وتدريب، إعلامية)</option>
@@ -1713,14 +2227,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   </div>
 
                   <div>
-                    <label className="block text-gray-300 mb-1 font-mono">القسم / الكلية:</label>
+                    <label className="block text-gray-300 mb-1 font-mono">القسم / اللجنة التابعة:</label>
                     <input
                       type="text"
                       required
-                      placeholder="مثال: كلية الهندسة والتكنولوجيا الصناعية"
+                      placeholder="مثال: رئاسة النادي أو لجنة الفعاليات والأنشطة"
                       value={leaderForm.department || ''}
                       onChange={(e) => setLeaderForm({ ...leaderForm, department: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
                     />
                   </div>
                 </div>
@@ -1730,22 +2244,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <input
                     type="email"
                     required
-                    placeholder="leader@eng-club.edu"
+                    placeholder="leader@engclub.edu"
                     value={leaderForm.email || ''}
                     onChange={(e) => setLeaderForm({ ...leaderForm, email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-300 mb-1 font-mono">رابط الصورة الشخصية (Avatar URL):</label>
-                  <input
-                    type="url"
-                    required
-                    placeholder="https://..."
-                    value={leaderForm.avatar || ''}
-                    onChange={(e) => setLeaderForm({ ...leaderForm, avatar: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono focus:outline-none focus:border-cyan-400"
                   />
                 </div>
 
@@ -1757,7 +2259,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     placeholder="اقتباس أو رؤية القائد لمستقبل النادي والهندسة..."
                     value={leaderForm.quote || ''}
                     onChange={(e) => setLeaderForm({ ...leaderForm, quote: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
                   />
                 </div>
 
@@ -1765,19 +2267,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <label className="block text-gray-300 mb-1 font-mono">المهارات والاهتمامات (مفصولة بفواصل):</label>
                   <input
                     type="text"
-                    placeholder="ذكاء اصطناعي, أنظمة مدمجة, إدارة مشاريع"
+                    placeholder="القيادة الاستراتيجية, معمارية النظم, إدارة المشاريع"
                     value={leaderSkillsInput}
                     onChange={(e) => setLeaderSkillsInput(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
                   />
                 </div>
 
                 <div className="flex gap-2 pt-3 border-t border-white/10">
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-md transition-all"
+                    className="flex-1 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-[0_0_15px_rgba(0,240,255,0.3)] transition-all"
                   >
-                    {editingLeader ? 'حفظ التعديلات' : 'إضافة القائد فوراً'}
+                    {editingLeader ? 'حفظ وتثبيت التعديلات' : 'إضافة القائد فوراً'}
                   </button>
                   <button
                     type="button"
