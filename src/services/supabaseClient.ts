@@ -34,7 +34,8 @@ export class SupabaseBridge {
   }
 
   public setConfig(url: string, anonKey: string): boolean {
-    const cleanUrl = url.trim().replace(/\/$/, '');
+    let cleanUrl = url.trim().replace(/\/$/, '');
+    cleanUrl = cleanUrl.replace(/\/rest\/v1\/?$/, '');
     const cleanKey = anonKey.trim();
 
     this.config = {
@@ -56,17 +57,19 @@ export class SupabaseBridge {
     }
 
     try {
-      const res = await fetch(`${this.config.url}/rest/v1/`, {
+      const res = await fetch(`${this.config.url}/rest/v1/events?select=count`, {
         headers: {
           apikey: this.config.anonKey,
           Authorization: `Bearer ${this.config.anonKey}`,
         },
       });
 
-      if (res.ok || res.status === 200 || res.status === 404) {
+      if (res.ok || res.status === 200 || res.status === 206) {
         return { success: true, message: 'الاتصال بقاعدة بيانات Supabase تم بنجاح!' };
       } else {
-        return { success: false, message: `فشل الاتصال: رمز الخطأ ${res.status}` };
+        const data = await res.json().catch(() => null);
+        const hint = data?.hint || data?.message || `رمز الخطأ ${res.status}`;
+        return { success: false, message: `فشل الاتصال: ${hint}` };
       }
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'تعذر الوصول إلى الخادم';
