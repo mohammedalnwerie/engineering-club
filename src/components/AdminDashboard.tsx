@@ -1055,10 +1055,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               }`}
                             >
                               {leader.tier === 'executive'
-                                ? 'مجلس القيادة التنفيذي'
+                                ? 'الرئاسة / الهيئة الإدارية'
                                 : leader.tier === 'college-lead'
                                 ? 'منسق كلية'
-                                : 'رئيس لجنة'}
+                                : 'رئيس لجنة تنفيذي'}
                             </span>
                           </div>
                         </div>
@@ -1698,7 +1698,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <div>
                     <label className="block text-gray-300 mb-1 font-mono">المستوى التنظيمي (Tier):</label>
                     <select
-                      value={leaderForm.tier || 'college-lead'}
+                      value={leaderForm.tier || 'committee-lead'}
                       onChange={(e) =>
                         setLeaderForm({
                           ...leaderForm,
@@ -1707,9 +1707,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       }
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
                     >
-                      <option value="executive">مجلس القيادة التنفيذي</option>
-                      <option value="college-lead">منسق كلية</option>
-                      <option value="committee-lead">رئيس لجنة تقنية / إشرافية</option>
+                      <option value="executive">الرئاسة والهيئة الإدارية (رئيس، نائب، أمين سر، أمين صندوق)</option>
+                      <option value="committee-lead">رئيس لجنة (فعاليات وأنشطة، علاقات وتدريب، إعلامية)</option>
                     </select>
                   </div>
 

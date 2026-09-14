@@ -420,111 +420,94 @@ export const TRAINING_COURSES: TrainingCourse[] = [
 ];
 
 export const LEADERSHIP_MEMBERS: LeaderMember[] = [
-  // Executive Board
+  // 1. رئيس النادي
   {
     id: 'pres-1',
     name: 'م. بدر بن عبدالعزيز المنصور',
-    role: 'رئيس مجلس إدارة النادي الهندسي',
+    role: 'رئيس النادي الهندسي',
     tier: 'executive',
-    department: 'مجلس الإدارة التنفيذي',
+    department: 'رئاسة النادي',
     avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80',
-    quote: 'نؤمن أن المهندس لا ينتظر الفرصة، بل يبتكر أدوات بنائها.',
+    quote: 'نؤمن أن المهندس لا ينتظر الفرصة، بل يبتكر أدوات بنائها ويقود التحول التقني.',
     linkedin: 'https://linkedin.com',
     github: 'https://github.com',
     email: 'president@engclub.edu',
-    skills: ['القيادة الاستراتيجية', 'معمارية الأنظمة', 'إدارة الابتكار التقني']
+    skills: ['القيادة الاستراتيجية', 'إدارة الابتكار الهندسي', 'الحوكمة وصناعة القرار']
   },
+  // 2. نائب الرئيس
   {
     id: 'vp-1',
     name: 'م. سارة بنت فهد الحازمي',
-    role: 'نائب الرئيس للشؤون الأكاديمية والتقنية',
+    role: 'نائب رئيس النادي',
     tier: 'executive',
-    department: 'مجلس الإدارة التنفيذي',
+    department: 'الهيئة الإدارية',
     avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&auto=format&fit=crop&q=80',
-    quote: 'التميز الأكاديمي يكتمل عندما يتحول إلى خطوط إنتاج وكود برمجي حي.',
+    quote: 'التكامل بين التخطيط الاستراتيجي والتنفيذ الميداني هو سر استدامة التميز.',
     linkedin: 'https://linkedin.com',
-    email: 'vp.academic@engclub.edu',
-    skills: ['هندسة الذكاء الاصطناعي', 'تطوير المناهج التدريبية', 'البحث العلمي']
+    email: 'vp@engclub.edu',
+    skills: ['الإدارة التنفيذية', 'التنسيق والمتابعة', 'تطوير الخطط والمبادرات']
   },
+  // 3. أمين السر
   {
     id: 'sec-1',
     name: 'م. محمد بن صالح الغامدي',
-    role: 'أمين عام النادي ومدير العمليات',
+    role: 'أمين سر النادي',
     tier: 'executive',
-    department: 'مجلس الإدارة التنفيذي',
+    department: 'الهيئة الإدارية',
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80',
-    quote: 'الانضباط التشغيلي هو المحرك غير المرئي لكل مشروع ناجح.',
+    quote: 'التوثيق الدقيق وإدارة المحاضر والتدفقات التنظيمية هما البوصلة الإدارية للنادي.',
     linkedin: 'https://linkedin.com',
     email: 'secretary@engclub.edu',
-    skills: ['إدارة العمليات الرشيقة Agile', 'إدارة الشراكات الصناعية', 'تخطيط الفعاليات']
+    skills: ['إدارة المحاضر والتوثيق', 'التنظيم الإداري', 'الحوكمة ومتابعة القرارات']
   },
-  // College Coordinators
+  // 4. أمين الصندوق
   {
-    id: 'coord-1',
-    name: 'م. راكان بن فهد الدوسري',
-    role: 'منسق كلية الهندسة والتكنولوجيا الصناعية والبرمجيات',
-    tier: 'college-lead',
-    department: 'منسقو الكليات',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-    quote: 'جسر التواصل بين ورش التصنيع ومختبرات البرمجيات السحابية.',
-    email: 'rakan.eng@engclub.edu',
-    skills: ['تنسيق المبادرات', 'الأنظمة المضمنة', 'الأتمتة الصناعية']
+    id: 'treasurer-1',
+    name: 'م. ريان بن خالد العتيبي',
+    role: 'أمين صندوق النادي',
+    tier: 'executive',
+    department: 'الهيئة الإدارية',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
+    quote: 'حوكمة الميزانيات وتوجيه الموارد المالية بكفاءة يضمن نجاح واستدامة كل مبادرة.',
+    linkedin: 'https://linkedin.com',
+    email: 'treasurer@engclub.edu',
+    skills: ['الإدارة المالية والموازنات', 'التدقيق والشفافية', 'إدارة الرعايات والعهد']
   },
+  // 5. لجنة الفعاليات والأنشطة
   {
-    id: 'coord-2',
-    name: 'م. ليلى بنت ناصر السبيعي',
-    role: 'منسقة كلية تكنولوجيا المعلومات',
-    tier: 'college-lead',
-    department: 'منسقو الكليات',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
-    quote: 'نصقل المواهب في معارك الأمن السيبراني ونماذج التعلم العميق.',
-    email: 'layla.it@engclub.edu',
-    skills: ['علوم البيانات', 'الهاكاثونات البرمجية', 'الأمن السيبراني']
-  },
-  {
-    id: 'coord-3',
+    id: 'comm-events',
     name: 'م. طارق بن كمال العمري',
-    role: 'منسق كلية الهندسة المعمارية والمدنية',
-    tier: 'college-lead',
-    department: 'منسقو الكليات',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
-    quote: 'الفضاء المعماري ليس جداراً وسقفاً، بل تجربة إنسانية ذكية متجددة.',
-    email: 'tariq.arch@engclub.edu',
-    skills: ['التصميم البارامتري', 'هندسة الجسور', 'نمذجة BIM']
-  },
-  // Committee Leads
-  {
-    id: 'comm-tech',
-    name: 'م. زياد بن خالد العتيبي',
-    role: 'رئيس لجنة التطوير والبرمجيات',
+    role: 'رئيس لجنة الفعاليات والأنشطة',
     tier: 'committee-lead',
-    department: 'لجنة التطوير البرمجي والمشاريع',
-    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&auto=format&fit=crop&q=80',
-    quote: 'نكتب الكود الذي يدير منصات النادي ويبني منتجات المستقبل.',
-    email: 'dev.lead@engclub.edu',
-    skills: ['Fullstack Architecture', 'DevOps & Cloud', 'Open Source']
+    department: 'لجنة الفعاليات والأنشطة',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+    quote: 'نبتكر فعاليات ومسابقات غير مسبوقة تصنع تجربة هندسية ثرية لجميع الطلاب.',
+    email: 'events@engclub.edu',
+    skills: ['إدارة الحشود والفعاليات', 'تنظيم الهاكاثونات', 'التخطيط اللوجستي الميداني']
   },
+  // 6. لجنة العلاقات والتدريب
+  {
+    id: 'comm-training',
+    name: 'م. ليلى بنت ناصر السبيعي',
+    role: 'رئيسة لجنة العلاقات والتدريب',
+    tier: 'committee-lead',
+    department: 'لجنة العلاقات والتدريب',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
+    quote: 'نبني جسوراً متينة من الشراكات الصناعية والبرامج التدريبية لتأهيل الكفاءات.',
+    email: 'training@engclub.edu',
+    skills: ['الشراكات الاستراتيجية', 'تطوير المسارات التدريبية', 'استقطاب الخبراء والمدربين']
+  },
+  // 7. اللجنة الإعلامية
   {
     id: 'comm-media',
     name: 'أ. جود بنت راشد التميمي',
-    role: 'رئيسة لجنة الإعلام والهوية البصرية',
+    role: 'رئيسة اللجنة الإعلامية',
     tier: 'committee-lead',
-    department: 'لجنة الهوية والإعلام الرقمي',
+    department: 'اللجنة الإعلامية',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-    quote: 'نترجم الابتكارات الهندسية المعقدة إلى قصص بصرية تأسر العالم.',
-    email: 'media.lead@engclub.edu',
-    skills: ['Motion Graphics', 'UI/UX Design', 'Visual Storytelling']
-  },
-  {
-    id: 'comm-logistics',
-    name: 'م. نواف بن حسن المالكي',
-    role: 'رئيس لجنة المعامل واللوجستيات',
-    tier: 'committee-lead',
-    department: 'لجنة الدعم الميداني والمعامل',
-    avatar: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=400&auto=format&fit=crop&q=80',
-    quote: 'نوفر لكل فريق هندسي الموارد والمعدات قبل أن يطلبها.',
-    email: 'logistics.lead@engclub.edu',
-    skills: ['إدارة العتاد الميداني', 'بروتوكولات السلامة', 'الطباعة ثلاثية الأبعاد']
+    quote: 'نترجم الإنجازات والابتكارات الهندسية إلى قصص بصرية ومحتوى رقمي ملهم.',
+    email: 'media@engclub.edu',
+    skills: ['صناعة المحتوى الرقمي', 'التغطيات الإعلامية', 'الهوية والتصميم والإنتاج المرئي']
   }
 ];
 
