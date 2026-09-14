@@ -100,8 +100,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     title: '',
     tagline: '',
     category: 'software',
-    collegeId: 'industrial-software',
-    collegeName: 'الهندسة والتكنولوجيا الصناعية والبرمجيات',
+    collegeId: 'software-ai',
+    collegeName: 'كلية هندسة برمجيات وذكاء اصطناعي',
     problem: '',
     solution: '',
     techStack: ['Python', 'React'],
@@ -740,9 +740,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           onChange={(e) => setNewProject({ ...newProject, collegeName: e.target.value })}
                           className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white"
                         >
-                          <option value="كلية الهندسة والتكنولوجيا الصناعية والبرمجيات">الهندسة والتكنولوجيا الصناعية والبرمجيات</option>
-                          <option value="كلية تكنولوجيا المعلومات">كلية تكنولوجيا المعلومات</option>
-                          <option value="كلية الهندسة المعمارية والمدنية">كلية الهندسة المعمارية والمدنية</option>
+                          <option value="كلية هندسة برمجيات وذكاء اصطناعي">كلية هندسة برمجيات وذكاء اصطناعي</option>
+                          <option value="كلية تكنولوجيا المعلومات IT">كلية تكنولوجيا المعلومات IT</option>
+                          <option value="كلية الهندسة التطبيقية و التخطيط العمراني">كلية الهندسة التطبيقية و التخطيط العمراني</option>
                         </select>
                       </div>
 
