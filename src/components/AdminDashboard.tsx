@@ -106,6 +106,7 @@ const processImageFile = (
 };
 
 const AVATAR_PRESETS = [
+  { label: 'افتراضي هندسي', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80' },
   { label: 'رسمي 1', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80' },
   { label: 'رسمية 1', url: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&auto=format&fit=crop&q=80' },
   { label: 'رسمي 2', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80' },
@@ -115,6 +116,8 @@ const AVATAR_PRESETS = [
   { label: 'رسمية 3', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80' },
   { label: 'رسمي 5', url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&auto=format&fit=crop&q=80' },
 ];
+
+const DEFAULT_AVATAR = AVATAR_PRESETS[0].url;
 
 const ROLE_TEMPLATES = [
   {
@@ -324,6 +327,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       },
       (err) => showToast(err)
     );
+  };
+
+  const handleResetLeaderAvatar = (leader: LeaderMember) => {
+    if (window.confirm(`هل أنت متأكد من حذف صورة (${leader.name}) واستعادة الصورة الافتراضية؟`)) {
+      sound.playClick();
+      const updated: LeaderMember = { ...leader, avatar: DEFAULT_AVATAR };
+      dataService.saveLeader(updated);
+      setLeadership(dataService.getLeadership());
+      showToast(`تم حذف صورة (${leader.name}) وتعيين الصورة الافتراضية`);
+    }
   };
 
   const handleSaveLeader = (e: React.FormEvent) => {
@@ -1392,17 +1405,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         >
                           <div>
                             <div className="flex items-start gap-3.5 mb-3">
-                              {/* Avatar with Direct Upload Button */}
+                              {/* Avatar with Direct Upload & Delete Actions */}
                               <div className="relative group/avatar shrink-0">
                                 <img
                                   src={leader.avatar}
                                   alt={leader.name}
                                   className="w-16 h-16 rounded-2xl object-cover border-2 border-white/10 shadow-md group-hover/avatar:border-cyan-400/60 transition-all"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src =
-                                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+                                    (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
                                   }}
                                 />
+                                {/* Upload Camera Button */}
                                 <label
                                   className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black flex items-center justify-center shadow-lg border border-cyan-100 cursor-pointer transition-transform hover:scale-110 active:scale-95"
                                   title="تغيير الصورة من جهازك فوراً"
@@ -1423,6 +1436,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                     }}
                                   />
                                 </label>
+
+                                {/* Delete Photo / Set Default Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetLeaderAvatar(leader)}
+                                  className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-red-950/90 hover:bg-red-800 border border-red-500/60 text-red-400 hover:text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                                  title="حذف الصورة واستعادة الصورة الافتراضية"
+                                >
+                                  <Trash2 className="w-2.5 h-2.5" />
+                                </button>
                               </div>
 
                               <div className="flex-1 min-w-0">
@@ -1798,7 +1821,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <Camera className="w-3.5 h-3.5 text-amber-400" />
                           <span>صورة نجم الشهر الهندسي:</span>
                         </label>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <label className="px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs flex items-center gap-1 cursor-pointer transition-all">
                             <Upload className="w-3 h-3" />
                             <span>رفع صورة من جهازك</span>
@@ -1827,6 +1850,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           </label>
                           <button
                             type="button"
+                            onClick={() => {
+                              sound.playClick();
+                              setSpotlight({ ...spotlight, avatar: DEFAULT_AVATAR });
+                              showToast('تم حذف صورة نجم الشهر وتعيين الصورة الافتراضية');
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white text-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                            title="حذف الصورة الحالية واستعادة النموذج الافتراضي"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-400" />
+                            <span>حذف الصورة (افتراضية)</span>
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => setShowSpotlightUrlInput(!showSpotlightUrlInput)}
                             className="px-2.5 py-1 rounded-xl bg-white/5 text-gray-300 text-xs flex items-center gap-1 border border-white/10 cursor-pointer"
                           >
@@ -1843,12 +1879,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             alt={spotlight.name}
                             className="w-14 h-14 rounded-2xl object-cover border-2 border-amber-400/40 shrink-0"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = AVATAR_PRESETS[1].url;
+                              (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
                             }}
                           />
                           <label
                             className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-amber-400 hover:bg-amber-300 text-black flex items-center justify-center cursor-pointer shadow-md"
-                            title="تغيير الصورة"
+                            title="تغيير الصورة من جهازك"
                           >
                             <Camera className="w-3 h-3" />
                             <input
@@ -1874,6 +1910,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               }}
                             />
                           </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sound.playClick();
+                              setSpotlight({ ...spotlight, avatar: DEFAULT_AVATAR });
+                              showToast('تم استعادة الصورة الافتراضية');
+                            }}
+                            className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-red-950/90 hover:bg-red-800 border border-red-500/60 text-red-400 hover:text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                            title="حذف واستعادة الصورة الافتراضية"
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </button>
                         </div>
                         <div className="flex-1 min-w-0">
                           {showSpotlightUrlInput ? (
@@ -2203,46 +2251,64 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-dashed border-cyan-500/30 hover:border-cyan-400/60 transition-colors relative"
                 >
                   {/* Tap-to-Upload Avatar Image */}
-                  <label
-                    className="relative group/modalAvatar shrink-0 cursor-pointer"
-                    title="انقر لتغيير الصورة مباشرة"
-                  >
-                    <img
-                      src={leaderForm.avatar || AVATAR_PRESETS[0].url}
-                      alt="معاينة الصورة"
-                      className="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.25)] group-hover/modalAvatar:brightness-90 transition-all"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = AVATAR_PRESETS[0].url;
-                      }}
-                    />
-                    <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-cyan-400 text-black shadow-md transition-transform group-hover/modalAvatar:scale-110">
-                      <Camera className="w-3.5 h-3.5" />
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onClick={(e) => {
-                        (e.target as HTMLInputElement).value = '';
-                      }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          processImageFile(
-                            file,
-                            (dataUrl) => {
-                              setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
-                              sound.playSuccess();
-                              showToast('تم تحميل وتحديث الصورة بنجاح');
-                            },
-                            (err) => showToast(err)
-                          );
-                        }
-                      }}
-                    />
-                  </label>
+                  <div className="relative group/modalAvatar shrink-0">
+                    <label
+                      className="relative block cursor-pointer"
+                      title="انقر لتغيير الصورة مباشرة"
+                    >
+                      <img
+                        src={leaderForm.avatar || DEFAULT_AVATAR}
+                        alt="معاينة الصورة"
+                        className="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.25)] group-hover/modalAvatar:brightness-90 transition-all"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+                        }}
+                      />
+                      <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-cyan-400 text-black shadow-md transition-transform group-hover/modalAvatar:scale-110">
+                        <Camera className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onClick={(e) => {
+                          (e.target as HTMLInputElement).value = '';
+                        }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            processImageFile(
+                              file,
+                              (dataUrl) => {
+                                setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
+                                sound.playSuccess();
+                                showToast('تم تحميل وتحديث الصورة بنجاح');
+                              },
+                              (err) => showToast(err)
+                            );
+                          }
+                        }}
+                      />
+                    </label>
 
-                  <div className="flex-1 text-center sm:text-right space-y-2 w-full">
+                    {/* Delete Photo / Set Default Button on Avatar Preview */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        sound.playClick();
+                        setLeaderForm((prev) => ({ ...prev, avatar: DEFAULT_AVATAR }));
+                        showToast('تم حذف الصورة واستعادة الصورة الافتراضية');
+                      }}
+                      className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-red-950/90 hover:bg-red-800 border border-red-500/60 text-red-400 hover:text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                      title="حذف الصورة الحالية واستعادة الافتراضية"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 text-center sm:text-right space-y-2.5 w-full">
                     <div className="text-xs font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
                       <span>صورة البطاقة الشخصية</span>
                       <span className="text-[10px] font-mono text-cyan-400">(اسحب وأفلت أو اختر ملفاً)</span>
@@ -2277,6 +2343,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         />
                       </label>
 
+                      {/* Delete / Reset to Default Avatar Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sound.playClick();
+                          setLeaderForm((prev) => ({ ...prev, avatar: DEFAULT_AVATAR }));
+                          showToast('تم حذف الصورة واستعادة الصورة الافتراضية');
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all active:scale-95"
+                        title="حذف الصورة الحالية واستعادة النموذج الافتراضي"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                        <span>حذف الصورة (افتراضية)</span>
+                      </button>
+
                       {/* Toggle manual URL input */}
                       <button
                         type="button"
@@ -2302,8 +2383,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     )}
 
                     {/* Presets Row */}
-                    <div className="pt-1">
-                      <div className="text-[10px] text-gray-400 mb-1 font-mono">أو اختر نموذجاً جاهزاً:</div>
+                    <div className="pt-2 border-t border-white/5">
+                      <div className="text-[10px] text-gray-300 mb-1.5 font-mono flex items-center justify-between">
+                        <span className="font-bold text-white">النماذج الافتراضية الجاهزة:</span>
+                        <span className="text-[9px] text-cyan-400">انقر لاختيار نموذج افتراضي</span>
+                      </div>
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
                         {AVATAR_PRESETS.map((p, i) => (
                           <button
@@ -2312,15 +2396,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             onClick={() => {
                               setLeaderForm((prev) => ({ ...prev, avatar: p.url }));
                               sound.playClick();
+                              showToast(`تم تعيين النموذج الافتراضي: ${p.label}`);
                             }}
-                            className={`w-7 h-7 rounded-lg overflow-hidden border transition-all cursor-pointer ${
+                            className={`relative w-8 h-8 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                               leaderForm.avatar === p.url
-                                ? 'border-cyan-400 ring-2 ring-cyan-400/50 scale-110'
-                                : 'border-white/10 hover:border-white/40 opacity-70 hover:opacity-100'
+                                ? 'border-cyan-400 ring-2 ring-cyan-400/60 scale-110 z-10'
+                                : 'border-white/10 hover:border-cyan-400/50 opacity-70 hover:opacity-100 hover:scale-105'
                             }`}
                             title={p.label}
                           >
                             <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
+                            {leaderForm.avatar === p.url && (
+                              <div className="absolute inset-0 bg-cyan-500/25 flex items-center justify-center">
+                                <Check className="w-3 h-3 text-cyan-300 drop-shadow" />
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
