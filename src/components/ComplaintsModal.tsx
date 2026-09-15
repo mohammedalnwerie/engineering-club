@@ -118,9 +118,18 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!trackQuery.trim()) return;
+    const cleanQuery = trackQuery.trim();
+    if (!cleanQuery) return;
+
+    // Strict Privacy: If student enters numeric student ID, guide them to use ticket number
+    if (!cleanQuery.toUpperCase().includes('UP-CMP') && /^\d{6,}$/.test(cleanQuery)) {
+      sound.playError();
+      alert('🔒 لدواعي الأمان وحماية خصوصية الشكاوى، تم حظر الاستعلام بالرقم الجامعي. الاستعلام متاح حصرياً عبر رمز التذكرة السري الفريد (مثال: UP-CMP-2026-1042) الذي استلمته عند تقديم الطلب.');
+      return;
+    }
+
     sound.playClick();
-    const res = dataService.getComplaintByTicket(trackQuery.trim());
+    const res = dataService.getComplaintByTicket(cleanQuery);
     setFoundTicket(res || null);
     setTrackSearched(true);
   };
@@ -461,22 +470,32 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
         {/* TAB 2: TRACK TICKET */}
         {activeTab === 'track' && (
           <div className="space-y-5">
-            <form onSubmit={handleTrack} className="flex gap-2">
-              <input
-                type="text"
-                placeholder="أدخل كود التتبع (مثال: UP-CMP-2026-1042) أو الرقم الجامعي..."
-                value={trackQuery}
-                onChange={(e) => setTrackQuery(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-cyan-400"
-              />
-              <button
-                type="submit"
-                className="px-5 py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <Search className="w-4 h-4" />
-                <span>استعلام</span>
-              </button>
-            </form>
+            <div>
+              <div className="flex items-center justify-between text-[11px] font-mono text-gray-400 mb-2">
+                <span className="flex items-center gap-1.5 text-cyan-300 font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>الاستعلام الآمن بالرمز الفريد فقط // UNIQUE TICKET ID ONLY</span>
+                </span>
+                <span className="text-[10px] text-gray-500">🔒 خصوصية وسرية مطلقة</span>
+              </div>
+              <form onSubmit={handleTrack} className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  placeholder="أدخل الرمز السري الفريد للشكوى (مثال: UP-CMP-2026-1042)..."
+                  value={trackQuery}
+                  onChange={(e) => setTrackQuery(e.target.value)}
+                  className="flex-1 px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-cyan-400 text-center tracking-wider"
+                />
+                <button
+                  type="submit"
+                  className="px-5 py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shrink-0 shadow-md"
+                >
+                  <Search className="w-4 h-4" />
+                  <span>استعلام سري</span>
+                </button>
+              </form>
+            </div>
 
             {trackSearched && (
               <div>
@@ -563,10 +582,12 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                     )}
                   </div>
                 ) : (
-                  <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 text-center text-gray-400 text-xs">
+                  <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 text-center text-gray-400 text-xs space-y-2">
                     <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-2 opacity-75" />
-                    <div>لم يتم العثور على أي شكوى أو مقترح مسجل بهذا الرمز أو الرقم الجامعي.</div>
-                    <div className="text-[11px] text-gray-500 mt-1">يرجى التأكد من كتابة الرمز بشكل صحيح (مثال: UP-CMP-2026-XXXX).</div>
+                    <div className="text-white font-bold">لم يتم العثور على أي شكوى مسجلة بهذا الرمز الفريد.</div>
+                    <p className="text-[11px] text-gray-400 leading-relaxed max-w-md mx-auto">
+                      تنبيه أمني: الاستعلام متاح حصرياً بواسطة <span className="text-cyan-300 font-mono font-bold">الرمز الفريد للتذكرة</span> الصادر عند التقديم لضمان أقصى درجات الخصوصية وحجب الشكاوى عن أي استعلام خارجي بالرقم الجامعي.
+                    </p>
                   </div>
                 )}
               </div>
