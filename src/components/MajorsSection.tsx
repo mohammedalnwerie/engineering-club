@@ -216,22 +216,37 @@ export const MajorsSection: React.FC = () => {
                 </div>
               </div>
 
-              {/* Featured Outcome Spotlight */}
-              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/30 via-cyan-950/20 to-transparent border border-blue-500/30 flex items-center justify-between">
-                <div>
-                  <div className="font-mono text-[10px] text-blue-400 uppercase">نموذج مشروع تطبيقي في المسار</div>
-                  <div className="text-sm font-bold text-white mt-0.5">{activeMajor.featuredProjectTitle}</div>
+              {/* Student Project Incubator Callout */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-black/40 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="inline-flex items-center gap-2 font-mono text-[10px] text-emerald-400 uppercase tracking-wider">
+                      <span>حاضنة الأفكار والمشاريع الطلابية</span>
+                      <span className="text-emerald-500/50">|</span>
+                      <span className="text-gray-400">باب التقديم مفتوح</span>
+                    </div>
+                    <div className="text-sm font-bold text-white mt-1">
+                      لديك فكرة مشروع في هذا التخصص؟ انضم للنادي وحوّلها لواقع عملي!
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      يوفر النادي الإرشاد الأكاديمي، فرق العمل، والبيئة التجريبية لتمكين طلبة التخصص من بناء نماذجهم وتطوير حلولهم.
+                    </p>
+                  </div>
                 </div>
+
                 <button
                   onClick={() => {
                     sound.playClick();
-                    const target = document.querySelector('#projects');
+                    const target = document.querySelector('#join');
                     target?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-cyan-400 hover:text-black text-xs font-bold transition-all text-gray-200 flex items-center gap-1 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-400 hover:text-black border border-emerald-500/40 text-xs font-bold transition-all text-emerald-200 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
                 >
-                  <span>استعراض</span>
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>شارك بفكرتك / انضم الآن</span>
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
               </div>
             </div>

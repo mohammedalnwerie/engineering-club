@@ -173,7 +173,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify }) => {
                 </button>
               </li>
               <li>
-                <span className="text-gray-500 font-mono">contact@engclub.edu</span>
+                <a href="mailto:eng.club@up.edu.ps" className="text-gray-400 hover:text-cyan-300 font-mono transition-colors">eng.club@up.edu.ps</a>
               </li>
             </ul>
 

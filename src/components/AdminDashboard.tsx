@@ -3014,7 +3014,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <input
                     type="email"
                     required
-                    placeholder="leader@engclub.edu"
+                    placeholder="leader@up.edu.ps"
                     value={leaderForm.email || ''}
                     onChange={(e) => setLeaderForm({ ...leaderForm, email: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono focus:outline-none focus:border-cyan-400"

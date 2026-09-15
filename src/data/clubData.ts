@@ -1,29 +1,28 @@
 import type { College, Major, ProjectCaseStudy, EventItem, TrainingCourse, LeaderMember } from '../types';
 
-
 export const COLLEGES: College[] = [
   {
     id: 'software-ai',
     code: 'ENG-AI',
     name: 'كلية هندسة برمجيات وذكاء اصطناعي',
     shortName: 'البرمجيات والذكاء الاصطناعي',
-    tagline: 'حيث تلتقي معمارية البرمجيات المعقدة بنماذج وخوارزميات الذكاء الاصطناعي',
-    description: 'تخريج مهندسين متخصصين في بناء الأنظمة البرمجية الموزعة، وتطوير خوارزميات ونماذج الذكاء الاصطناعي التوليدي، وتطبيقات الحوسبة فائقة الأداء.',
+    tagline: 'تطوير البرمجيات المتقدمة وخوارزميات الذكاء الاصطناعي والحلول الرقمية',
+    description: 'تمكين مهندسي المستقبل في بناء النظم البرمجية الحديثة، تطبيقات الويب والهواتف، وتطوير نماذج الذكاء الاصطناعي التوليدي، وتطبيقات الحوسبة الذكية.',
     accentColor: '#00F0FF',
     gradient: 'from-cyan-500/20 via-blue-500/10 to-transparent',
     coordinator: {
-      name: 'م. راكان بن فهد',
-      role: 'منسق كلية هندسة برمجيات وذكاء اصطناعي',
-      title: 'باحث في معمارية النظم وهندسة الذكاء الاصطناعي',
+      name: 'ممثلو الكلية في النادي',
+      role: 'لجنة التنسيق والمتابعة الطلابية',
+      title: 'كلية هندسة برمجيات وذكاء اصطناعي — جامعة فلسطين',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-      email: 'rakan.ai@engclub.edu',
+      email: 'eng.software@up.edu.ps',
     },
     majors: ['هندسة برمجيات', 'هندسة ذكاء اصطناعي'],
-    labsCount: 8,
-    studentsCount: 460,
-    projectsCount: 32,
-    featuredLabs: ['مختبر الحوسبة الفائقة ونماذج الذكاء الاصطناعي GPU Cluster', 'مختبر هندسة البرمجيات والنظم السحابية', 'معمل الرؤية الحاسوبية ومعالجة اللغات الطبيعية'],
-    flagshipAchievement: 'الفوز بالمركز الأول في هاكاثون الذكاء الاصطناعي الوطني وتطوير نماذج برمجية سيادية'
+    labsCount: 4,
+    studentsCount: 0,
+    projectsCount: 0,
+    featuredLabs: ['مختبر تطوير النظم والبرمجيات', 'مختبر الذكاء الاصطناعي وتعلم الآلة', 'معمل الحوسبة السحابية ومشاريع التخرج'],
+    flagshipAchievement: 'إطلاق مسار التطوير البرمجي ونماذج الذكاء الاصطناعي لخدمة مجتمع الجامعة'
   },
   {
     id: 'it-computing',
@@ -31,45 +30,45 @@ export const COLLEGES: College[] = [
     name: 'كلية تكنولوجيا المعلومات IT',
     shortName: 'تكنولوجيا المعلومات IT',
     tagline: 'إدارة نظم المعلومات الرقمية وتصميم التجارب التفاعلية والوسائط المتعددة',
-    description: 'تمكين الكوادر التقنية في تحليل النظم المؤسسية، إدارة وتكامل البيانات الضخمة، وتطوير الإنتاج الرقمي التفاعلي ثلاثي الأبعاد والوسائط المتعددة.',
+    description: 'تأهيل الكوادر التقنية في تحليل النظم المؤسسية، إدارة قواعد البيانات، وتطوير الإنتاج الرقمي التفاعلي ثلاثي الأبعاد وتصميم تجربة المستخدم UI/UX.',
     accentColor: '#3877FF',
     gradient: 'from-blue-600/20 via-indigo-500/10 to-transparent',
     coordinator: {
-      name: 'م. ليلى السبيعي',
-      role: 'منسقة كلية تكنولوجيا المعلومات IT',
-      title: 'متخصصة في نظم المعلومات وتصميم التجارب والوسائط الرقمية',
+      name: 'ممثلو الكلية في النادي',
+      role: 'لجنة التنسيق والمتابعة الطلابية',
+      title: 'كلية تكنولوجيا المعلومات — جامعة فلسطين',
       avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
-      email: 'layla.it@engclub.edu',
+      email: 'it.club@up.edu.ps',
     },
     majors: ['تخصص نظم المعلومات', 'تخصص الوسائط المتعددة'],
-    labsCount: 6,
-    studentsCount: 490,
-    projectsCount: 29,
-    featuredLabs: ['استوديو إنتاج الوسائط المتعددة والواقع الافتراضي VR/AR', 'مختبر نظم وتكامل قواعد البيانات Enterprise ERP', 'معمل التصميم الرقمي وتجربة المستخدم UX/UI'],
-    flagshipAchievement: 'تطوير المنظومة الرقمية والبيئة التفاعلية الشاملة لخدمات الحرم الجامعي'
+    labsCount: 3,
+    studentsCount: 0,
+    projectsCount: 0,
+    featuredLabs: ['استوديو إنتاج الوسائط المتعددة والتصميم الرقمي', 'مختبر نظم وقواعد البيانات والشبكات', 'معمل التصميم التفاعلي وتجربة المستخدم UI/UX'],
+    flagshipAchievement: 'تأسيس فرق العمل لتطوير الأنظمة الرقمية والوسائط التفاعلية وإثراء المحتوى الجامعي'
   },
   {
     id: 'applied-urban',
     code: 'ENG-URB',
     name: 'كلية الهندسة التطبيقية و التخطيط العمراني',
     shortName: 'الهندسة التطبيقية والتخطيط العمراني',
-    tagline: 'نصمم المدن الذكية، نشيد البنى التحتية، ونرسم ملامح العمران المستدام',
-    description: 'دمج الإبداع المعماري بالهندسة الإنشائية والتخطيط الحضري لتطوير بيئات عمرانية متكاملة ومستدامة وفق معايير الاستدامة العالمية.',
+    tagline: 'العمارة المبتكرة، الإنشاءات المستدامة، والتخطيط العمراني الذكي',
+    description: 'دمج الإبداع المعماري بالهندسة الإنشائية والتخطيط الحضري لتطوير بيئات عمرانية متكاملة ومستدامة تسهم في خدمة المجتمع وإعادة البناء الذكي.',
     accentColor: '#10B981',
     gradient: 'from-emerald-500/20 via-teal-500/10 to-transparent',
     coordinator: {
-      name: 'م. طارق العمري',
-      role: 'منسق كلية الهندسة التطبيقية والتخطيط العمراني',
-      title: 'استشاري التخطيط الحضري والهندسة المعمارية المستدامة',
+      name: 'ممثلو الكلية في النادي',
+      role: 'لجنة التنسيق والمتابعة الطلابية',
+      title: 'كلية الهندسة التطبيقية والتخطيط العمراني — جامعة فلسطين',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
-      email: 'tariq.arch@engclub.edu',
+      email: 'eng.urban@up.edu.ps',
     },
     majors: ['تخصص هندسة معمارية', 'تخصص هندسة مدنية'],
-    labsCount: 7,
-    studentsCount: 380,
-    projectsCount: 24,
-    featuredLabs: ['استوديو التصميم المعماري البارامتري والتخطيط الحضري', 'مختبر ميكانيكا المواد والإنشاءات الذكية', 'مركز نظم المعلومات الجغرافية GIS والاستشعار عن بعد'],
-    flagshipAchievement: 'الفوز بجائزة التخطيط العمراني المستدام وتصميم المخطط التوجيهي للحرم الأخضر'
+    labsCount: 4,
+    studentsCount: 0,
+    projectsCount: 0,
+    featuredLabs: ['استوديو التصميم والنمذجة المعمارية', 'مختبر المواد وميكانيكا الإنشاءات', 'مركز نظم المعلومات الجغرافية GIS والتخطيط الحضري'],
+    flagshipAchievement: 'تطوير أفكار ومبادرات إعادة التخطيط العمراني والحلول الإنشائية المستدامة'
   }
 ];
 
@@ -87,7 +86,7 @@ export const MAJORS: Major[] = [
     techStack: ['React / Next.js', 'Flutter & Mobile', 'Python', 'Node.js', 'SQL & Databases', 'Git & GitHub'],
     careerPaths: ['مطور مواقع وإنترنت (Web Developer)', 'مبرمج تطبيقات هواتف (Mobile App Developer)', 'مهندس اختبار وجودة برمجيات (QA)'],
     keyCourses: ['برمجة وتطوير مواقع الويب (Full-Stack)', 'تطوير تطبيقات الهواتف الذكية', 'هندسة وإدارة المشاريع البرمجية'],
-    featuredProjectTitle: 'منصة الخدمات الطلابية والتواصل الأكاديمي'
+    featuredProjectTitle: 'منصة الخدمات الطلابية وبوابة النادي الرقمية'
   },
   {
     id: 'ai-eng',
@@ -102,7 +101,7 @@ export const MAJORS: Major[] = [
     techStack: ['Python', 'Machine Learning', 'TensorFlow / PyTorch', 'Data Analysis', 'ChatGPT & AI Tools', 'Computer Vision'],
     careerPaths: ['مهندس ذكاء اصطناعي (AI Engineer)', 'محلل بيانات (Data Analyst)', 'مطور حلول الأتمتة والأنظمة الذكية'],
     keyCourses: ['مبادئ الذكاء الاصطناعي وتعلم الآلة', 'تحليل واستكشاف البيانات العلمية', 'الرؤية الحاسوبية ومعالجة اللغات'],
-    featuredProjectTitle: 'المساعد الطلابي الذكي للإرشاد الجامعي'
+    featuredProjectTitle: 'المساعد الطلابي الذكي وأنظمة الأتمتة'
   },
   {
     id: 'is-major',
@@ -117,7 +116,7 @@ export const MAJORS: Major[] = [
     techStack: ['SQL Databases', 'Power BI & Excel', 'Business Analysis', 'ERP & Cloud Systems', 'Web Management Apps'],
     careerPaths: ['محلل نظم أعمال (Business Systems Analyst)', 'مسؤول قواعد بيانات (Database Admin)', 'أخصائي تحول رقمي وحلول مؤسسية'],
     keyCourses: ['تحليل وتصميم نظم المعلومات', 'إدارة وتصميم قواعد البيانات', 'ذكاء الأعمال والتحول الرقمي'],
-    featuredProjectTitle: 'نظام إدارة الفعاليات والأنشطة الجامعية المؤتمت'
+    featuredProjectTitle: 'منظومة إدارة الفعاليات والأنشطة المؤتمتة'
   },
   {
     id: 'multimedia-major',
@@ -132,7 +131,7 @@ export const MAJORS: Major[] = [
     techStack: ['Figma (UI/UX)', 'Adobe Premiere', 'After Effects', 'Photoshop & Illustrator', 'Blender 3D'],
     careerPaths: ['مصمم واجهات وتجربة مستخدم (UI/UX Designer)', 'مصمم موشن جرافيك وفيديو (Motion Designer)', 'مصمم هويات بصرية ومحتوى رقمي'],
     keyCourses: ['تصميم واجهات وتجربة المستخدم UI/UX', 'التحريك الرقمي والموشن جرافيك', 'المونتاج والإنتاج المرئي الرقمي'],
-    featuredProjectTitle: 'معرض رقمي تفاعلي ثلاثي الأبعاد لإبداعات الطلبة'
+    featuredProjectTitle: 'المعرض الرقمي التفاعلي والإنتاج البصري'
   },
   {
     id: 'architecture',
@@ -147,7 +146,7 @@ export const MAJORS: Major[] = [
     techStack: ['AutoCAD', 'Revit (BIM)', 'Sketchup', 'Lumion / 3ds Max', 'Photoshop Architecture'],
     careerPaths: ['مهندس معماري مصمم (Architectural Designer)', 'مصمم مناظير ثلاثية الأبعاد (3D Visualizer)', 'أخصائي نمذجة معمارية BIM'],
     keyCourses: ['مبادئ واستوديو التصميم المعماري', 'الرسم والنمذجة المعمارية بالحاسوب', 'العمارة البيئية والتصميم الداخلي'],
-    featuredProjectTitle: 'تصميم المركز الطلابي الصديق للبيئة'
+    featuredProjectTitle: 'مبادرة التصميم المعماري الصديق للبيئة وإعادة الإعمار'
   },
   {
     id: 'civil-eng',
@@ -162,259 +161,192 @@ export const MAJORS: Major[] = [
     techStack: ['AutoCAD', 'ETABS / SAP2000', 'حساب الكميات والتكاليف', 'Primavera / Project Management', 'Excel الهندسي'],
     careerPaths: ['مهندس موقع وتنفيذ (Site Engineer)', 'مهندس تصميم إنشائي (Structural Engineer)', 'مهندس حساب كميات ومكتب فني'],
     keyCourses: ['تصميم المنشآت والخرسانة المسلحة', 'إدارة وتنفيذ المشاريع الإنشائية', 'ميكانيكا التربة والأساسات والمساحة'],
-    featuredProjectTitle: 'دراسة وتصميم مبنى سكني متكامل مع حساب الكميات'
+    featuredProjectTitle: 'نماذج المنشآت المستدامة وإدارة المشاريع الإنشائية'
   }
 ];
 
 export const FLAGSHIP_PROJECTS: ProjectCaseStudy[] = [
   {
-    id: 'smart-grid-ai',
-    title: 'SmartGrid AI — نظام موازنة أحمال الطاقة الحرمية',
-    tagline: 'منظومة تنبؤية ذكية خفضت استهلاك الطاقة في مرافق الحرم الجامعي بنسبة 28%',
-    category: 'ai',
+    id: 'up-digital-portal',
+    title: 'منصة النادي الرقمية — UP Engineering Portal',
+    tagline: 'المنظومة الرقمية التفاعلية الموحدة لإدارة العضويات، الفعاليات، والتحقق الفوري من البطاقات الذكية',
+    category: 'software',
     collegeId: 'software-ai',
     collegeName: 'كلية هندسة برمجيات وذكاء اصطناعي',
     featured: true,
-    award: 'جائزة الابتكار الهندسي المفتوح 2025',
+    award: 'مشروع النادي التقني لعام 2026',
     status: 'Deployed',
-    problem: 'كانت مرافق الحرم الجامعي تعاني من ذروات استهلاك غير متوقعة للكهرباء والتكييف دون وجود قراءات فورية أو توزيع حمل ديناميكي بين مباني الكليات.',
-    solution: 'قمنا بتطوير منصة تدمج مجسات IoT الموزعة في 12 مبنى مع نموذج شبكات عصبية زمنية (LSTM) للتنبؤ بالأحمال وضبط تدفق الطاقة والتبريد آلياً في الوقت الفعلي.',
+    problem: 'الحاجة إلى واجهة إلكترونية حديثة تمثل طلبة الكليات الهندسية في جامعة فلسطين، وتسهل الانضمام للنادي وإصدار البطاقات الرقمية والتحقق الفوري منها بسلاسة.',
+    solution: 'تم تصميم وتطوير هذه المنصة التفاعلية المتكاملة بتقنيات الويب الحديثة، متضمنة نظام تحقق فوري عبر كود QR وتكامل مع قواعد البيانات ولوحة تحكم مركزية متقدمة للهيئة الإدارية.',
     impactMetrics: [
-      { label: 'انخفاض في استهلاك الطاقة', value: '28%' },
-      { label: 'أجهزة استشعار متصلة', value: '340+' },
-      { label: 'وفر مالي سنوي تقديري', value: '180,000 ريال' },
-      { label: 'زمن استجابة المنظومة', value: '< 200ms' }
+      { label: 'كليات وتخصصات مغطاة', value: '100%' },
+      { label: 'نظام التحقق الذاتي', value: 'QR Code فوري' },
+      { label: 'سهولة إصدار البطاقات', value: 'لحظي' },
+      { label: 'الوصول للطلبة', value: 'متاح للجميع' }
     ],
-    techStack: ['Python', 'PyTorch LSTM', 'MQTT Protocol', 'TimescaleDB', 'Grafana UI', 'ESP32 Nodes'],
+    techStack: ['React 18', 'TypeScript', 'Tailwind CSS', 'Vite', 'Local & Cloud Storage', 'QR Verification Engine'],
     team: [
-      { name: 'فيصل الحربي', role: 'قائد المشروع & مهندس برمجيات', major: 'هندسة برمجيات' },
-      { name: 'سارة القحطاني', role: 'مهندسة ذكاء اصطناعي وتحليل بيانات', major: 'هندسة ذكاء اصطناعي' },
-      { name: 'عمر الدوسري', role: 'مهندس نظم ومعلومات ذكية', major: 'تخصص نظم المعلومات' }
+      { name: 'فريق البرمجة والتطوير', role: 'هندسة النظم والواجهات', major: 'هندسة برمجيات' },
+      { name: 'فريق الوسائط والتصميم', role: 'تصميم الهوية وتجربة المستخدم UI/UX', major: 'تخصص الوسائط المتعددة' },
+      { name: 'فريق المتابعة والتوثيق', role: 'إدارة البيانات والفحص', major: 'تخصص نظم المعلومات' }
     ],
-    demoUrl: 'https://smartgrid-demo.engclub.edu',
-    githubUrl: 'https://github.com/engclub/smartgrid-ai-core',
-    schematicType: 'IoT Sensors Node -> MQTT Broker -> LSTM Inference Engine -> Modbus Controller'
+    demoUrl: 'https://engineering-club-phi.vercel.app',
+    githubUrl: 'https://github.com/mohammedalnwerie/engineering-club',
+    schematicType: 'Client UI -> State Manager -> QR Hash Engine -> Verification Modal'
   },
   {
-    id: 'bim-genesis',
-    title: 'BIM Genesis — المحلل التوليدي للمخططات الإنشائية',
-    tagline: 'خوارزمية توليد وتدقيق مخططات البناء وفق الكود العمراني في ثوانٍ معدودة',
+    id: 'up-open-repo',
+    title: 'مستودع مشاريع التخرج المفتوح — UP Engineering Archive',
+    tagline: 'مبادرة طلابية لبناء مكتبة رقمية مفتوحة تتيح للطلبة الاستفادة من أبحاث وأفكار مشاريع التخرج السابقة',
+    category: 'ai',
+    collegeId: 'it-computing',
+    collegeName: 'كلية تكنولوجيا المعلومات IT',
+    featured: true,
+    award: 'مبادرة طلابية قيد التأسيس',
+    status: 'Prototyped',
+    problem: 'تشتت مشاريع التخرج والأبحاث الهندسية بعد مناقشتها وصعوبة وصول الطلبة الجدد للتوثيق والخبرات المتراكمة للسنوات السابقة للاستفادة منها والبناء عليها.',
+    solution: 'تأسيس مستودع رقمي وفهرس موحد يصنف المشاريع حسب التخصص والكلية، مع ملخصات وأكواد ومخططات معمارية لإلهام الطلبة المقبلين على التخرج.',
+    impactMetrics: [
+      { label: 'مستوى الجاهزية', value: 'مرحلة النمذجة' },
+      { label: 'الهدف الأكاديمي', value: 'توثيق المشاريع' },
+      { label: 'المستفيدون', value: 'كافة طلبة الهندسة' },
+      { label: 'نوع الوصول', value: 'مفتوح مجاني' }
+    ],
+    techStack: ['Digital Archiving', 'Search & Filter Index', 'PDF & CAD Viewers', 'Git Repositories'],
+    team: [
+      { name: 'فريق نظم المعلومات', role: 'تصنيف وفهرسة البيانات', major: 'تخصص نظم المعلومات' },
+      { name: 'فريق الذكاء الاصطناعي', role: 'محرك البحث والتصنيف', major: 'هندسة ذكاء اصطناعي' }
+    ],
+    demoUrl: 'https://engineering-club-phi.vercel.app/#projects',
+    githubUrl: 'https://github.com/mohammedalnwerie/engineering-club',
+    schematicType: 'Project Submission -> Faculty Review -> Metadata Indexing -> Student Search Portal'
+  },
+  {
+    id: 'smart-reconstruction',
+    title: 'مبادرة الحلول الهندسية وإعادة الإعمار الذكي — Smart Reconstruction',
+    tagline: 'حاضنة لابتكار تصاميم معمارية وبنى تحتية مستدامة وحلول طاقة بديلة لخدمة المجتمع المحلي',
     category: 'architecture',
     collegeId: 'applied-urban',
     collegeName: 'كلية الهندسة التطبيقية و التخطيط العمراني',
     featured: true,
-    award: 'أفضل ابتكار في مسابقة البناء الرقمي 2025',
-    status: 'Prototyped',
-    problem: 'يستغرق تدقيق المخططات الإنشائية والتأكد من مطابقتها لاشتراطات كود البناء وأبعاد السلامة أسابيع من التدقيق اليدوي المعرض للأخطاء البشرية.',
-    solution: 'نظام برمجي يتكامل مع ملفات IFC وRevit، يحلل الهندسة الفراغية باستخدام خوارزميات الهندسة الحسابية (Computational Geometry) ويكشف أي تعارض إنشائي أو مخالفة للكود بلحظات.',
-    impactMetrics: [
-      { label: 'تسريع التدقيق الفراغي', value: '14x أسرع' },
-      { label: 'دقة رصد التعارضات', value: '99.4%' },
-      { label: 'مخططات تم اختبارها', value: '1,200+' }
-    ],
-    techStack: ['C# .NET', 'Revit API', 'Grasshopper', 'OpenCASCADE', 'React Three Fiber', 'WebAssembly'],
-    team: [
-      { name: 'مها الشريف', role: 'مهندسة معمارية ومصممة خوارزميات', major: 'تخصص هندسة معمارية' },
-      { name: 'خالد باوزير', role: 'مهندس إنشائي ومبرمج تكامل', major: 'تخصص هندسة مدنية' },
-      { name: 'زياد السعيد', role: 'مهندس وسائط رقمية ونمذجة 3D', major: 'تخصص الوسائط المتعددة' }
-    ],
-    demoUrl: 'https://bimgenesis.engclub.edu',
-    githubUrl: 'https://github.com/engclub/bim-genesis',
-    schematicType: 'IFC Parser -> Topological Spatial Graph -> Rule Engine Evaluator -> 3D WebGL Diff Viewer'
-  },
-  {
-    id: 'aeropulse-robotics',
-    title: 'AeroPulse — روبوت الفحص الذاتي للهياكل الإنشائية',
-    tagline: 'روبوت مجنزر ومسيّر للكشف عن الشقوق الدقيقة في الجسور والأنابيب الصناعية',
-    category: 'robotics',
-    collegeId: 'software-ai',
-    collegeName: 'كلية هندسة برمجيات وذكاء اصطناعي',
-    featured: true,
+    award: 'مبادرة النادي للمسؤولية المجتمعية',
     status: 'In Testing',
-    problem: 'صعوبة وخطورة الفحص البشري في المواقع العالية وتحت الجسور وفي قنوات الأنفاق الصناعية الضيقة والمغلقة.',
-    solution: 'صمم الفريق مركبة فحص مستقلة مجهزة بحساسات ليزر LiDAR وكاميرات تصوير حراري ميكروسكوبية، تبني خريطة ثلاثية الأبعاد للموقع وتحدد بدقة المليمتر أي شروخ خرسانية أو صدأ معدني.',
+    problem: 'الحاجة الماسة إلى أفكار وحلول هندسية ومعمارية مبتكرة وسريعة التنفيذ تساهم في التخطيط المستدام وتوفير بدائل الطاقة والمياه وإعادة التأهيل العمراني.',
+    solution: 'تشكيل مجموعات عمل من طلبة الهندسة المعمارية والمدنية وأنظمة الطاقة لدراسة وتصميم وحدات سكنية اقتصادية ونماذج شبكات مياه وطاقة شمسية ملائمة للمجتمع المحلي.',
     impactMetrics: [
-      { label: 'دقة رصد الشقوق', value: '0.2 mm' },
-      { label: 'زمن الفحص الميداني', value: 'تخفيض 70%' },
-      { label: 'مدى التغطية اللاسلكية', value: '1.5 كم' }
+      { label: 'المجال المستهدف', value: 'إعادة الإعمار والاستدامة' },
+      { label: 'التخصصات المشاركة', value: 'عمارة + مدني + أنظمة' },
+      { label: 'نمط الحلول', value: 'اقتصادي ومستدام' },
+      { label: 'المرحلة الحالية', value: 'دراسات ومخططات أولية' }
     ],
-    techStack: ['ROS2 (Robot OS)', 'C++', 'YOLOv10 Vision', 'LiDAR SLAM', 'SolidWorks CAD', '3D Carbon Fiber'],
+    techStack: ['Revit & AutoCAD', 'BIM Modeling', 'GIS Urban Mapping', 'Solar Simulation Tools'],
     team: [
-      { name: 'سلطان الرويلي', role: 'مهندس برمجيات ونظم روبوتات', major: 'هندسة برمجيات' },
-      { name: 'نورة العتيبي', role: 'مهندسة رؤية حاسوبية وذكاء اصطناعي', major: 'هندسة ذكاء اصطناعي' },
-      { name: 'فهد المطيري', role: 'مهندس سلامة إنشائية واختبار مواد', major: 'تخصص هندسة مدنية' }
+      { name: 'فريق التصميم المعماري', role: 'تخطيط النماذج السكنية', major: 'تخصص هندسة معمارية' },
+      { name: 'فريق الهندسة المدنية', role: 'دراسة السلامة والإنشاءات', major: 'تخصص هندسة مدنية' }
     ],
-    demoUrl: 'https://aeropulse.engclub.edu',
-    githubUrl: 'https://github.com/engclub/aeropulse-autonomous-inspector',
-    schematicType: 'Stereo Vision & LiDAR -> ROS2 Navigation Node -> Jetson Orin Nano AI -> Real-Time Telemetry'
-  },
-  {
-    id: 'cybershield-campus',
-    title: 'CyberShield — منصة الأمان اللامركزي للوثائق الأكاديمية',
-    tagline: 'بروتوكول تحقق تشفيري فوري يمنع التزوير الأكاديمي ويحمي براءات الاختراع',
-    category: 'software',
-    collegeId: 'it-computing',
-    collegeName: 'كلية تكنولوجيا المعلومات IT',
-    featured: false,
-    status: 'Deployed',
-    problem: 'صعوبة التحقق الدولي الفوري من وثائق المشروعات الطلابية والشهادات الهندسية دون الحاجة لمراسلات بطيئة.',
-    solution: 'نظام هجين يعتمد على خوارزميات الإثبات الصفري (Zero-Knowledge Proofs) وسجلات تشفيرية لتوثيق ملكية المشاريع الهندسية ونتائج المعامل بأعلى درجات الخصوصية والأمان.',
-    impactMetrics: [
-      { label: 'وثيقة وبراءة مسجلة', value: '8,500+' },
-      { label: 'زمن التحقق التشفيري', value: '45 ms' },
-      { label: 'مستوى حماية التشفير', value: 'AES-256 / SHA3' }
-    ],
-    techStack: ['Rust', 'Zero-Knowledge Snarks', 'Docker', 'React / Vite', 'REST & gRPC APIs'],
-    team: [
-      { name: 'عبدالله التميمي', role: 'مهندس أمن سيبراني وتشفير', major: 'الأمن السيبراني' },
-      { name: 'ريم المنصور', role: 'مطورة واجهات وتجربة مستخدم', major: 'هندسة البرمجيات' }
-    ],
-    demoUrl: 'https://cybershield.engclub.edu',
-    githubUrl: 'https://github.com/engclub/cybershield-core',
-    schematicType: 'Document Hasher -> ZK Proof Prover -> Cryptographic Ledger -> Verifier Portal'
+    demoUrl: 'https://engineering-club-phi.vercel.app/#projects',
+    githubUrl: 'https://github.com/mohammedalnwerie/engineering-club',
+    schematicType: 'Urban Damage Assessment -> Generative Modular CAD -> Structural Integrity Check -> Feasibility Report'
   }
 ];
 
 export const CLUB_EVENTS: EventItem[] = [
   {
-    id: 'hackathon-2026',
-    title: 'هاكاثون الابتكار الهندسي 2026: نبني مدن الغد',
-    category: 'Hackathon',
-    date: '24 - 26 أكتوبر 2026',
-    time: '48 ساعة متواصلة من التطوير',
-    location: 'قاعة الابتكار الكبرى — مركز المؤتمرات الجامعي',
-    capacity: 250,
-    registeredCount: 194,
+    id: 'launch-event',
+    title: 'اللقاء التعريفي الافتتاحي للنادي الهندسي — جامعة فلسطين',
+    category: 'Conference',
+    date: 'قريباً مع انطلاق الفصل الدراسي',
+    time: '11:00 ص – 01:00 م',
+    location: 'قاعة المؤتمرات الكبرى — جامعة فلسطين',
+    capacity: 200,
+    registeredCount: 45,
     speakers: [
-      { name: 'د. يوسف الشمري', title: 'خبير المدن الذكية ومستشار تقني' },
-      { name: 'م. هالة الغامدي', title: 'كبير مهندسي البرمجيات في الحوسبة السحابية' }
+      { name: 'الهيئة الإدارية للنادي الهندسي', title: 'فريق قيادة وممثلو لجان النادي' },
+      { name: 'نخبة من أساتذة الكليات الهندسية', title: 'جامعة فلسطين' }
     ],
-    description: 'تحدٍ هندسي مكثف يجمع طلاب البرمجيات، الذكاء الاصطناعي، العمارة، والهندسة المدنية لبناء نماذج حية تسهم في حل مشكلات الطاقة الحضرية وإدارة البنية التحتية.',
-    prerequisites: ['معرفة بأساسيات البرمجة أو النمذجة ثلاثية الأبعاد', 'إحضار حاسوب محمول شخصي', 'شغف العمل الفريقي متعدد التخصصات'],
+    description: 'لقاء مفتوح لجميع طلبة الكليات الهندسية وتكنولوجيا المعلومات للتعريف برؤية ورسالة النادي، واستعراض خطة الفعاليات واللجان وفتح باب المشاركة والتطوير.',
+    prerequisites: ['مفتوح لكافة طلبة كليات الهندسة وتكنولوجيا المعلومات في الجامعة'],
     badgeColor: '#00F0FF'
   },
   {
-    id: 'bim-advanced-workshop',
-    title: 'معسكر النمذجة المتقدمة BIM & Revit في المنشآت العملاقة',
+    id: 'swe-workshop',
+    title: 'ورشة عمل: بناء المشاريع البرمجية وأدوات الويب الحديثة',
     category: 'Workshop',
-    date: '12 نوفمبر 2026',
-    time: '04:00 م – 08:00 م',
-    location: 'مختبر الحوسبة الهندسية — مبنى 4',
+    date: 'خلال الأسابيع الأولى من الإطلاق',
+    time: '02:00 م – 04:30 م',
+    location: 'مختبر الحاسوب المركزي — مبنى الخوارزمي',
     capacity: 40,
-    registeredCount: 38,
+    registeredCount: 18,
     speakers: [
-      { name: 'م. حسام الشهري', title: 'معماري معتمد في نمذجة BIM 4D/5D' }
+      { name: 'فريق لجنة العلاقات والتدريب', title: 'النادي الهندسي' }
     ],
-    description: 'ورشة تطبيقية احترافية في ربط الجداول الزمنية والتكاليف بنماذج المباني ثلاثية الأبعاد واكتشاف تعارضات التمديدات الكهروميكانيكية MEP.',
-    prerequisites: ['معرفة مبدئية ببرنامج Revit أو AutoCAD', 'جهاز حاسب محمول يدعم البرامج الإنشائية'],
+    description: 'ورشة تطبيقية مكثفة حول أساسيات بناء المواقع والأنظمة الحديثة وإدارة المشاريع البرمجية باستخدام Git و GitHub.',
+    prerequisites: ['معرفة مبدئية بأساسيات الحاسوب أو البرمجة', 'إحضار حاسوب محمول إن أمكن'],
     badgeColor: '#10B981'
   },
   {
-    id: 'ai-edge-conference',
-    title: 'ملتقى أنظمة الحوسبة الطرفية Edge Computing والروبوتات',
+    id: 'arch-forum',
+    title: 'ملتقى العمارة والإنشاء: أفكار وتحديات التخطيط العمراني المستدام',
     category: 'Conference',
-    date: '03 ديسمبر 2026',
-    time: '09:00 ص – 02:00 م',
-    location: 'المدرج الهندسي الرئيسي',
-    capacity: 300,
-    registeredCount: 220,
+    date: 'يُحدد لاحقاً',
+    time: '12:00 م – 02:30 م',
+    location: 'مرسم واستوديو التصميم المعماري — كلية الهندسة',
+    capacity: 60,
+    registeredCount: 22,
     speakers: [
-      { name: 'د. كريم عبدالفتاح', title: 'أستاذ الروبوتات والأنظمة الذكية' },
-      { name: 'م. ندى القاسم', title: 'رئيسة فرق إنترنت الأشياء الصناعي' }
+      { name: 'فريق طلبة الهندسة المعمارية والمدنية', title: 'مبادرة إعادة الإعمار الذكي' }
     ],
-    description: 'أوراق بحثية وعروض حية لأحدث ما توصلت إليه المعامل في تشغيل نماذج الذكاء الاصطناعي على الشرائح متناهية الصغر بدون إنترنت.',
-    prerequisites: ['مفتوح لجميع طلاب وطالبات الكليات الهندسية والتقنية'],
-    badgeColor: '#818CF8'
-  },
-  {
-    id: 'site-visit-metro',
-    title: 'زيارة ميدانية: مركز التحكم التشغيلي والأنظمة الحضرية',
-    category: 'Site Visit',
-    date: '18 ديسمبر 2026',
-    time: '08:00 ص – 01:00 م',
-    location: 'مقر شبكة النقل الذكية — التجمع عند بوابة النادي',
-    capacity: 35,
-    registeredCount: 35,
-    speakers: [
-      { name: 'م. ماجد العنزي', title: 'مدير عمليات البنية التحتية والتحكم الآلي' }
-    ],
-    description: 'جولة فنية داخل غرف التحكم المركزية والمحطات الفرعية، للاطلاع الميداني على خوارزميات SCADA وحسابات الأحمال والتحكم في الإشارات.',
-    prerequisites: ['التسجيل المسبق عبر النادي', 'الالتزام بمتطلبات السلامة الميدانية'],
-    badgeColor: '#F59E0B'
+    description: 'جلسة نقاشية وعرض تصاميم معمارية ونماذج إنشائية تركز على الاستدامة، وحلول الطاقة البديلة وإعادة البناء الذكي.',
+    prerequisites: ['طلبة الهندسة المعمارية والتطبيقية والمهتمين بالاستدامة'],
+    badgeColor: '#38BDF8'
   }
 ];
 
 export const TRAINING_COURSES: TrainingCourse[] = [
   {
-    id: 'course-distributed-systems',
-    title: 'معمارية النظم الموزعة والحوسبة السحابية عالية التوافر',
+    id: 'course-web-dev',
+    title: 'مسار تطوير الويب والأنظمة البرمجية المتكاملة',
     instructor: {
-      name: 'م. أحمد الخالدي',
-      title: 'مهندس نظم رئيسي ومدرب معتمد في Cloud Architecture',
+      name: 'فريق التدريب البرمجي',
+      title: 'مدربون من طلبة السنوات المتقدمة وخريجي التخصص',
       avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80'
     },
-    level: 'متقدم',
-    duration: '6 أسابيع',
-    totalHours: 36,
-    totalSeats: 30,
-    availableSeats: 7,
-    startDate: '15 أكتوبر 2026',
-    category: 'هندسة البرمجيات',
-    skillsGained: ['Microservices Architecture', 'Kubernetes Clusters', 'Event-Driven Systems (Kafka)', 'Resilience Engineering'],
-    syllabusWeeks: [
-      { week: 1, title: 'الأسس النظرية للأنظمة الموزعة ونظرية CAP', topics: ['Consensus Algorithms', 'Network Partitions', 'Data Replication'] },
-      { week: 2, title: 'تصميم خدمات المايكروسيرفيس المستقلة', topics: ['Domain-Driven Design', 'API Gateway Patterns', 'gRPC vs REST'] },
-      { week: 3, title: 'رسائل الأحداث والتدفق الفوري للبيانات', topics: ['Apache Kafka', 'Event Sourcing', 'CQRS Architecture'] },
-      { week: 4, title: 'إدارة الحاويات ونشر النظم في Kubernetes', topics: ['Pods & Services', 'Ingress Controllers', 'ConfigMaps & Secrets'] },
-      { week: 5, title: 'مراقبة النظم ورصد الأعطال Observability', topics: ['Prometheus & Grafana', 'Distributed Tracing', 'OpenTelemetry'] },
-      { week: 6, title: 'المشروع النهائي: إطلاق منظومة موزعة فائقة التحمل', topics: ['Chaos Engineering Testing', 'Load Testing', 'Final Review'] }
-    ]
-  },
-  {
-    id: 'course-parametric-bim',
-    title: 'التصميم البارامتري المتقدم واستراتيجيات الاستدامة العمرانية',
-    instructor: {
-      name: 'م. وجدان الحارثي',
-      title: 'معمارية وباحثة في الخوارزميات الفراغية والطاقة المتجددة',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80'
-    },
-    level: 'متوسط',
+    level: 'مبتدئ',
     duration: '4 أسابيع',
     totalHours: 24,
-    totalSeats: 25,
-    availableSeats: 4,
-    startDate: '20 أكتوبر 2026',
-    category: 'العمارة والتصميم',
-    skillsGained: ['Grasshopper Algorithmic Modeling', 'Solar Radiation Analysis', 'Parametric Facades', 'Carbon Footprint Calculation'],
+    totalSeats: 30,
+    availableSeats: 12,
+    startDate: 'يُحدد مع جدول الأنشطة',
+    category: 'هندسة البرمجيات',
+    skillsGained: ['HTML5 & CSS3', 'JavaScript / React', 'Git & GitHub', 'REST APIs'],
     syllabusWeeks: [
-      { week: 1, title: 'مدخل إلى الخوارزميات الرياضية في التشكيل المعماري', topics: ['Vector Math', 'NURBS Curves & Surfaces', 'Mathematical Patterns'] },
-      { week: 2, title: 'الواجهات الحركية المتفاعلة مع حركة الشمس', topics: ['Kinetic Shading Systems', 'Sun Vectors Simulation', 'Ladybug Tools'] },
-      { week: 3, title: 'الربط التبادلي بين Grasshopper وبرنامج Revit', topics: ['Rhino.Inside.Revit', 'Automated Geometry Generation', 'Data Linking'] },
-      { week: 4, title: 'مشروع تخرج المعسكر: مجمع بحثي بيئي منعدم الانبعاثات', topics: ['Net-Zero Optimization', 'Structural Feasibility', 'Digital Model Presentation'] }
+      { week: 1, title: 'أساسيات الويب الحديث وهيكلة الصفحات', topics: ['Modern HTML & CSS', 'Responsive Layouts', 'Flexbox & Grid'] },
+      { week: 2, title: 'البرمجة التفاعلية بـ JavaScript', topics: ['DOM Manipulation', 'Async & Fetch', 'ES6+ Features'] },
+      { week: 3, title: 'مقدمة في React والمكونات', topics: ['Components & Props', 'State Hooks', 'Tailwind CSS'] },
+      { week: 4, title: 'مشروع عملي متكامل ونشره على الإنترنت', topics: ['Git Version Control', 'Vercel Deployment', 'Project Showcase'] }
     ]
   },
   {
-    id: 'course-industrial-iot',
-    title: 'إنترنت الأشياء الصناعي والروبوتات المدمجة من الألف إلى الياء',
+    id: 'course-bim-intro',
+    title: 'أساسيات النمذجة المعمارية الرقمية (Revit & AutoCAD)',
     instructor: {
-      name: 'م. سامي الحربي',
-      title: 'مهندس إلكترونيات وأنظمة تحكم صناعي Embedded Systems',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop&q=80'
+      name: 'فريق التدريب المعماري',
+      title: 'مدربون متخصصون في النمذجة المعمارية والـ BIM',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80'
     },
-    level: 'متوسط',
-    duration: '5 أسابيع',
-    totalHours: 30,
-    totalSeats: 28,
-    availableSeats: 9,
-    startDate: '01 نوفمبر 2026',
-    category: 'الأنظمة الصناعية والروبوتات',
-    skillsGained: ['Embedded C/C++', 'FreeRTOS Architecture', 'Industrial Protocols (Modbus, CAN bus)', 'PCB Design in KiCad'],
+    level: 'مبتدئ',
+    duration: '4 أسابيع',
+    totalHours: 20,
+    totalSeats: 25,
+    availableSeats: 8,
+    startDate: 'يُحدد مع جدول الأنشطة',
+    category: 'العمارة والتصميم',
+    skillsGained: ['AutoCAD 2D Drafting', 'Revit 3D Modeling', 'Architectural Visualization', 'Drafting Standards'],
     syllabusWeeks: [
-      { week: 1, title: 'معماريات المعالجات الدقيقة ونظم التشغيل المضمنة', topics: ['ARM Cortex-M Architecture', 'Memory Mapping', 'Bare Metal Programming'] },
-      { week: 2, title: 'نظام التشغيل الآني Real-Time OS (FreeRTOS)', topics: ['Tasks & Schedulers', 'Mutexes & Semaphores', 'Queue Management'] },
-      { week: 3, title: 'بروتوكولات الاتصال الصناعية والحساسات الدقيقة', topics: ['CAN Bus', 'Modbus RTU/TCP', 'I2C & SPI Drivers'] },
-      { week: 4, title: 'تصميم لوحات الدوائر الإلكترونية المطبوعة (PCB)', topics: ['Schematic Capture', 'Routing Best Practices', 'Signal Integrity'] },
-      { week: 5, title: 'تجميع واختبار ذراع روبوتية صناعية متصلة بالسحاب', topics: ['Kinematic Inversion', 'Cloud Telemetry', 'Hardware Assembly'] }
+      { week: 1, title: 'مبادئ الرسم المعماري وضبط المقاييس', topics: ['AutoCAD Interface', 'Precision Drawing', 'Layers & Dimensions'] },
+      { week: 2, title: 'الانتقال إلى عالم نمذجة معلومات البناء BIM', topics: ['Revit Basics', 'Walls, Doors & Windows', 'Levels & Grids'] },
+      { week: 3, title: 'الخامات والكتل والإظهار ثلاثي الأبعاد', topics: ['Materials', 'Cameras & Lighting', 'Rendering Setup'] },
+      { week: 4, title: 'إخراج لوحات مشروع معماري متكامل', topics: ['Sheets & Schedules', 'Section Views', 'Final Portfolio'] }
     ]
   }
 ];
@@ -423,108 +355,108 @@ export const LEADERSHIP_MEMBERS: LeaderMember[] = [
   // 1. رئيس النادي
   {
     id: 'pres-1',
-    name: 'م. بدر بن عبدالعزيز المنصور',
+    name: 'م. رئيس النادي الهندسي',
     role: 'رئيس النادي الهندسي',
     tier: 'executive',
     department: 'رئاسة النادي',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80',
-    quote: 'نؤمن أن المهندس لا ينتظر الفرصة، بل يبتكر أدوات بنائها ويقود التحول التقني.',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80',
+    quote: 'نؤمن أن المهندس لا ينتظر الفرصة، بل يبتكر أدوات بنائها ويقود التحول الإيجابي في جامعته ومجتمعه.',
     linkedin: 'https://linkedin.com',
     github: 'https://github.com',
-    email: 'president@engclub.edu',
-    skills: ['القيادة الاستراتيجية', 'إدارة الابتكار الهندسي', 'الحوكمة وصناعة القرار']
+    email: 'president@up.edu.ps',
+    skills: ['القيادة الطلابية', 'إدارة الابتكار الهندسي', 'التنسيق الأكاديمي وصناعة القرار']
   },
   // 2. نائب الرئيس
   {
     id: 'vp-1',
-    name: 'م. سارة بنت فهد الحازمي',
+    name: 'م. نائب رئيس النادي',
     role: 'نائب رئيس النادي',
     tier: 'executive',
     department: 'الهيئة الإدارية',
     avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&auto=format&fit=crop&q=80',
-    quote: 'التكامل بين التخطيط الاستراتيجي والتنفيذ الميداني هو سر استدامة التميز.',
+    quote: 'التكامل بين التخطيط والتنفيذ الميداني هو سر نجاح واستدامة كافة مبادرات النادي.',
     linkedin: 'https://linkedin.com',
-    email: 'vp@engclub.edu',
-    skills: ['الإدارة التنفيذية', 'التنسيق والمتابعة', 'تطوير الخطط والمبادرات']
+    email: 'vp@up.edu.ps',
+    skills: ['الإدارة التنفيذية', 'التنسيق والمتابعة', 'تطوير المبادرات الطلابية']
   },
   // 3. أمين السر
   {
     id: 'sec-1',
-    name: 'م. محمد بن صالح الغامدي',
+    name: 'م. أمين سر النادي',
     role: 'أمين سر النادي',
     tier: 'executive',
     department: 'الهيئة الإدارية',
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80',
-    quote: 'التوثيق الدقيق وإدارة المحاضر والتدفقات التنظيمية هما البوصلة الإدارية للنادي.',
+    quote: 'التوثيق الدقيق وإدارة المحاضر والتواصل المنظم هما عمود الإدارة الناجحة للنادي.',
     linkedin: 'https://linkedin.com',
-    email: 'secretary@engclub.edu',
-    skills: ['إدارة المحاضر والتوثيق', 'التنظيم الإداري', 'الحوكمة ومتابعة القرارات']
+    email: 'secretary@up.edu.ps',
+    skills: ['إدارة المحاضر والتوثيق', 'التنظيم الإداري', 'متابعة الخطط والقرارات']
   },
   // 4. أمين الصندوق
   {
     id: 'treasurer-1',
-    name: 'م. ريان بن خالد العتيبي',
+    name: 'م. أمين صندوق النادي',
     role: 'أمين صندوق النادي',
     tier: 'executive',
     department: 'الهيئة الإدارية',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
-    quote: 'حوكمة الميزانيات وتوجيه الموارد المالية بكفاءة يضمن نجاح واستدامة كل مبادرة.',
+    quote: 'إدارة الموارد بكفاءة وشفافية تضمن تنفيذ الفعاليات والمشاريع بأعلى جودة ممكنة.',
     linkedin: 'https://linkedin.com',
-    email: 'treasurer@engclub.edu',
-    skills: ['الإدارة المالية والموازنات', 'التدقيق والشفافية', 'إدارة الرعايات والعهد']
+    email: 'treasurer@up.edu.ps',
+    skills: ['الإدارة المالية والموازنات', 'الشفافية والتنظيم', 'إدارة الموارد والعهد']
   },
   // 5. لجنة الفعاليات والأنشطة
   {
     id: 'comm-events',
-    name: 'م. طارق بن كمال العمري',
+    name: 'م. مسؤول لجنة الفعاليات والأنشطة',
     role: 'رئيس لجنة الفعاليات والأنشطة',
     tier: 'committee-lead',
     department: 'لجنة الفعاليات والأنشطة',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
-    quote: 'نبتكر فعاليات ومسابقات غير مسبوقة تصنع تجربة هندسية ثرية لجميع الطلاب.',
-    email: 'events@engclub.edu',
-    skills: ['إدارة الحشود والفعاليات', 'تنظيم الهاكاثونات', 'التخطيط اللوجستي الميداني']
+    quote: 'نبتكر فعاليات ومسابقات وورش عمل تصنع تجربة جامعية غنية وممتعة لجميع الزملاء.',
+    email: 'events@up.edu.ps',
+    skills: ['إدارة وتنظيم الفعاليات', 'إقامة الهاكاثونات', 'التخطيط الميداني واللوجستي']
   },
   // 6. لجنة العلاقات والتدريب
   {
     id: 'comm-training',
-    name: 'م. ليلى بنت ناصر السبيعي',
-    role: 'رئيسة لجنة العلاقات والتدريب',
+    name: 'م. مسؤول لجنة العلاقات والتدريب',
+    role: 'رئيس لجنة العلاقات والتدريب',
     tier: 'committee-lead',
     department: 'لجنة العلاقات والتدريب',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
-    quote: 'نبني جسوراً متينة من الشراكات الصناعية والبرامج التدريبية لتأهيل الكفاءات.',
-    email: 'training@engclub.edu',
-    skills: ['الشراكات الاستراتيجية', 'تطوير المسارات التدريبية', 'استقطاب الخبراء والمدربين']
+    quote: 'نبني جسوراً من الشراكات وورش التدريب لتطوير قدرات الطلبة وتأهيلهم لسوق العمل.',
+    email: 'training@up.edu.ps',
+    skills: ['الشراكات الطلابية', 'تنظيم الورش والتدريبات', 'التواصل المؤسسي']
   },
   // 7. اللجنة الإعلامية
   {
     id: 'comm-media',
-    name: 'أ. جود بنت راشد التميمي',
-    role: 'رئيسة اللجنة الإعلامية',
+    name: 'أ. مسؤول اللجنة الإعلامية',
+    role: 'رئيس اللجنة الإعلامية',
     tier: 'committee-lead',
     department: 'اللجنة الإعلامية',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-    quote: 'نترجم الإنجازات والابتكارات الهندسية إلى قصص بصرية ومحتوى رقمي ملهم.',
-    email: 'media@engclub.edu',
-    skills: ['صناعة المحتوى الرقمي', 'التغطيات الإعلامية', 'الهوية والتصميم والإنتاج المرئي']
+    quote: 'نبرز إبداعات مهندسي فلسطين وننقل رسالة النادي وأنشطته بهوية بصرية احترافية وملهمة.',
+    email: 'media@up.edu.ps',
+    skills: ['صناعة المحتوى الرقمي', 'التغطيات الإعلامية', 'التصميم والإنتاج المرئي']
   }
 ];
 
 export const LIVE_ACTIVITY_STREAM = [
-  { id: '1', title: 'تم اكتمال مراجعة الكود', desc: 'الفريق البرمجي أطلق التحديث v2.4 لمنصة التدقيق الإنشائي', time: 'منذ 8 دقائق', tag: 'SWE' },
-  { id: '2', title: 'تسجيل مقعد جديد', desc: 'انضم 5 طلاب جدد لمعسكر النظم الموزعة والحوسبة السحابية', time: 'منذ 23 دقيقة', tag: 'TRAIN' },
-  { id: '3', title: 'نموذج أولي مطبوع', desc: 'مختبر الروبوتات أتم طباعة الذراع المفصلية بألياف الكربون', time: 'منذ 45 دقيقة', tag: 'ROBOT' },
-  { id: '4', title: 'اعتماد شريك صناعي', desc: 'توقيع اتفاقية رعاية ومقاعد تدريبية مع شركة أتمتة الأنظمة', time: 'منذ ساعتين', tag: 'PARTNER' }
+  { id: '1', title: 'إطلاق بوابة النادي الرقمية', desc: 'تدشين المنصة الرسمية وإتاحة التحقق التلقائي من البطاقات الذكية بالكامل', time: 'اليوم', tag: 'LAUNCH' },
+  { id: '2', title: 'فتح باب العضوية واللجان', desc: 'بدء استقبال طلبات الانضمام لطلبة كليات الهندسة وتكنولوجيا المعلومات', time: 'الآن', tag: 'JOIN' },
+  { id: '3', title: 'إعداد خطة الورش التطبيقية', desc: 'لجنة العلاقات والتدريب تعكف على جدولة أولى الورش التخصصية', time: 'مستمر', tag: 'TRAIN' },
+  { id: '4', title: 'تأسيس حاضنة المشاريع الطلابية', desc: 'فتح باب مقترحات المشاريع لربط فرق العمل وتوفير الإرشاد الأكاديمي', time: 'جديد', tag: 'PROJECTS' }
 ];
 
 export const STUDENT_SPOTLIGHT = {
-  name: 'المهندسة سارة بنت منصور القحطاني',
-  major: 'علوم الحاسب والذكاء الاصطناعي — السنة الرابعة',
-  achievement: 'قادت فريق تطوير خوارزمية التنبؤ بالأحمال الكهربائية (SmartGrid AI)، وفازت بجائزة الطالب المبتكر للعام 2025 بعد تجربة الخوارزمية بنجاح على 12 مبنى بالحرم الجامعي.',
-  avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&auto=format&fit=crop&q=80',
-  quote: 'النادي الهندسي لم يكن مجرد نشاط طلابي، بل كان مسرّعة أعمال هندسية ومختبراً حياً نقل أفكارنا من الورق إلى الواقع الميداني الفعلي.',
-  projectsCount: 4,
-  awardsCount: 3,
-  publicationsCount: 2
+  name: 'طالب متميز من مهندسي جامعة فلسطين',
+  major: 'كليات الهندسة وتكنولوجيا المعلومات',
+  achievement: 'مشاركة فاعلة في تأسيس مبادرات النادي الهندسي والمساهمة في بناء بيئة طلابية ملهمة تدعم كافة الزملاء والزميلات في التخصصات الهندسية.',
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=80',
+  quote: 'النادي الهندسي في جامعة فلسطين هو بوابتنا لتحويل ما نتعلمه في القاعات إلى أثر حقيقي ومشاريع نخدم بها مجتمعنا ووطننا.',
+  projectsCount: 2,
+  awardsCount: 1,
+  publicationsCount: 0
 };

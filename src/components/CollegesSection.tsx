@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { College } from '../types';
 import { sound } from '../utils/soundEngine';
-import { ExternalLink, Mail, Award, FlaskConical, BookOpen } from 'lucide-react';
+import { Award, FlaskConical, BookOpen, Sparkles, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 export const CollegesSection: React.FC = () => {
   const [collegesList, setCollegesList] = useState<College[]>([]);
@@ -109,8 +109,8 @@ export const CollegesSection: React.FC = () => {
                 </p>
 
                 <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-gray-400">
-                  <span>{college.studentsCount} طالب/طالبة</span>
-                  <span className="text-cyan-400">{college.labsCount} معامل تخصصية</span>
+                  <span>{college.majors.length} تخصصات معتمدة</span>
+                  <span className="text-cyan-400">بيئة تدريبية ومشاريع</span>
                 </div>
               </button>
             );
@@ -151,7 +151,7 @@ export const CollegesSection: React.FC = () => {
                 <div className="p-4 rounded-xl bg-cyan-950/30 border border-cyan-500/30 mb-8 flex items-start gap-3.5">
                   <Award className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-xs font-mono text-cyan-400 uppercase font-bold">أبرز إنجازات الكلية</div>
+                    <div className="text-xs font-mono text-cyan-400 uppercase font-bold">رسالة ومسار الكلية</div>
                     <div className="text-sm text-gray-200 mt-0.5">{activeCollege.flagshipAchievement}</div>
                   </div>
                 </div>
@@ -195,64 +195,60 @@ export const CollegesSection: React.FC = () => {
               </div>
             </div>
 
-            {/* Coordinator Card & College Stats */}
+            {/* College Roadmap & Action Card */}
             <div className="lg:col-span-5 flex flex-col gap-6">
-              {/* College Coordinator Card */}
-              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-cyan-500/40 transition-all duration-300">
-                <div className="text-xs font-mono uppercase text-gray-400 mb-4 tracking-wider">
-                  // منسق الكلية الأكاديمي
-                </div>
-
-                <div className="flex items-center gap-4 mb-4">
-                  <img
-                    src={activeCollege.coordinator.avatar}
-                    alt={activeCollege.coordinator.name}
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-cyan-400/40 shadow-md"
-                  />
-                  <div>
-                    <h4 className="text-base font-bold text-white">{activeCollege.coordinator.name}</h4>
-                    <p className="text-xs text-cyan-400 font-medium">{activeCollege.coordinator.role}</p>
-                    <p className="text-xs text-gray-400 mt-1">{activeCollege.coordinator.title}</p>
+              {/* College Club Roadmap Card */}
+              <div className="p-6 sm:p-7 rounded-2xl bg-white/[0.02] border border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs font-mono uppercase text-cyan-400 tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>مسار الكلية داخل النادي // COLLEGE ROADMAP</span>
                   </div>
+                  <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                    متاح للجميع
+                  </span>
                 </div>
 
-                <a
-                  href={`mailto:${activeCollege.coordinator.email}`}
-                  className="w-full py-2.5 px-4 rounded-xl bg-cyan-950/40 hover:bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-xs font-mono flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                <h4 className="text-lg font-bold text-white mb-2">
+                  بيئة تمكين وتطوير لطلبة {activeCollege.shortName}
+                </h4>
+
+                <p className="text-xs text-gray-300 leading-relaxed mb-5">
+                  يوفر النادي الهندسي لطلبة الكلية مساحة متكاملة للنمو الأكاديمي والمهني، عبر ربط المعرفة النظرية بالمشاريع التطبيقية وتوفير الإرشاد اللازم من الفكرة حتى التخرج.
+                </p>
+
+                <div className="space-y-2.5 mb-6">
+                  {[
+                    'ورش عمل تقنية متخصصة تواكب متطلبات سوق العمل',
+                    'تشكيل فرق طلابية للمشاركة في الهاكاثونات والمسابقات',
+                    'حاضنة لدعم أفكار مشاريع التخرج وتوفير الاستشارات',
+                    'فرص تمثيل الكلية والمشاركة في اللجان التنظيمية'
+                  ].map((feature, fIdx) => (
+                    <div key={fIdx} className="flex items-start gap-2.5 text-xs text-gray-300">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/20 text-[11px] text-cyan-200 mb-6 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+                  <span>عضوية مسار الكلية مفتوحة لجميع طلبة جامعة فلسطين بمختلف المستويات الدراسية.</span>
+                </div>
+
+                {/* Primary CTA */}
+                <button
+                  onClick={() => {
+                    sound.playClick();
+                    const target = document.querySelector('#join');
+                    target?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500/20 via-cyan-500/20 to-blue-500/20 hover:from-emerald-400 hover:to-cyan-400 hover:text-black border border-cyan-400/40 text-xs sm:text-sm font-bold text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.15)] group"
                 >
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>{activeCollege.coordinator.email}</span>
-                </a>
+                  <span>انضم لمسار الكلية في النادي الآن</span>
+                  <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                </button>
               </div>
-
-              {/* College Metrics Dashboard */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
-                  <div className="font-mono text-2xl font-extrabold text-cyan-400">{activeCollege.studentsCount}+</div>
-                  <div className="text-[11px] text-gray-400 mt-1">طالب مسجل</div>
-                </div>
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
-                  <div className="font-mono text-2xl font-extrabold text-blue-400">{activeCollege.projectsCount}</div>
-                  <div className="text-[11px] text-gray-400 mt-1">مشروع نشط</div>
-                </div>
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
-                  <div className="font-mono text-2xl font-extrabold text-emerald-400">{activeCollege.labsCount}</div>
-                  <div className="text-[11px] text-gray-400 mt-1">معامل بحثية</div>
-                </div>
-              </div>
-
-              {/* Quick Action */}
-              <button
-                onClick={() => {
-                  sound.playClick();
-                  const target = document.querySelector('#projects');
-                  target?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="w-full py-3.5 rounded-xl bg-white/[0.04] hover:bg-cyan-500/10 border border-white/10 hover:border-cyan-400/40 text-sm font-bold text-gray-200 hover:text-cyan-300 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>استعراض مشاريع {activeCollege.shortName}</span>
-                <ExternalLink className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>

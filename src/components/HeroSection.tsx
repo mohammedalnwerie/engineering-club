@@ -11,7 +11,7 @@ interface HeroSectionProps {
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExploreClick }) => {
   const [settings, setSettings] = useState<SiteSettings>(dataService.getSettings());
-  const [coords, setCoords] = useState({ x: 24.7136, y: 46.6753 });
+  const [coords, setCoords] = useState({ x: 31.5017, y: 34.4668 });
   const [activeMetric, setActiveMetric] = useState(0);
 
   useEffect(() => {
@@ -22,8 +22,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
 
     const interval = setInterval(() => {
       setCoords({
-        x: Number((24.7136 + (Math.random() - 0.5) * 0.005).toFixed(4)),
-        y: Number((46.6753 + (Math.random() - 0.5) * 0.005).toFixed(4)),
+        x: Number((31.5017 + (Math.random() - 0.5) * 0.005).toFixed(4)),
+        y: Number((34.4668 + (Math.random() - 0.5) * 0.005).toFixed(4)),
       });
       setActiveMetric((prev) => (prev + 1) % 4);
     }, 3000);
@@ -35,10 +35,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
 
 
   const stats = [
-    { number: '03', label: 'كليات تخصصية', sub: 'هندسة، حاسب، عمارة' },
-    { number: '06', label: 'تخصصات متقدمة', sub: 'من الأنظمة إلى الذكاء' },
-    { number: '1,200+', label: 'مهندس ومهندسة', sub: 'مجتمع شغوف بالإنجاز' },
-    { number: '45+', label: 'مشروع تخرّج وابتكار', sub: 'حلول عملية لسوق العمل' },
+    { number: '03', label: 'كليات تخصصية', sub: 'برمجيات، حاسوب، عمارة وهندسة' },
+    { number: '06', label: 'مسارات هندسية', sub: 'تخصصات متكاملة للطلبة' },
+    { number: '03', label: 'لجان تنفيذية', sub: 'فعاليات، علاقات وتدريب، إعلام' },
+    { number: '01', label: 'مظلة طلابية رائدة', sub: 'تجمع مهندسي جامعة فلسطين' },
   ];
 
   return (
