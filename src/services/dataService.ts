@@ -10,7 +10,8 @@ import type {
   College,
   Major,
   SiteSettings,
-  StudentSpotlightData
+  StudentSpotlightData,
+  ComplaintItem
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -19,11 +20,12 @@ const STORAGE_KEYS = {
   COURSES: 'eng_club_courses_v2',
   APPLICATIONS: 'eng_club_applications_v2',
   TICKETS: 'eng_club_tickets_v1',
-  LEADERSHIP: 'eng_club_leadership_v3',
+  LEADERSHIP: 'eng_club_leadership_v4',
   COLLEGES: 'eng_club_colleges_v3',
   MAJORS: 'eng_club_majors_v4',
   SPOTLIGHT: 'eng_club_spotlight_v2',
   SETTINGS: 'eng_club_settings_v1',
+  COMPLAINTS: 'eng_club_complaints_v1',
   SUPABASE_CONFIG: 'eng_club_supabase_config_v1',
 };
 
@@ -494,8 +496,100 @@ class DataService {
       majors: this.getMajors(),
       spotlight: this.getSpotlight(),
       settings: this.getSettings(),
+      complaints: this.getComplaints(),
     };
     return JSON.stringify(payload, null, 2);
+  }
+
+  public getComplaints(): ComplaintItem[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.COMPLAINTS);
+    if (!raw) {
+      const initial: ComplaintItem[] = [
+        {
+          id: 'cmp-sample-1',
+          ticketNumber: 'UP-CMP-2026-1042',
+          studentName: 'محمد أحمد خليل',
+          studentId: '120230554',
+          email: 'mohammed.k@up.edu.ps',
+          phone: '0599000001',
+          college: 'كلية هندسة برمجيات وذكاء اصطناعي',
+          category: 'club_activities',
+          subject: 'اقتراح تنظيم ورشة عمل في أدوات الذكاء الاصطناعي التوليدي',
+          message: 'نرجو من لجنة العلاقات والتدريب تنظيم ورشة تدريبية عملية حول توظيف تقنيات الـ Prompt Engineering وأدوات الذكاء الاصطناعي في تسريع البرمجة للطلبة المبتدئين.',
+          isAnonymous: false,
+          status: 'resolved',
+          adminNotes: 'تمت إحالة المقترح للجنة التدريب وإدراجه ضمن خطة الورش القادمة للفصل الحالي.',
+          createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+          updatedAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.COMPLAINTS, JSON.stringify(initial));
+      return initial;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
+  public submitComplaint(data: Omit<ComplaintItem, 'id' | 'ticketNumber' | 'status' | 'createdAt'>): ComplaintItem {
+    const complaints = this.getComplaints();
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const newComplaint: ComplaintItem = {
+      ...data,
+      id: 'cmp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      ticketNumber: `UP-CMP-2026-${randomSuffix}`,
+      status: 'new',
+      createdAt: new Date().toISOString()
+    };
+    complaints.unshift(newComplaint);
+    localStorage.setItem(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
+    this.notify();
+    return newComplaint;
+  }
+
+  public updateComplaintStatus(id: string, status: ComplaintItem['status'], adminNotes?: string): ComplaintItem | undefined {
+    const complaints = this.getComplaints();
+    const idx = complaints.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      complaints[idx].status = status;
+      if (adminNotes !== undefined) {
+        complaints[idx].adminNotes = adminNotes;
+      }
+      complaints[idx].updatedAt = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
+      this.notify();
+      return complaints[idx];
+    }
+    return undefined;
+  }
+
+  public deleteComplaint(id: string): void {
+    let complaints = this.getComplaints();
+    complaints = complaints.filter(c => c.id !== id);
+    localStorage.setItem(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
+    this.notify();
+  }
+
+  public getComplaintByTicket(ticketNumber: string): ComplaintItem | undefined {
+    const complaints = this.getComplaints();
+    const cleanNum = ticketNumber.trim().toUpperCase();
+    return complaints.find(c => c.ticketNumber.toUpperCase() === cleanNum || (c.studentId && c.studentId.trim().toUpperCase() === cleanNum));
+  }
+
+  public isStudentMember(studentId: string): { isMember: boolean; status: 'approved' | 'pending' | 'rejected' | 'not_found'; app?: StoredApplication } {
+    const cleanId = studentId.trim().toLowerCase();
+    if (!cleanId) return { isMember: false, status: 'not_found' };
+    const applications = this.getApplications();
+    const app = applications.find(a => (a.studentId && a.studentId.trim().toLowerCase() === cleanId) || a.id.toLowerCase() === cleanId);
+    if (!app) {
+      return { isMember: false, status: 'not_found' };
+    }
+    if (app.status === 'تم القبول') {
+      return { isMember: true, status: 'approved', app };
+    }
+    return { isMember: false, status: app.status as any, app };
   }
 
   public importDatabaseJSON(jsonStr: string): boolean {

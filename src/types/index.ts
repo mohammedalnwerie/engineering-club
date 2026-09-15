@@ -175,4 +175,22 @@ export interface StudentSpotlightData {
   publicationsCount: number;
 }
 
+export interface ComplaintItem {
+  id: string;
+  ticketNumber: string; // e.g. UP-CMP-2026-0812
+  studentName: string;
+  studentId: string;
+  email: string;
+  phone?: string;
+  college: string;
+  category: 'complaint' | 'suggestion' | 'inquiry' | 'academic' | 'facilities' | 'club_activities' | 'other';
+  subject: string;
+  message: string;
+  isAnonymous: boolean;
+  status: 'pending' | 'in-progress' | 'resolved' | 'rejected' | 'new' | 'in_progress';
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 

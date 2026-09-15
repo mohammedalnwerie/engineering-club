@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, ShieldAlert, ShieldCheck, MessageSquare } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
 
@@ -8,9 +8,10 @@ interface NavbarProps {
   onOpenJoinModal?: () => void;
   onOpenAdmin?: () => void;
   onOpenVerify?: () => void;
+  onOpenComplaints?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, onOpenVerify }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, onOpenVerify, onOpenComplaints }) => {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMuted, setIsMuted] = useState(sound.getMuted());
@@ -96,6 +97,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>التحقق من العضوية</span>
+          </button>
+
+                    {/* Complaints & Suggestions trigger */}
+          <button
+            onClick={() => {
+              sound.playClick();
+              if (onOpenComplaints) onOpenComplaints();
+            }}
+            title="صندوق الشكاوى والمقترحات والتحسين"
+            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-amber-400 text-xs font-mono text-amber-300 hover:text-white transition-all cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+            <span>الشكاوى والمقترحات</span>
           </button>
 
           {/* Admin Control Center HUD trigger */}
@@ -190,6 +204,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
           >
             <ShieldAlert className="w-4 h-4 text-cyan-400" />
             <span>دخول لوحة الإدارة (Admin)</span>
+          </button>
+                    <button
+            onClick={() => {
+              sound.playClick();
+              setMobileMenuOpen(false);
+              if (onOpenComplaints) onOpenComplaints();
+            }}
+            className="w-full py-2.5 rounded-xl font-mono text-xs text-amber-300 bg-white/5 border border-amber-500/30 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <MessageSquare className="w-4 h-4 text-amber-400" />
+            <span>صندوق الشكاوى والمقترحات 📨</span>
           </button>
           <button
             onClick={() => {

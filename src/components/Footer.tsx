@@ -7,9 +7,10 @@ import { dataService } from '../services/dataService';
 
 interface FooterProps {
   onOpenVerify?: () => void;
+  onOpenComplaints?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onOpenVerify }) => {
+export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }) => {
   const [subscribed, setSubscribed] = useState(false);
   const [email, setEmail] = useState('');
   const settings = dataService.getSettings();
@@ -162,6 +163,15 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify }) => {
                 <a href="#join" className="hover:text-cyan-400 transition-colors">
                   بوابة تقديم العضوية
                 </a>
+              </li>
+                            <li>
+                <button
+                  type="button"
+                  onClick={onOpenComplaints}
+                  className="hover:text-amber-400 text-amber-400/90 font-medium transition-colors flex items-center gap-1 cursor-pointer text-xs"
+                >
+                  <span>صندوق الشكاوى والمقترحات 📨</span>
+                </button>
               </li>
               <li>
                 <button

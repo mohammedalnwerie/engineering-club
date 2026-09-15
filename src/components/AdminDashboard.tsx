@@ -3,6 +3,7 @@ import { dataService } from '../services/dataService';
 import { supabaseBridge } from '../services/supabaseClient';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
+import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
 import type {
   ProjectCaseStudy,
   EventItem,
@@ -12,7 +13,8 @@ import type {
   College,
   Major,
   SiteSettings,
-  StudentSpotlightData
+  StudentSpotlightData,
+  ComplaintItem
 } from '../types';
 import {
   X,
@@ -42,7 +44,8 @@ import {
   Printer,
   ShieldCheck,
   CreditCard,
-  Copy
+  Copy,
+  MessageSquare,
 } from 'lucide-react';
 
 // Client-side image compressor & lightweight base64 converter
@@ -132,18 +135,18 @@ const ROLE_TEMPLATES = [
     quote: 'نؤمن أن المهندس لا ينتظر الفرصة، بل يبتكر أدوات بنائها ويقود التحول التقني.'
   },
   {
-    role: 'نائب رئيس النادي',
+    role: 'نائب رئيس النادي للشؤون الإدارية',
     tier: 'executive' as const,
     department: 'الهيئة الإدارية',
-    skills: 'الإدارة التنفيذية, التنسيق والمتابعة, تطوير الخطط والمبادرات',
-    quote: 'التكامل بين التخطيط الاستراتيجي والتنفيذ الميداني هو سر استدامة التميز.'
+    skills: 'الشؤون الإدارية والحوكمة, إدارة اللجان والتنسيق, التخطيط والسياسات الداخلية',
+    quote: 'الحوكمة الإدارية الرشيدة والتنظيم الداخلي المتين هما الأساس الذي تنطلق منه جميع إنجازات النادي.'
   },
   {
-    role: 'أمين سر النادي',
+    role: 'نائب رئيس النادي للشؤون التنفيذية',
     tier: 'executive' as const,
     department: 'الهيئة الإدارية',
-    skills: 'إدارة المحاضر والتوثيق, التنظيم الإداري, الحوكمة ومتابعة القرارات',
-    quote: 'التوثيق الدقيق وإدارة المحاضر والتدفقات التنظيمية هما البوصلة الإدارية للنادي.'
+    skills: 'الإشراف التنفيذي الميداني, إدارة المبادرات والعمليات, قيادة فرق العمل الميدانية',
+    quote: 'نحول الرؤى والخطط إلى واقع ملموس ومشاريع ميدانية رائدة تصنع فارقاً حقيقياً لطلبتنا.'
   },
   {
     role: 'أمين صندوق النادي',
@@ -185,7 +188,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [passcode, setPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'settings' | 'cloud'>('applications');
+  const [activeTab, setActiveTab] = useState<'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud'>('applications');
 
   // Live Data states
   const [applications, setApplications] = useState<StoredApplication[]>([]);
@@ -197,6 +200,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [majors, setMajors] = useState<Major[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(dataService.getSettings());
   const [spotlight, setSpotlight] = useState<StudentSpotlightData>(dataService.getSpotlight());
+
+  // Complaints & Suggestions state
+  const [complaints, setComplaints] = useState<ComplaintItem[]>([]);
+  const [complaintsFilter, setComplaintsFilter] = useState<'all' | 'pending' | 'in-progress' | 'resolved' | 'rejected'>('all');
+  const [complaintsCategoryFilter, setComplaintsCategoryFilter] = useState<'all' | 'complaint' | 'suggestion' | 'inquiry'>('all');
+  const [complaintsSearch, setComplaintsSearch] = useState('');
+  const [inspectComplaint, setInspectComplaint] = useState<ComplaintItem | null>(null);
+  const [adminResponseNote, setAdminResponseNote] = useState('');
+
+  // Executive Badge state
+  const [viewingLeaderBadge, setViewingLeaderBadge] = useState<LeaderMember | null>(null);
 
   // Colleges sub-tab
   const [collegeSubTab, setCollegeSubTab] = useState<'colleges' | 'majors'>('colleges');
@@ -299,6 +313,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setMajors(dataService.getMajors());
     setSettings(dataService.getSettings());
     setSpotlight(dataService.getSpotlight());
+    setComplaints(dataService.getComplaints());
+  };
+
+  
+  const handleUpdateComplaintStatus = (
+    id: string,
+    newStatus: ComplaintItem['status'],
+    notes?: string
+  ) => {
+    const updated = dataService.updateComplaintStatus(id, newStatus, notes);
+    if (updated) {
+      setComplaints(dataService.getComplaints());
+      if (inspectComplaint && inspectComplaint.id === id) {
+        setInspectComplaint(updated);
+      }
+      showToast(`تم تحديث حالة البلاغ إلى (${newStatus}) بنجاح`);
+    }
+  };
+
+  const handleDeleteComplaint = (id: string, ticket: string) => {
+    if (window.confirm(`هل أنت متأكد من حذف البلاغ برقم تذكرة (${ticket}) نهائياً؟`)) {
+      dataService.deleteComplaint(id);
+      setComplaints(dataService.getComplaints());
+      if (inspectComplaint && inspectComplaint.id === id) {
+        setInspectComplaint(null);
+      }
+      showToast('تم حذف البلاغ بنجاح');
+    }
   };
 
   const handleOpenAddLeader = () => {
@@ -769,6 +811,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 >
                   <Calendar className="w-4 h-4 shrink-0" />
                   <span>الفعاليات والحضور ({events.length})</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    sound.playClick();
+                    setActiveTab('complaints');
+                  }}
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'complaints'
+                      ? 'bg-cyan-400 text-black shadow-md'
+                      : 'text-gray-300 hover:bg-white/5'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4 shrink-0" />
+                  <span>صندوق الشكاوى والمقترحات ({complaints.length})</span>
+                  {complaints.filter((c) => c.status === 'pending').length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-mono font-black">
+                      {complaints.filter((c) => c.status === 'pending').length} جديد
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -1433,6 +1495,355 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             )}
 
             {/* Tab: Leadership Management */}
+            {/* Tab: Complaints & Feedback Portal */}
+            {activeTab === 'complaints' && (
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Header Banner */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-white">صندوق الشكاوى والمقترحات والاستفسارات</h3>
+                      <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                        {complaints.length} وارد
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      متابعة بلاغات وشكاوى ومقترحات الطلبة بدقة وشفافية، تسجيل إجراءات المعالجة وتحديث الحالات.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setComplaints(dataService.getComplaints());
+                        showToast('تم تحديث قائمة الشكاوى والمقترحات');
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-white/10"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>تحديث</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Summary Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
+                    <div className="text-[11px] font-mono text-gray-400">إجمالي البلاغات</div>
+                    <div className="text-xl font-black text-white mt-0.5">{complaints.length}</div>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30">
+                    <div className="text-[11px] font-mono text-amber-300">قيد المراجعة والانتظار</div>
+                    <div className="text-xl font-black text-amber-400 mt-0.5">
+                      {complaints.filter((c) => c.status === 'pending').length}
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-blue-950/20 border border-blue-500/30">
+                    <div className="text-[11px] font-mono text-blue-300">جاري المتابعة والمعالجة</div>
+                    <div className="text-xl font-black text-blue-400 mt-0.5">
+                      {complaints.filter((c) => c.status === 'in-progress').length}
+                    </div>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30">
+                    <div className="text-[11px] font-mono text-emerald-300">تم الحل والمعالجة</div>
+                    <div className="text-xl font-black text-emerald-400 mt-0.5">
+                      {complaints.filter((c) => c.status === 'resolved').length}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filters & Search Toolbar */}
+                <div className="p-3 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    {/* Status Filter */}
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                      <button
+                        onClick={() => setComplaintsFilter('all')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                          complaintsFilter === 'all'
+                            ? 'bg-cyan-400 text-black shadow-sm'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        الكل ({complaints.length})
+                      </button>
+                      <button
+                        onClick={() => setComplaintsFilter('pending')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                          complaintsFilter === 'pending'
+                            ? 'bg-amber-400 text-black shadow-sm'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        قيد المراجعة ({complaints.filter((c) => c.status === 'pending').length})
+                      </button>
+                      <button
+                        onClick={() => setComplaintsFilter('in-progress')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                          complaintsFilter === 'in-progress'
+                            ? 'bg-blue-400 text-white shadow-sm'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        جاري المتابعة ({complaints.filter((c) => c.status === 'in-progress').length})
+                      </button>
+                      <button
+                        onClick={() => setComplaintsFilter('resolved')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                          complaintsFilter === 'resolved'
+                            ? 'bg-emerald-400 text-black shadow-sm'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        تم الحل ({complaints.filter((c) => c.status === 'resolved').length})
+                      </button>
+                      <button
+                        onClick={() => setComplaintsFilter('rejected')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                          complaintsFilter === 'rejected'
+                            ? 'bg-gray-700 text-white shadow-sm'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        مرفوض ({complaints.filter((c) => c.status === 'rejected').length})
+                      </button>
+                    </div>
+
+                    {/* Search */}
+                    <div className="relative w-full sm:w-64">
+                      <Search className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="ابحث برقم التذكرة أو الاسم أو الطالب..."
+                        value={complaintsSearch}
+                        onChange={(e) => setComplaintsSearch(e.target.value)}
+                        className="w-full pl-3 pr-9 py-1.5 rounded-xl bg-black/50 border border-white/10 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Category Filter */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-white/5 text-xs text-gray-400">
+                    <span className="font-mono text-[11px] text-gray-500">التصنيف:</span>
+                    <button
+                      onClick={() => setComplaintsCategoryFilter('all')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] ${
+                        complaintsCategoryFilter === 'all'
+                          ? 'bg-white/10 text-white font-bold'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      جميع الأنواع
+                    </button>
+                    <button
+                      onClick={() => setComplaintsCategoryFilter('complaint')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] ${
+                        complaintsCategoryFilter === 'complaint'
+                          ? 'bg-red-950/60 text-red-300 border border-red-500/40 font-bold'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      شكاوى رسمية ⚠️
+                    </button>
+                    <button
+                      onClick={() => setComplaintsCategoryFilter('suggestion')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] ${
+                        complaintsCategoryFilter === 'suggestion'
+                          ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 font-bold'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      مقترحات تطوير 💡
+                    </button>
+                    <button
+                      onClick={() => setComplaintsCategoryFilter('inquiry')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] ${
+                        complaintsCategoryFilter === 'inquiry'
+                          ? 'bg-purple-950/60 text-purple-300 border border-purple-500/40 font-bold'
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      استفسارات عامة ❓
+                    </button>
+                  </div>
+                </div>
+
+                {/* Complaints List */}
+                <div className="space-y-3">
+                  {complaints
+                    .filter((c) => {
+                      if (complaintsFilter !== 'all' && c.status !== complaintsFilter) return false;
+                      if (complaintsCategoryFilter !== 'all' && c.category !== complaintsCategoryFilter) return false;
+                      if (complaintsSearch.trim()) {
+                        const q = complaintsSearch.toLowerCase();
+                        const matchTicket = c.ticketNumber.toLowerCase().includes(q);
+                        const matchName = c.studentName?.toLowerCase().includes(q) || false;
+                        const matchId = c.studentId?.toLowerCase().includes(q) || false;
+                        const matchSubject = c.subject.toLowerCase().includes(q);
+                        const matchMessage = c.message.toLowerCase().includes(q);
+                        return matchTicket || matchName || matchId || matchSubject || matchMessage;
+                      }
+                      return true;
+                    })
+                    .map((item) => {
+                      const isPending = item.status === 'pending';
+                      const isInProgress = item.status === 'in-progress';
+                      const isResolved = item.status === 'resolved';
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`p-4 rounded-2xl bg-black/40 border transition-all ${
+                            isPending
+                              ? 'border-amber-500/40 hover:border-amber-400/70 shadow-[0_0_15px_rgba(245,158,11,0.05)]'
+                              : isInProgress
+                              ? 'border-blue-500/40 hover:border-blue-400/70'
+                              : isResolved
+                              ? 'border-emerald-500/30 hover:border-emerald-400/60'
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Ticket Badge */}
+                              <span className="font-mono text-xs px-2.5 py-1 rounded-lg bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-bold flex items-center gap-1.5">
+                                <span>{item.ticketNumber}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(item.ticketNumber);
+                                    showToast('تم نسخ رقم التذكرة للحافظة');
+                                  }}
+                                  className="text-gray-400 hover:text-white cursor-pointer"
+                                  title="نسخ رقم التذكرة"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              </span>
+
+                              {/* Category Badge */}
+                              <span
+                                className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                                  item.category === 'complaint'
+                                    ? 'bg-red-950/60 text-red-300 border-red-500/40'
+                                    : item.category === 'suggestion'
+                                    ? 'bg-cyan-950/60 text-cyan-300 border-cyan-500/40'
+                                    : 'bg-purple-950/60 text-purple-300 border-purple-500/40'
+                                }`}
+                              >
+                                {item.category === 'complaint'
+                                  ? '⚠️ شكوى'
+                                  : item.category === 'suggestion'
+                                  ? '💡 مقترح'
+                                  : '❓ استفسار'}
+                              </span>
+
+                              {/* Status Badge */}
+                              <span
+                                className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                                  isPending
+                                    ? 'bg-amber-950/60 text-amber-300 border-amber-500/40 animate-pulse'
+                                    : isInProgress
+                                    ? 'bg-blue-950/60 text-blue-300 border-blue-500/40'
+                                    : isResolved
+                                    ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                                    : 'bg-gray-800 text-gray-300 border-gray-600'
+                                }`}
+                              >
+                                {isPending
+                                  ? 'قيد المراجعة'
+                                  : isInProgress
+                                  ? 'جاري المتابعة'
+                                  : isResolved
+                                  ? 'تم الحل والمعالجة ✓'
+                                  : 'مرفوض'}
+                              </span>
+                            </div>
+
+                            <div className="font-mono text-xs text-gray-400 flex items-center gap-2">
+                              <Clock className="w-3.5 h-3.5 text-gray-500" />
+                              <span>{new Date(item.createdAt).toLocaleString('ar-EG')}</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            <h4 className="text-sm font-bold text-white mb-1.5">{item.subject}</h4>
+                            <p className="text-xs text-gray-300 leading-relaxed bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                              {item.message}
+                            </p>
+                          </div>
+
+                          {/* Student Info & Admin Notes */}
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/5 text-xs">
+                            <div className="font-mono text-gray-400 space-x-3 space-x-reverse">
+                              {item.isAnonymous ? (
+                                <span className="text-amber-400/90 font-sans">👤 مُرسل مجهول الهوية (طلب عدم الكشف)</span>
+                              ) : (
+                                <>
+                                  <span className="text-white font-bold">{item.studentName}</span>
+                                  {item.studentId && (
+                                    <span className="text-cyan-300">ID: {item.studentId}</span>
+                                  )}
+                                  {item.college && (
+                                    <span className="text-gray-400">({item.college})</span>
+                                  )}
+                                  {item.email && (
+                                    <span className="text-gray-400">{item.email}</span>
+                                  )}
+                                  {item.phone && (
+                                    <span className="text-gray-400">{item.phone}</span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setInspectComplaint(item);
+                                  setAdminResponseNote(item.adminNotes || '');
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>معاينة والرد / تحديث الحالة</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteComplaint(item.id, item.ticketNumber)}
+                                className="p-1.5 rounded-xl bg-red-950/40 hover:bg-red-950 border border-red-500/30 text-red-400 text-xs transition-all cursor-pointer"
+                                title="حذف البلاغ نهائياً"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Admin Notes Preview */}
+                          {item.adminNotes && (
+                            <div className="mt-2.5 p-2.5 rounded-xl bg-cyan-950/30 border border-cyan-500/30 text-xs">
+                              <div className="font-bold text-cyan-300 font-mono text-[11px] mb-1">
+                                💬 رد وملاحظات الإدارة:
+                              </div>
+                              <div className="text-gray-200 leading-relaxed">{item.adminNotes}</div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                  {complaints.length === 0 && (
+                    <div className="p-12 text-center rounded-2xl bg-black/30 border border-white/5">
+                      <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                      <h4 className="text-white font-bold text-sm">صندوق الشكاوى والمقترحات فارغ</h4>
+                      <p className="text-xs text-gray-500 mt-1">لم يتم إرسال أي شكاوى أو مقترحات حتى الآن.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === 'leadership' && (
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {/* Header & Stats Banner */}
@@ -1445,7 +1856,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       </span>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
-                      التحكم ببيانات وصور رئيس النادي، الهيئة الإدارية (النائب، أمين السر، أمين الصندوق)، ورؤساء اللجان.
+                      التحكم ببيانات وصور رئيس النادي، الهيئة الإدارية (نائب الشؤون الإدارية، نائب الشؤون التنفيذية، أمين الصندوق)، ورؤساء اللجان.
                     </p>
                   </div>
 
@@ -1670,6 +2081,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           </div>
 
                           <div className="flex items-center gap-2 pt-3 border-t border-white/5">
+                            <button
+                              type="button"
+                              onClick={() => setViewingLeaderBadge(leader)}
+                              className="py-1.5 px-2.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                              title="عرض وطباعة بطاقة التكليف والاعتماد القيادي"
+                            >
+                              <CreditCard className="w-3.5 h-3.5" />
+                              <span>بطاقة التكليف 🪪</span>
+                            </button>
                             <button
                               onClick={() => handleOpenEditLeader(leader)}
                               className="flex-1 py-1.5 rounded-xl bg-white/[0.05] hover:bg-cyan-400 hover:text-black text-cyan-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
@@ -3700,6 +4120,197 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             </div>
           </div>
         )}
+      
+        {/* Inspect & Action Complaint Modal */}
+        {inspectComplaint && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+            <div className="w-full max-w-xl rounded-3xl glass-panel border border-cyan-500/40 p-6 shadow-2xl relative text-right animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => setInspectComplaint(null)}
+                className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs px-2.5 py-0.5 rounded-lg bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-bold">
+                    {inspectComplaint.ticketNumber}
+                  </span>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {new Date(inspectComplaint.createdAt).toLocaleString('ar-EG')}
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white mt-2">{inspectComplaint.subject}</h3>
+              </div>
+
+              {/* Details box */}
+              <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3 text-xs mb-4">
+                <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                  <span className="text-gray-400">التصنيف:</span>
+                  <span className="font-bold text-white">
+                    {inspectComplaint.category === 'complaint'
+                      ? '⚠️ شكوى رسمية'
+                      : inspectComplaint.category === 'suggestion'
+                      ? '💡 مقترح تطوير'
+                      : '❓ استفسار عام'}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                  <span className="text-gray-400">مقدم الطلب:</span>
+                  <span className="font-bold text-white">
+                    {inspectComplaint.isAnonymous
+                      ? 'فاعل خير / مجهول الهوية (حساب سري)'
+                      : inspectComplaint.studentName}
+                  </span>
+                </div>
+
+                {!inspectComplaint.isAnonymous && (
+                  <>
+                    {inspectComplaint.studentId && (
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-gray-400">الرقم الجامعي:</span>
+                        <span className="font-bold font-mono text-cyan-300">{inspectComplaint.studentId}</span>
+                      </div>
+                    )}
+                    {inspectComplaint.college && (
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-gray-400">الكلية:</span>
+                        <span className="font-bold text-gray-200">{inspectComplaint.college}</span>
+                      </div>
+                    )}
+                    {inspectComplaint.email && (
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-gray-400">البريد الإلكتروني:</span>
+                        <a href={`mailto:${inspectComplaint.email}`} className="text-cyan-400 underline font-mono">
+                          {inspectComplaint.email}
+                        </a>
+                      </div>
+                    )}
+                    {inspectComplaint.phone && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">رقم الهاتف:</span>
+                        <span className="font-mono text-gray-200">{inspectComplaint.phone}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Message text */}
+              <div className="mb-4">
+                <label className="block text-xs font-mono text-gray-400 mb-1.5">نص الشكوى / المقترح:</label>
+                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-xs text-gray-200 leading-relaxed whitespace-pre-wrap">
+                  {inspectComplaint.message}
+                </div>
+              </div>
+
+              {/* Admin Action & Notes */}
+              <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 mb-4 space-y-3">
+                <label className="block text-xs font-bold text-cyan-300 font-mono">
+                  إجراء الإدارة ورد المتابعة (يظهر للطالب عند تتبع التذكرة):
+                </label>
+                <textarea
+                  rows={3}
+                  value={adminResponseNote}
+                  onChange={(e) => setAdminResponseNote(e.target.value)}
+                  placeholder="سجل هنا الإجراء المتخذ، الرد الرسمي للطالب، أو ملاحظات المتابعة..."
+                  className="w-full p-3 rounded-xl bg-black/60 border border-white/10 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 leading-relaxed font-sans"
+                />
+
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <span className="text-xs text-gray-400 self-center font-mono ml-2">تحديث الحالة إلى:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateComplaintStatus(inspectComplaint.id, 'pending', adminResponseNote)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                      inspectComplaint.status === 'pending'
+                        ? 'bg-amber-400 text-black shadow-md'
+                        : 'bg-white/5 text-amber-300 hover:bg-amber-950/60 border border-amber-500/30'
+                    }`}
+                  >
+                    قيد المراجعة
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateComplaintStatus(inspectComplaint.id, 'in-progress', adminResponseNote)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                      inspectComplaint.status === 'in-progress'
+                        ? 'bg-blue-400 text-white shadow-md'
+                        : 'bg-white/5 text-blue-300 hover:bg-blue-950/60 border border-blue-500/30'
+                    }`}
+                  >
+                    جاري المتابعة
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateComplaintStatus(inspectComplaint.id, 'resolved', adminResponseNote)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                      inspectComplaint.status === 'resolved'
+                        ? 'bg-emerald-400 text-black shadow-md'
+                        : 'bg-white/5 text-emerald-300 hover:bg-emerald-950/60 border border-emerald-500/30'
+                    }`}
+                  >
+                    تم الحل والمعالجة ✓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateComplaintStatus(inspectComplaint.id, 'rejected', adminResponseNote)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                      inspectComplaint.status === 'rejected'
+                        ? 'bg-gray-700 text-white shadow-md'
+                        : 'bg-white/5 text-gray-400 hover:bg-gray-900 border border-gray-600'
+                    }`}
+                  >
+                    مرفوض
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="flex gap-2 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleUpdateComplaintStatus(inspectComplaint.id, inspectComplaint.status, adminResponseNote);
+                    setInspectComplaint(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>حفظ الرد وتحديث البيانات</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteComplaint(inspectComplaint.id, inspectComplaint.ticketNumber)}
+                  className="px-4 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs cursor-pointer flex items-center gap-1"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>حذف</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInspectComplaint(null)}
+                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs cursor-pointer"
+                >
+                  إغلاق
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Executive Credential Badge Modal for Leaders */}
+        {viewingLeaderBadge && (
+          <ExecutiveBadgeModal
+            isOpen={Boolean(viewingLeaderBadge)}
+            leader={viewingLeaderBadge}
+            onClose={() => setViewingLeaderBadge(null)}
+          />
+        )}
+
       </div>
     </div>
   );

@@ -16,11 +16,13 @@ import { LiveFeedSection } from './components/LiveFeedSection';
 import { Footer } from './components/Footer';
 import { AdminDashboard } from './components/AdminDashboard';
 import { MembershipVerifyModal } from './components/MembershipVerifyModal';
+import { ComplaintsModal } from './components/ComplaintsModal';
 
 export function App() {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
+  const [showComplaintsModal, setShowComplaintsModal] = useState(false);
 
   useEffect(() => {
     // Check if URL has ?verify=...
@@ -32,11 +34,19 @@ export function App() {
     }
 
     // Check if URL has #/admin or ?admin=1
+        // Check if URL has #/complaints or ?complaints=1
+    if (window.location.hash === '#/complaints' || params.get('complaints') === '1') {
+      setShowComplaintsModal(true);
+    }
+
     if (window.location.hash === '#/admin' || params.get('admin') === '1') {
       setShowAdminModal(true);
     }
 
     const handleHashChange = () => {
+            if (window.location.hash === '#/complaints') {
+        setShowComplaintsModal(true);
+      }
       if (window.location.hash === '#/admin') {
         setShowAdminModal(true);
       }
@@ -52,7 +62,10 @@ export function App() {
 
   const handleCloseAdmin = () => {
     setShowAdminModal(false);
-    if (window.location.hash === '#/admin') {
+          if (window.location.hash === '#/complaints') {
+        setShowComplaintsModal(true);
+      }
+      if (window.location.hash === '#/admin') {
       window.history.pushState(null, '', window.location.pathname + window.location.search);
     }
   };
@@ -79,6 +92,7 @@ export function App() {
       <Navbar
         onOpenJoinModal={handleJoinClick}
         onOpenAdmin={handleOpenAdmin}
+        onOpenComplaints={() => setShowComplaintsModal(true)}
         onOpenVerify={() => {
           setVerifyCode('');
           setShowVerifyModal(true);
@@ -98,6 +112,17 @@ export function App() {
         initialCode={verifyCode}
       />
 
+
+            {/* Complaints & Suggestions Student Portal */}
+      <ComplaintsModal
+        isOpen={showComplaintsModal}
+        onClose={() => {
+          setShowComplaintsModal(false);
+          if (window.location.hash === '#/complaints') {
+            window.history.pushState(null, '', window.location.pathname + window.location.search);
+          }
+        }}
+      />
 
       {/* Main Content Sections */}
       <main className="relative z-10">
@@ -137,6 +162,7 @@ export function App() {
 
       {/* 11: Technical Blueprint Footer */}
       <Footer
+        onOpenComplaints={() => setShowComplaintsModal(true)}
         onOpenVerify={() => {
           setVerifyCode('');
           setShowVerifyModal(true);
