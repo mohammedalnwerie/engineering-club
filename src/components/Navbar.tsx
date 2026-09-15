@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, Cpu, ShieldAlert } from 'lucide-react';
+import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, ShieldAlert } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
+import { ClubLogo } from './ClubLogo';
 
 
 interface NavbarProps {
@@ -48,13 +49,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin }) 
   return (
     <header className="fixed top-0 inset-x-0 z-40 px-4 sm:px-6 lg:px-8 pt-4 transition-all duration-300">
       <div
-        className={`max-w-7xl mx-auto rounded-2xl transition-all duration-300 px-4 sm:px-6 py-3 flex items-center justify-between ${
+        className={`max-w-7xl mx-auto rounded-2xl transition-all duration-300 px-4 sm:px-6 py-2.5 flex items-center justify-between ${
           isScrolled
-            ? 'glass-panel shadow-[0_10px_35px_-10px_rgba(0,0,0,0.8)] border border-cyan-500/20 py-2.5'
-            : 'bg-[#07090e]/60 backdrop-blur-md border border-white/5'
+            ? 'glass-panel shadow-[0_10px_35px_-10px_rgba(0,0,0,0.8)] border border-emerald-500/20 py-2'
+            : 'bg-[#07090e]/70 backdrop-blur-md border border-white/5'
         }`}
       >
-        {/* Brand Logo & Telemetry */}
+        {/* Official Brand Logo */}
         <a
           href="#"
           onClick={(e) => {
@@ -64,27 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin }) 
           }}
           className="flex items-center gap-3.5 group cursor-pointer"
         >
-          {/* Engineering CAD Hexagon Emblem */}
-          <div className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-400/40 group-hover:border-cyan-400 transition-all duration-300 shadow-[0_0_15px_rgba(0,240,255,0.15)] group-hover:shadow-[0_0_20px_rgba(0,240,255,0.35)]">
-            <Cpu className="w-5 h-5 text-cyan-400 transition-transform duration-300 group-hover:rotate-45" />
-            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-cyan-400 rounded-full" />
-            <div className="absolute -bottom-0.5 -left-0.5 w-1.5 h-1.5 bg-cyan-400 rounded-full" />
-          </div>
-
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-base sm:text-lg tracking-tight text-white group-hover:text-cyan-300 transition-colors">
-                النادي الهندسي
-              </span>
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-500/30 font-semibold tracking-wider">
-                ENG-CORP
-              </span>
-            </div>
-            <span className="font-mono text-[10px] text-gray-400 flex items-center gap-1.5">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>نظام التشغيل الهندسي v2.6</span>
-            </span>
-          </div>
+          <ClubLogo variant="horizontal" size="md" />
         </a>
 
         {/* Desktop Navigation Links */}
@@ -136,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin }) 
               }
             }}
             onMouseEnter={() => sound.playHover()}
-            className="relative group overflow-hidden px-4 sm:px-5 py-2 rounded-xl font-medium text-sm text-[#07090e] bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-cyan-200 transition-all shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:shadow-[0_0_30px_rgba(0,240,255,0.5)] cursor-pointer flex items-center gap-2 font-bold"
+            className="relative group overflow-hidden px-4 sm:px-5 py-2 rounded-xl font-medium text-sm text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_0_20px_rgba(22,163,74,0.35)] hover:shadow-[0_0_30px_rgba(22,163,74,0.55)] cursor-pointer flex items-center gap-2 font-bold"
           >
             <span>انضم للنادي</span>
             <ArrowUpRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

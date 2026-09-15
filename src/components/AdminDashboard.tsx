@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { supabaseBridge } from '../services/supabaseClient';
 import { sound } from '../utils/soundEngine';
+import { ClubLogo } from './ClubLogo';
 import type {
   ProjectCaseStudy,
   EventItem,
@@ -28,7 +29,6 @@ import {
   Database,
   RefreshCw,
   Eye,
-  Activity,
   Award,
   Sparkles,
   Building2,
@@ -269,6 +269,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     prerequisites: ['إحضار الحاسب الشخصي'],
     badgeColor: '#00F0FF',
   });
+
+  // Edit Project & Event States
+  const [editingProject, setEditingProject] = useState<ProjectCaseStudy | null>(null);
+  const [editingProjectTechStack, setEditingProjectTechStack] = useState<string>('');
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [editingEventPrereqs, setEditingEventPrereqs] = useState<string>('');
+  const [showCollegeUrlInput, setShowCollegeUrlInput] = useState(false);
 
   // Supabase Form State
   const [supabaseUrl, setSupabaseUrl] = useState('');
@@ -530,6 +537,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setShowAddEvent(false);
   };
 
+  // Edit Project Handlers
+  const handleOpenEditProject = (proj: ProjectCaseStudy) => {
+    sound.playClick();
+    setEditingProject({ ...proj });
+    setEditingProjectTechStack((proj.techStack || []).join(', '));
+  };
+
+  const handleSaveProject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProject) return;
+    const updated: ProjectCaseStudy = {
+      ...editingProject,
+      techStack: editingProjectTechStack
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    };
+    dataService.saveProject(updated);
+    setProjects(dataService.getProjects());
+    setEditingProject(null);
+    sound.playSuccess();
+    showToast(`تم حفظ وتحديث مشروع (${updated.title}) بنجاح`);
+  };
+
+  // Edit Event Handlers
+  const handleOpenEditEvent = (ev: EventItem) => {
+    sound.playClick();
+    setEditingEvent({ ...ev });
+    setEditingEventPrereqs((ev.prerequisites || []).join(', '));
+  };
+
+  const handleSaveEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+    const updated: EventItem = {
+      ...editingEvent,
+      capacity: Number(editingEvent.capacity) || 50,
+      prerequisites: editingEventPrereqs
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    };
+    dataService.saveEvent(updated);
+    setEvents(dataService.getEvents());
+    setEditingEvent(null);
+    sound.playSuccess();
+    showToast(`تم حفظ وتحديث فعالية (${updated.title}) بنجاح`);
+  };
+
   // Supabase test
   const handleConnectSupabase = async () => {
     sound.playClick();
@@ -551,14 +607,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         {/* Top Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#090d16]/90">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400">
-              <Activity className="w-4 h-4" />
-            </div>
+            <ClubLogo variant="emblem" size="md" />
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-extrabold text-white text-base">لوحة الإدارة الهندسية المركزية</span>
-                <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-500/30">
-                  ENG-ADMIN v2.6
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#0B2D5B] text-cyan-300 border border-cyan-500/30 font-bold">
+                  ENG-ADMIN v3.0
+                </span>
+                <span className="hidden md:inline-flex items-center gap-1 font-mono text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold">
+                  {settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}
                 </span>
                 {isAuthenticated && (
                   <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
@@ -568,7 +625,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 )}
               </div>
               <div className="font-mono text-[11px] text-gray-400">
-                إدارة المشاريع، الكادر القيادي، الفعاليات، ومزامنة السحابة
+                {settings.universityNameAr || "جامعة فلسطين"} — إدارة المشاريع، الكادر القيادي، الفعاليات، الهوية والرؤية
               </div>
             </div>
           </div>
@@ -773,6 +830,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] text-gray-400 shrink-0 border-r border-white/10 pr-3">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>ONLINE</span>
+              </div>
+            </div>
+
+            {/* Quick Operational Telemetry Strip */}
+            <div className="px-4 sm:px-6 py-2.5 bg-[#080d1a]/80 border-b border-white/10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 text-xs shrink-0">
+              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] text-gray-400 font-mono">طلبات الانضمام</div>
+                  <div className="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
+                    <span>{applications.length}</span>
+                    <span className="text-[10px] text-amber-400 font-normal">({applications.filter((a) => a.status === 'قيد المراجعة').length} معلق)</span>
+                  </div>
+                </div>
+                <Users className="w-4 h-4 text-cyan-400/70" />
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] text-gray-400 font-mono">المشاريع المنشورة</div>
+                  <div className="text-sm font-bold text-white mt-0.5">{projects.length} مشاريع</div>
+                </div>
+                <Layers className="w-4 h-4 text-blue-400/70" />
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] text-gray-400 font-mono">الفعاليات والتذاكر</div>
+                  <div className="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
+                    <span>{events.length}</span>
+                    <span className="text-[10px] text-emerald-400 font-normal">({tickets.length} حجز)</span>
+                  </div>
+                </div>
+                <Calendar className="w-4 h-4 text-emerald-400/70" />
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] text-gray-400 font-mono">الكادر القيادي</div>
+                  <div className="text-sm font-bold text-white mt-0.5">{leadership.length} قائد/ة</div>
+                </div>
+                <Award className="w-4 h-4 text-amber-400/70" />
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] text-gray-400 font-mono">الكليات والتخصصات</div>
+                  <div className="text-sm font-bold text-white mt-0.5">{colleges.length} كليات / {majors.length} تخصص</div>
+                </div>
+                <Building2 className="w-4 h-4 text-purple-400/70" />
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] text-gray-400 font-mono">الهوية الرسمية</div>
+                  <div className="text-xs font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>معتمدة (UP)</span>
+                  </div>
+                </div>
+                <Sparkles className="w-4 h-4 text-emerald-400/70" />
               </div>
             </div>
 
@@ -1071,16 +1183,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{proj.tagline}</p>
                       </div>
 
-                      <button
-                        onClick={() => {
-                          sound.playClick();
-                          dataService.deleteProject(proj.id);
-                        }}
-                        className="p-2 rounded-lg bg-red-950/30 hover:bg-red-500/20 text-red-400 transition-colors"
-                        title="حذف المشروع"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => handleOpenEditProject(proj)}
+                          className="px-2.5 py-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-cyan-500/30 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                          title="تعديل دراسة الحالة"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>تعديل</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`هل أنت متأكد من حذف مشروع (${proj.title})؟`)) {
+                              sound.playClick();
+                              dataService.deleteProject(proj.id);
+                              setProjects(dataService.getProjects());
+                              showToast(`تم حذف مشروع (${proj.title})`);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
+                          title="حذف المشروع"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1220,6 +1346,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             >
                               <Download className="w-3.5 h-3.5" />
                               <span>تصدير الكشف</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleOpenEditEvent(ev)}
+                              className="px-3 py-1.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-500/20 text-xs font-bold text-cyan-300 hover:text-cyan-200 border border-cyan-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+                              title="تعديل بيانات الفعالية"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>تعديل</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`هل أنت متأكد من حذف فعالية (${ev.title})؟`)) {
+                                  sound.playClick();
+                                  dataService.deleteEvent(ev.id);
+                                  setEvents(dataService.getEvents());
+                                  showToast(`تم حذف فعالية (${ev.title})`);
+                                }
+                              }}
+                              className="p-1.5 rounded-xl bg-red-950/40 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
+                              title="حذف الفعالية"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -1673,7 +1823,187 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Hero & Vision Settings Card */}
+                  {/* Card 1: Official Brand Identity & Vision/Mission Form */}
+                  <form
+                    onSubmit={handleSaveSettings}
+                    className="p-6 rounded-2xl bg-black/40 border border-emerald-500/30 space-y-4"
+                  >
+                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                      <div className="flex items-center gap-2">
+                        <ClubLogo variant="emblem" size="sm" />
+                        <div>
+                          <h4 className="text-sm font-bold text-white">الهوية الرسمية والرؤية والرسالة (UP Charter)</h4>
+                          <p className="text-[11px] text-gray-400">تحديث نصوص الرؤية والرسالة والشعار المعتمد</p>
+                        </div>
+                      </div>
+                      {settingsSavedMsg && (
+                        <span className="text-xs text-emerald-400 font-mono flex items-center gap-1 animate-in fade-in">
+                          <Check className="w-3.5 h-3.5" />
+                          تم الحفظ
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-gray-300 mb-1 font-mono">اسم الجامعة:</label>
+                        <input
+                          type="text"
+                          required
+                          value={settings.universityNameAr || ''}
+                          onChange={(e) => setSettings({ ...settings, universityNameAr: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-300 mb-1 font-mono">اسم النادي:</label>
+                        <input
+                          type="text"
+                          required
+                          value={settings.clubNameAr || ''}
+                          onChange={(e) => setSettings({ ...settings, clubNameAr: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-gray-300 mb-1 font-mono">الشعار اللفظي (عربي):</label>
+                        <input
+                          type="text"
+                          required
+                          value={settings.sloganAr || ''}
+                          onChange={(e) => setSettings({ ...settings, sloganAr: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-emerald-500/30 text-xs text-emerald-300 font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-300 mb-1 font-mono">الشعار اللفظي (English):</label>
+                        <input
+                          type="text"
+                          required
+                          value={settings.sloganEn || ''}
+                          onChange={(e) => setSettings({ ...settings, sloganEn: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-cyan-300 font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-emerald-400 mb-1 font-bold">نص الرؤية الرسمية (Vision):</label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={settings.vision || ''}
+                        onChange={(e) => setSettings({ ...settings, vision: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-black/40 border border-emerald-500/40 text-xs text-gray-100 leading-relaxed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-cyan-400 mb-1 font-bold">نص الرسالة الرسمية (Mission):</label>
+                      <textarea
+                        rows={4}
+                        required
+                        value={settings.mission || ''}
+                        onChange={(e) => setSettings({ ...settings, mission: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-black/40 border border-cyan-500/40 text-xs text-gray-100 leading-relaxed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-gray-300 mb-1 font-mono">القيم الجوهرية الخمس (مفصولة بفواصل):</label>
+                      <input
+                        type="text"
+                        required
+                        value={(settings.values || []).map((v) => (typeof v === 'string' ? v : v.name)).join(', ')}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            values: e.target.value
+                              .split(',')
+                              .map((s, idx) => ({
+                                id: `val-${idx + 1}`,
+                                name: s.trim(),
+                                description: '',
+                                iconName: 'Award',
+                              }))
+                              .filter((v) => Boolean(v.name)),
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white font-mono"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md transition-all"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>حفظ وتحديث الهوية والرؤية والرسالة</span>
+                    </button>
+                  </form>
+
+                  {/* Card 2: Live Brand Identity & Logo Preview */}
+                  <div className="p-6 rounded-2xl bg-[#090d16] border border-white/10 space-y-4 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-emerald-400" />
+                          <h4 className="text-sm font-bold text-white">المعاينة الحية للهوية الرسمية</h4>
+                        </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+                          LIVE PREVIEW
+                        </span>
+                      </div>
+
+                      {/* Official Logo Banner */}
+                      <div className="p-4 rounded-xl bg-[#0B2D5B]/40 border border-emerald-500/30 flex items-center justify-between gap-4 mb-4">
+                        <ClubLogo variant="horizontal" size="md" />
+                        <span className="text-[11px] font-mono text-emerald-300 font-bold px-2.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40">
+                          {settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}
+                        </span>
+                      </div>
+
+                      {/* Vision Snippet */}
+                      <div className="p-3.5 rounded-xl bg-black/40 border border-emerald-500/20 mb-3">
+                        <div className="text-[11px] font-bold text-emerald-400 mb-1">الرؤية:</div>
+                        <p className="text-xs text-gray-300 leading-relaxed">{settings.vision}</p>
+                      </div>
+
+                      {/* Mission Snippet */}
+                      <div className="p-3.5 rounded-xl bg-black/40 border border-cyan-500/20 mb-3">
+                        <div className="text-[11px] font-bold text-cyan-400 mb-1">الرسالة:</div>
+                        <p className="text-xs text-gray-300 leading-relaxed line-clamp-3">{settings.mission}</p>
+                      </div>
+
+                      {/* Values Chips */}
+                      <div>
+                        <div className="text-[11px] font-mono text-gray-400 mb-1.5">القيم الخمس المعتمدة:</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(settings.values || []).map((v, idx) => {
+                            const vName = typeof v === 'string' ? v : v.name;
+                            return (
+                              <span
+                                key={idx}
+                                className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-emerald-950/50 text-emerald-300 border border-emerald-500/30 font-mono"
+                              >
+                                ★ {vName}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/5 text-[11px] font-mono text-gray-500 flex justify-between items-center">
+                      <span>{settings.universityNameAr || "جامعة فلسطين"}</span>
+                      <span>{settings.sloganEn || "ENGINEERING TODAY .. IMPACT TOMORROW"}</span>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Hero & Texts Card */}
                   <form
                     onSubmit={handleSaveSettings}
                     className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4"
@@ -1681,7 +2011,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <div className="flex items-center justify-between pb-3 border-b border-white/10">
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-cyan-400" />
-                        <h4 className="text-sm font-bold text-white">نصوص الرؤية والواجهة الرئيسية (Hero)</h4>
+                        <h4 className="text-sm font-bold text-white">نصوص الواجهة الرئيسية (Hero Section)</h4>
                       </div>
                       {settingsSavedMsg && (
                         <span className="text-xs text-emerald-400 font-mono flex items-center gap-1 animate-in fade-in">
@@ -1748,7 +2078,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md transition-all"
                     >
                       <Save className="w-3.5 h-3.5" />
-                      <span>حفظ وتحديث نصوص الرؤية</span>
+                      <span>حفظ وتحديث نصوص الهيرو</span>
                     </button>
                   </form>
 
@@ -2648,21 +2978,111 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
                       />
                     </div>
-                    <div>
-                      <label className="block text-gray-400 mb-1">رابط صورة المنسق:</label>
-                      <input
-                        type="url"
-                        required
-                        value={editingCollege.coordinator.avatar}
-                        onChange={(e) =>
-                          setEditingCollege({
-                            ...editingCollege,
-                            coordinator: { ...editingCollege.coordinator, avatar: e.target.value },
-                          })
-                        }
-                        className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
+                  {/* Coordinator Photo Management */}
+                  <div>
+                    <label className="block text-gray-400 mb-1.5 font-mono">صورة المنسق الأكاديمي:</label>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-black/40 border border-white/10">
+                      <img
+                        src={editingCollege.coordinator.avatar || DEFAULT_AVATAR}
+                        alt="منسق الكلية"
+                        className="w-14 h-14 rounded-xl object-cover border border-cyan-500/40 shrink-0 bg-white/5"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+                        }}
                       />
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>رفع صورة من الجهاز</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  processImageFile(
+                                    file,
+                                    (dataUrl) => {
+                                      setEditingCollege({
+                                        ...editingCollege,
+                                        coordinator: { ...editingCollege.coordinator, avatar: dataUrl },
+                                      });
+                                      sound.playSuccess();
+                                      showToast('تم تحديث صورة المنسق بنجاح');
+                                    },
+                                    (err) => showToast(err)
+                                  );
+                                }
+                              }}
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sound.playClick();
+                              setEditingCollege({
+                                ...editingCollege,
+                                coordinator: { ...editingCollege.coordinator, avatar: DEFAULT_AVATAR },
+                              });
+                              showToast('تم استعادة الصورة الافتراضية');
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 text-xs transition-all cursor-pointer"
+                          >
+                            حذف واستعادة الافتراضية
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setShowCollegeUrlInput(!showCollegeUrlInput)}
+                            className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-xs transition-all cursor-pointer flex items-center gap-1"
+                          >
+                            <LinkIcon className="w-3 h-3" />
+                            <span>رابط مباشر</span>
+                          </button>
+                        </div>
+
+                        {showCollegeUrlInput && (
+                          <input
+                            type="url"
+                            placeholder="https://images.unsplash.com/..."
+                            value={editingCollege.coordinator.avatar}
+                            onChange={(e) =>
+                              setEditingCollege({
+                                ...editingCollege,
+                                coordinator: { ...editingCollege.coordinator, avatar: e.target.value },
+                              })
+                            }
+                            className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-white font-mono text-xs"
+                          />
+                        )}
+
+                        {/* Presets */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                          <span className="text-[10px] text-gray-500 font-mono shrink-0">نماذج جاهزة:</span>
+                          {AVATAR_PRESETS.slice(0, 5).map((preset, pIdx) => (
+                            <button
+                              key={pIdx}
+                              type="button"
+                              onClick={() => {
+                                sound.playClick();
+                                setEditingCollege({
+                                  ...editingCollege,
+                                  coordinator: { ...editingCollege.coordinator, avatar: preset.url },
+                                });
+                              }}
+                              className="w-6 h-6 rounded-lg overflow-hidden border border-white/10 hover:border-cyan-400 shrink-0 cursor-pointer"
+                              title={preset.label}
+                            >
+                              <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
+                  </div>
                   </div>
                 </div>
 
@@ -2802,6 +3222,307 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <button
                     type="button"
                     onClick={() => setEditingMajor(null)}
+                    className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 text-xs cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Project Edit Modal */}
+        {editingProject && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-2xl rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
+              <button
+                onClick={() => setEditingProject(null)}
+                className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="mb-4">
+                <span className="font-mono text-xs text-cyan-400">تعديل دراسة الحالة ومشروع النادي</span>
+                <h3 className="text-xl font-bold text-white mt-1">{editingProject.title}</h3>
+              </div>
+
+              <form onSubmit={handleSaveProject} className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">اسم المشروع:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingProject.title}
+                      onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">الوصف المختصر (Tagline):</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingProject.tagline}
+                      onChange={(e) => setEditingProject({ ...editingProject, tagline: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">التصنيف الهندسي:</label>
+                    <select
+                      value={editingProject.category}
+                      onChange={(e) => setEditingProject({ ...editingProject, category: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    >
+                      <option value="software">برمجيات (Software)</option>
+                      <option value="ai">ذكاء اصطناعي (AI)</option>
+                      <option value="robotics">روبوتات وميكاترونكس</option>
+                      <option value="architecture">عمارة وتصميم</option>
+                      <option value="civil">هندسة مدنية وبنية</option>
+                      <option value="iot">إنترنت الأشياء والنظم</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">الكلية المشرفة:</label>
+                    <select
+                      value={editingProject.collegeName}
+                      onChange={(e) => setEditingProject({ ...editingProject, collegeName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    >
+                      <option value="كلية هندسة برمجيات وذكاء اصطناعي">كلية هندسة برمجيات وذكاء اصطناعي</option>
+                      <option value="كلية تكنولوجيا المعلومات IT">كلية تكنولوجيا المعلومات IT</option>
+                      <option value="كلية الهندسة التطبيقية و التخطيط العمراني">كلية الهندسة التطبيقية و التخطيط العمراني</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">حالة المشروع:</label>
+                    <select
+                      value={editingProject.status}
+                      onChange={(e) => setEditingProject({ ...editingProject, status: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    >
+                      <option value="Deployed">مطلق في الإنتاج (Deployed)</option>
+                      <option value="Prototyped">نموذج أولي مجرب (Prototyped)</option>
+                      <option value="In Testing">قيد الاختبار (In Testing)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">المشكلة والتحدي الهندسي:</label>
+                    <textarea
+                      rows={2}
+                      required
+                      value={editingProject.problem}
+                      onChange={(e) => setEditingProject({ ...editingProject, problem: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">الحل الهندسي المبتكر:</label>
+                    <textarea
+                      rows={2}
+                      required
+                      value={editingProject.solution}
+                      onChange={(e) => setEditingProject({ ...editingProject, solution: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1 font-mono">التقنيات والأدوات (مفصولة بفواصل):</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingProjectTechStack}
+                    onChange={(e) => setEditingProjectTechStack(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1 font-mono">المخطط التدفقي / المعماري (Schematic Flow):</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingProject.schematicType}
+                    onChange={(e) => setEditingProject({ ...editingProject, schematicType: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">رابط العرض الحي (Demo URL):</label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={editingProject.demoUrl || ''}
+                      onChange={(e) => setEditingProject({ ...editingProject, demoUrl: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">رابط كود المشروع (GitHub URL):</label>
+                    <input
+                      type="url"
+                      placeholder="https://github.com/..."
+                      value={editingProject.githubUrl || ''}
+                      onChange={(e) => setEditingProject({ ...editingProject, githubUrl: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-3 border-t border-white/10">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-md transition-all"
+                  >
+                    حفظ وتحديث بيانات المشروع
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingProject(null)}
+                    className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 text-xs cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Event Edit Modal */}
+        {editingEvent && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-lg rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
+              <button
+                onClick={() => setEditingEvent(null)}
+                className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="mb-4">
+                <span className="font-mono text-xs text-cyan-400">تعديل بيانات الفعالية والورشة</span>
+                <h3 className="text-xl font-bold text-white mt-1">{editingEvent.title}</h3>
+              </div>
+
+              <form onSubmit={handleSaveEvent} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-gray-300 mb-1 font-mono">عنوان الفعالية:</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingEvent.title}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">التصنيف:</label>
+                    <select
+                      value={editingEvent.category}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, category: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    >
+                      <option value="Workshop">ورشة عمل (Workshop)</option>
+                      <option value="Hackathon">هاكاثون وتحدي برمجي</option>
+                      <option value="Site Visit">زيارة ميدانية صناعية</option>
+                      <option value="Conference">مؤتمر ولقاء علمي</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">السعة الاستيعابية (عدد المقاعد):</label>
+                    <input
+                      type="number"
+                      required
+                      min={5}
+                      value={editingEvent.capacity}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, capacity: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">التاريخ:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingEvent.date}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, date: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">التوقيت:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingEvent.time}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, time: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">الموقع / القاعة:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingEvent.location}
+                      onChange={(e) => setEditingEvent({ ...editingEvent, location: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1 font-mono">وصف الفعالية وأهدافها:</label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={editingEvent.description}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1 font-mono">المتطلبات المسبقة (مفصولة بفواصل):</label>
+                  <input
+                    type="text"
+                    value={editingEventPrereqs}
+                    onChange={(e) => setEditingEventPrereqs(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-3 border-t border-white/10">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-md transition-all"
+                  >
+                    حفظ وتحديث بيانات الفعالية
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingEvent(null)}
                     className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 text-xs cursor-pointer"
                   >
                     إلغاء

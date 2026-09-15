@@ -4,6 +4,7 @@ import { CanvasBackground } from './components/CanvasBackground';
 import { CustomCursor } from './components/CustomCursor';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
+import { BrandIdentitySection } from './components/BrandIdentitySection';
 import { StoryScroll } from './components/StoryScroll';
 import { CollegesSection } from './components/CollegesSection';
 import { MajorsSection } from './components/MajorsSection';
@@ -58,7 +59,10 @@ export function App() {
           onExploreClick={handleExploreClick}
         />
 
-        {/* 02: Narrative Arc / Story Scroll */}
+        {/* 02: Official Brand Identity, Vision & Mission */}
+        <BrandIdentitySection />
+
+        {/* 03: Narrative Arc / Story Scroll */}
         <StoryScroll />
 
         {/* 03: Colleges Interactive Showcase */}

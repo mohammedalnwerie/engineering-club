@@ -54,14 +54,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
 
       <div className="relative max-w-5xl mx-auto text-center flex flex-col items-center z-10">
         {/* Tech Badge / Telemetry bar */}
-        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 text-xs sm:text-sm font-mono mb-8 backdrop-blur-md shadow-[0_0_15px_rgba(0,240,255,0.15)]">
+        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#0B2D5B]/70 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-mono mb-8 backdrop-blur-md shadow-[0_0_20px_rgba(22,163,74,0.2)]">
           <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="font-semibold tracking-wide">المنظومة الهندسية الموحدة</span>
-          <span className="text-cyan-500/50">|</span>
-          <span className="text-gray-400 hidden sm:inline">الإحداثيات: {coords.x}°N, {coords.y}°E</span>
+          <span className="font-bold tracking-wide text-white">{settings.universityNameAr || "جامعة فلسطين"}</span>
+          <span className="text-emerald-500/50">|</span>
+          <span className="font-semibold text-emerald-400">{settings.clubNameAr || "النادي الهندسي"}</span>
+          <span className="text-emerald-500/50 hidden sm:inline">|</span>
+          <span className="text-gray-300 hidden sm:inline font-sans">{settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}</span>
         </div>
 
         {/* Main Epic Headline */}
@@ -71,7 +73,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
             // INIT_SYS.ENGINEER
           </div>
           <div className="absolute -bottom-4 -left-6 text-[10px] font-mono text-cyan-500/40 hidden sm:block">
-            COORD [01.06.26]
+            COORD [{coords.x}°N, {coords.y}°E]
           </div>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white leading-[1.12]">

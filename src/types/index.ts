@@ -140,12 +140,28 @@ export interface EventTicket {
   checkedIn: boolean;
 }
 
+export interface BrandValue {
+  id: string;
+  name: string;
+  description: string;
+  iconName: string;
+}
+
 export interface SiteSettings {
   heroTitle: string;
   heroHighlight: string;
   heroSubheadline1: string;
   heroSubheadline2: string;
   operatingSystemVersion: string;
+  clubNameAr: string;
+  clubNameEn: string;
+  universityNameAr: string;
+  universityNameEn: string;
+  sloganAr: string;
+  sloganEn: string;
+  vision: string;
+  mission: string;
+  values: BrandValue[];
 }
 
 export interface StudentSpotlightData {

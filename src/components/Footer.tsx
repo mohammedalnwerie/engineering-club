@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Cpu, ArrowUp, MapPin, Check } from 'lucide-react';
+import { ArrowUp, MapPin, Check, Sparkles } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
+import { ClubLogo } from './ClubLogo';
+import { dataService } from '../services/dataService';
 
 
 export const Footer: React.FC = () => {
   const [subscribed, setSubscribed] = useState(false);
   const [email, setEmail] = useState('');
+  const settings = dataService.getSettings();
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,24 +31,22 @@ export const Footer: React.FC = () => {
         {/* Top telemetry banner */}
         <div className="flex flex-col sm:flex-row items-center justify-between pb-10 border-b border-white/10 mb-12 gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400">
-              <Cpu className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-base font-extrabold text-white">النادي الهندسي الجامعي</div>
-              <div className="font-mono text-[10px] text-gray-400">ENGINEERING CLUB PLATFORM // EST. 2026</div>
-            </div>
+            <ClubLogo variant="horizontal" size="md" />
           </div>
 
-          <div className="flex items-center gap-6 font-mono text-xs text-gray-400">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6 font-mono text-xs text-gray-400">
+            <div className="px-3 py-1 rounded-full bg-[#0B2D5B]/60 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{settings.sloganAr || 'هندسة اليوم .. تصنع أثر الغد'}</span>
+            </div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>ALL SYSTEMS OPERATIONAL</span>
+              <span>{settings.universityNameAr || 'جامعة فلسطين'}</span>
             </div>
             <span className="text-white/20 hidden sm:inline">|</span>
             <div className="hidden sm:flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-              <span>24.7136° N, 46.6753° E</span>
+              <span>فلسطين — غزة</span>
             </div>
           </div>
         </div>
@@ -54,9 +55,9 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-16">
           {/* Col 1 & 2: Manifesto & Newsletter */}
           <div className="lg:col-span-2">
-            <h4 className="text-sm font-bold text-white mb-3">الرسالة الهندسية</h4>
-            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-light mb-6">
-              نصمم بيئة جامعية غير تقليدية تحتضن العقول الهندسية الطموحة، ونوفر الدعم المعملي والبرمجي لتحويل الأفكار إلى حلول ملموسة تخدم المجتمع وتنافس عالمياً.
+            <h4 className="text-sm font-bold text-white mb-3">رسالة النادي الرسمية</h4>
+            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-light mb-6 text-balance">
+              {settings.mission}
             </p>
 
             <form onSubmit={handleSubscribe} className="space-y-2">
@@ -205,7 +206,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar: Copyright & Back to Top */}
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 font-mono gap-4">
           <div>
-            © 2026 النادي الهندسي. جميع الحقوق محفوظة — مصمم بأعلى معايير الإخراج الرقمي الحديث.
+            © 2026 النادي الهندسي — جامعة فلسطين (غزة). جميع الحقوق محفوظة.
           </div>
 
           <button

@@ -28,11 +28,26 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_SETTINGS: SiteSettings = {
-  heroTitle: 'نبني مهندس المستقبل',
-  heroHighlight: 'مهندس',
-  heroSubheadline1: 'من المعرفة إلى المهارة. من الفكرة إلى المشروع.',
-  heroSubheadline2: 'من الجامعة إلى المجتمع وسوق العمل.',
+  heroTitle: 'هندسة اليوم .. تصنع أثر الغد',
+  heroHighlight: 'أثر الغد',
+  heroSubheadline1: 'منصة طلابية رائدة لتمكين الطلبة وتطوير قدراتهم الأكاديمية والمهنية والشخصية، وربطهم بالابتكار وسوق العمل والمجتمع.',
+  heroSubheadline2: 'بيئة هندسية متكاملة تدعم طلبة الكليات والتخصصات المختلفة.',
   operatingSystemVersion: 'نظام التشغيل الهندسي v2.6',
+  clubNameAr: 'النادي الهندسي',
+  clubNameEn: 'UP Engineering Club',
+  universityNameAr: 'جامعة فلسطين',
+  universityNameEn: 'University of Palestine',
+  sloganAr: 'هندسة اليوم .. تصنع أثر الغد',
+  sloganEn: 'ENGINEERING TODAY .. IMPACT TOMORROW',
+  vision: 'أن يكون النادي الهندسي منصة طلابية رائدة لتمكين الطلبة وتطوير قدراتهم الأكاديمية والمهنية والشخصية، وربطهم بالابتكار وسوق العمل والمجتمع، وبناء جيل قادر على تحويل المعرفة والأفكار إلى أثر حقيقي.',
+  mission: 'نسعى إلى توفير بيئة هندسية متكاملة تدعم طلبة الكليات والتخصصات المختلفة من خلال تقديم الدورات والورش والبرامج التدريبية، وتنفيذ المشاريع والمسابقات، وبناء الشراكات مع المؤسسات وسوق العمل، وتمثيل صوت الطلبة ونقل احتياجاتهم وتطلعاتهم، بما يسهم في تطوير مهاراتهم وتعزيز فرصهم وتمكينهم من المشاركة الفاعلة في المجتمع.',
+  values: [
+    { id: 'v1', name: 'الابتكار', description: 'تحويل الأفكار الإبداعية إلى حلول هندسية تطبيقية ذات قيمة مضافة.', iconName: 'Lightbulb' },
+    { id: 'v2', name: 'التعاون', description: 'روح الفريق والعمل التكاملي بين مختلف الكليات والتخصصات الهندسية.', iconName: 'Users' },
+    { id: 'v3', name: 'التطوير', description: 'السعي المستمر لصقل المهارات الأكاديمية والتقنية ومواكبة أحدث الأدوات.', iconName: 'Settings' },
+    { id: 'v4', name: 'التمكين', description: 'إتاحة الفرص والموارد للطلبة للقيادة وبناء مشاريعهم الخاصة بثقة.', iconName: 'GraduationCap' },
+    { id: 'v5', name: 'الأثر', description: 'صناعة فارق ملموس في المجتمع وسوق العمل والبيئة الجامعية.', iconName: 'Target' }
+  ]
 };
 
 
@@ -240,7 +255,9 @@ class DataService {
   public getSettings(): SiteSettings {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      return raw ? JSON.parse(raw) : DEFAULT_SETTINGS;
+      if (!raw) return DEFAULT_SETTINGS;
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_SETTINGS, ...parsed };
     } catch {
       return DEFAULT_SETTINGS;
     }
