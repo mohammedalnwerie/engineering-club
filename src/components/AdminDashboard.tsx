@@ -4,6 +4,7 @@ import { supabaseBridge } from '../services/supabaseClient';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
+import { CommitteeBadgeModal } from './CommitteeBadgeModal';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import type {
   ProjectCaseStudy,
@@ -212,6 +213,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
   // Executive Badge state
   const [viewingLeaderBadge, setViewingLeaderBadge] = useState<LeaderMember | null>(null);
+  const [viewingCommitteeApp, setViewingCommitteeApp] = useState<StoredApplication | null>(null);
 
   // Colleges sub-tab
   const [collegeSubTab, setCollegeSubTab] = useState<'colleges' | 'majors'>('colleges');
@@ -1087,6 +1089,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                     title="إصدار وعرض بطاقة العضوية الرقمية"
                                   >
                                     <CreditCard className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+
+                                {app.status === 'تم القبول' && app.targetCommittee && !app.targetCommittee.includes('عامة') && (
+                                  <button
+                                    onClick={() => setViewingCommitteeApp(app)}
+                                    className="p-1.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-colors"
+                                    title="إصدار وعرض كرت عضو اللجنة التنفيذية الرسمية"
+                                  >
+                                    <Award className="w-3.5 h-3.5" />
                                   </button>
                                 )}
 
@@ -2118,6 +2130,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       );
                     })}
                 </div>
+
+                {/* Certified Committee Taskforce Section */}
+                <div className="mt-12 pt-8 border-t border-white/10">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] mb-1.5">
+                        <Users className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>EXECUTIVE COMMITTEES TASKFORCE // فرق العمل المعتمدة</span>
+                      </div>
+                      <h4 className="text-base font-bold text-white">كوادر وأعضاء اللجان التنفيذية المعتمدين</h4>
+                      <p className="text-xs text-gray-400">
+                        الطلبة المقبولون رسمياً في اللجان التنفيذية (فعاليات، علاقات وتدريب، إعلام) مع إمكانية استخراج كروت العضوية الرسمية لكل عضو.
+                      </p>
+                    </div>
+
+                    <div className="text-xs text-gray-400 font-mono bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+                      إجمالي الأعضاء باللجان: <span className="text-cyan-400 font-bold">{applications.filter((a) => a.status === 'تم القبول' && a.targetCommittee && !a.targetCommittee.includes('عامة')).length}</span>
+                    </div>
+                  </div>
+
+                  {/* Committees Roster */}
+                  {['لجنة الفعاليات', 'لجنة العلاقات والتدريب', 'اللجنة الإعلامية'].map((commGroup) => {
+                    const isEvt = commGroup.includes('الفعاليات');
+                    const isRel = commGroup.includes('العلاقات');
+                    const isMed = commGroup.includes('الإعلامية');
+
+                    const members = applications.filter((a) => {
+                      if (a.status !== 'تم القبول') return false;
+                      const c = a.targetCommittee || '';
+                      if (isEvt) return c.includes('فعاليات') || c.includes('events');
+                      if (isRel) return c.includes('علاقات') || c.includes('تدريب') || c.includes('training');
+                      if (isMed) return c.includes('إعلام') || c.includes('media');
+                      return false;
+                    });
+
+                    const commTitle = isEvt
+                      ? 'لجنة الفعاليات والأنشطة الهندسية ⚡'
+                      : isRel
+                      ? 'لجنة العلاقات العامة والتدريب 🤝'
+                      : 'اللجنة الإعلامية والإنتاج المرئي 🎨';
+
+                    const borderAccent = isEvt
+                      ? 'border-cyan-500/30'
+                      : isRel
+                      ? 'border-blue-500/30'
+                      : 'border-purple-500/30';
+
+                    return (
+                      <div key={commGroup} className={`mb-6 p-4 sm:p-5 rounded-2xl bg-black/40 border ${borderAccent}`}>
+                        <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+                          <h5 className="font-bold text-white text-sm flex items-center gap-2">
+                            <span>{commTitle}</span>
+                            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-white/5 text-gray-300">
+                              {members.length} أعضاء
+                            </span>
+                          </h5>
+                          <span className="text-[11px] text-gray-400 font-mono hidden sm:inline">
+                            {isEvt ? 'EVENTS & HACKATHONS' : isRel ? 'RELATIONS & TRAINING' : 'MEDIA & CONTENT'}
+                          </span>
+                        </div>
+
+                        {members.length === 0 ? (
+                          <div className="py-6 text-center text-xs text-gray-400">
+                            لا يوجد أعضاء معتمدين بعد في هذه اللجنة. يمكنك قبول طلبات الانضمام وتعيينهم في اللجان من قسم طلبات الانضمام.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {members.map((member) => (
+                              <div
+                                key={member.id}
+                                className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-cyan-400/50 transition-all flex flex-col justify-between"
+                              >
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold text-white truncate max-w-[160px]">
+                                      {member.fullName}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30">
+                                      {member.studentId}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-gray-300 truncate">{member.major}</div>
+                                  <div className="text-[10px] text-gray-400 truncate mb-3">{member.college} — {member.academicYear}</div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    sound.playClick();
+                                    setViewingCommitteeApp(member);
+                                  }}
+                                  className="w-full py-1.5 px-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                >
+                                  <Award className="w-3.5 h-3.5" />
+                                  <span>عرض كرت عضو اللجنة 🪪</span>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -2947,6 +3063,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <CreditCard className="w-4 h-4 text-emerald-400" />
                   <span>معاينة وإصدار بطاقة العضوية الإلكترونية الرسمية (Digital ID Badge)</span>
                 </button>
+
+                {inspectApp.targetCommittee && !inspectApp.targetCommittee.includes('عامة') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewingCommitteeApp(inspectApp);
+                    }}
+                    className="w-full mt-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 hover:from-cyan-500/30 hover:to-purple-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow-lg transition-all"
+                  >
+                    <Award className="w-4 h-4 text-cyan-400" />
+                    <span>إصدار بطاقة عضو اللجنة التنفيذية الرسمية ({inspectApp.targetCommittee}) 🪪</span>
+                  </button>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/10">
@@ -4359,6 +4488,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             isOpen={Boolean(viewingLeaderBadge)}
             leader={viewingLeaderBadge}
             onClose={() => setViewingLeaderBadge(null)}
+          />
+        )}
+
+        {/* Committee Member Credential Badge Modal */}
+        {viewingCommitteeApp && (
+          <CommitteeBadgeModal
+            isOpen={Boolean(viewingCommitteeApp)}
+            app={viewingCommitteeApp}
+            onClose={() => setViewingCommitteeApp(null)}
           />
         )}
 

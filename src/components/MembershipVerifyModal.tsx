@@ -13,8 +13,10 @@ import {
   Printer,
   Copy,
   Download,
-  ArrowLeft
+  ArrowLeft,
+  Award
 } from 'lucide-react';
+import { CommitteeBadgeModal } from './CommitteeBadgeModal';
 
 interface MembershipVerifyModalProps {
   isOpen: boolean;
@@ -32,6 +34,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
   const [matchedApp, setMatchedApp] = useState<StoredApplication | null>(null);
   const [copied, setCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showCommitteeBadge, setShowCommitteeBadge] = useState(false);
 
   useEffect(() => {
     if (initialCode) {
@@ -244,6 +247,20 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                       <span>{isExporting ? 'جاري تجهيز الصورة...' : 'تحميل البطاقة كصورة رسمية عالية الدقة (PNG) 🖼️'}</span>
                     </button>
 
+                    {matchedApp.targetCommittee && !matchedApp.targetCommittee.includes('عامة') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sound.playClick();
+                          setShowCommitteeBadge(true);
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500/20 via-cyan-500/20 to-blue-500/20 hover:from-purple-500/30 hover:to-blue-500/30 border border-cyan-400/50 text-cyan-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow transition-all"
+                      >
+                        <Award className="w-4 h-4 text-cyan-400" />
+                        <span>عرض كرت عضو اللجنة التنفيذية الرسمي ({matchedApp.targetCommittee}) 🪪</span>
+                      </button>
+                    )}
+
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -322,6 +339,14 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
           </div>
         )}
       </div>
+
+      {showCommitteeBadge && matchedApp && (
+        <CommitteeBadgeModal
+          isOpen={showCommitteeBadge}
+          app={matchedApp}
+          onClose={() => setShowCommitteeBadge(false)}
+        />
+      )}
     </div>
   );
 };

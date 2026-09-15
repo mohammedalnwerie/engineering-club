@@ -36,7 +36,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
     { label: 'المشاريع', href: '#projects' },
     { label: 'الفعاليات', href: '#events' },
     { label: 'القيادة', href: '#leadership' },
-    { label: 'انضم إلينا', href: '#join' },
   ];
 
   const handleNavClick = (href: string) => {
@@ -85,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
         </nav>
 
         {/* Action Controls: Admin + Sound Toggle + Join Button */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 lg:gap-2.5 shrink-0">
           {/* Membership Verification Modal trigger */}
           <button
             onClick={() => {
@@ -93,23 +92,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
               if (onOpenVerify) onOpenVerify();
             }}
             title="التحقق من صحة بطاقات العضوية الرسمية"
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-emerald-400 text-xs font-mono text-emerald-300 hover:text-white transition-all cursor-pointer"
+            className="hidden md:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-emerald-400 text-xs font-mono text-emerald-300 hover:text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>التحقق من العضوية</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="whitespace-nowrap">التحقق</span>
           </button>
 
-                    {/* Complaints & Suggestions trigger */}
+          {/* Complaints & Suggestions trigger */}
           <button
             onClick={() => {
               sound.playClick();
               if (onOpenComplaints) onOpenComplaints();
             }}
             title="صندوق الشكاوى والمقترحات والتحسين"
-            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-amber-400 text-xs font-mono text-amber-300 hover:text-white transition-all cursor-pointer"
+            className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-amber-400 text-xs font-mono text-amber-300 hover:text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
-            <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-            <span>الشكاوى والمقترحات</span>
+            <MessageSquare className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="whitespace-nowrap">الشكاوى</span>
           </button>
 
           {/* Admin Control Center HUD trigger */}
@@ -119,17 +118,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
               if (onOpenAdmin) onOpenAdmin();
             }}
             title="لوحة الإدارة الهندسية والتحكم في البيانات"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-cyan-400 text-xs font-mono text-cyan-300 hover:text-white transition-all cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-cyan-400 text-xs font-mono text-cyan-300 hover:text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
-            <ShieldAlert className="w-3.5 h-3.5 text-cyan-400" />
-            <span>لوحة الإدارة</span>
+            <ShieldAlert className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span className="whitespace-nowrap">لوحة الإدارة</span>
           </button>
 
           {/* Sound FX Synthesizer Toggle */}
           <button
             onClick={toggleSound}
             title={isMuted ? 'تفعيل المؤثرات الصوتية التقنية' : 'كتم المؤثرات الصوتية'}
-            className="p-2 rounded-xl bg-white/[0.04] border border-white/10 hover:border-cyan-500/40 text-gray-400 hover:text-cyan-400 transition-all cursor-pointer"
+            className="p-2 rounded-xl bg-white/[0.04] border border-white/10 hover:border-cyan-500/40 text-gray-400 hover:text-cyan-400 transition-all cursor-pointer shrink-0"
           >
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
           </button>
@@ -145,10 +144,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
               }
             }}
             onMouseEnter={() => sound.playHover()}
-            className="relative group overflow-hidden px-4 sm:px-5 py-2 rounded-xl font-medium text-sm text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_0_20px_rgba(22,163,74,0.35)] hover:shadow-[0_0_30px_rgba(22,163,74,0.55)] cursor-pointer flex items-center gap-2 font-bold"
+            className="relative group overflow-hidden px-3 sm:px-4 lg:px-5 py-2 rounded-xl font-medium text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-[0_0_20px_rgba(22,163,74,0.35)] hover:shadow-[0_0_30px_rgba(22,163,74,0.55)] cursor-pointer flex items-center gap-1.5 sm:gap-2 font-bold whitespace-nowrap shrink-0"
           >
             <span>انضم للنادي</span>
-            <ArrowUpRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <ArrowUpRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 shrink-0" />
           </button>
 
           {/* Mobile Menu Trigger */}
