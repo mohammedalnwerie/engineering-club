@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { StoredApplication } from '../types';
 import { sound } from '../utils/soundEngine';
+import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import {
   X,
   Search,
@@ -11,6 +12,7 @@ import {
   ShieldCheck,
   Printer,
   Copy,
+  Download,
   ArrowLeft
 } from 'lucide-react';
 
@@ -29,6 +31,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
   const [searched, setSearched] = useState(false);
   const [matchedApp, setMatchedApp] = useState<StoredApplication | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (initialCode) {
@@ -224,34 +227,48 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
+                  {/* Actions: Export PNG & Print PDF */}
+                  <div className="flex flex-col gap-2 pt-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        sound.playClick();
-                        window.print();
+                      disabled={isExporting}
+                      onClick={async () => {
+                        setIsExporting(true);
+                        const cleanId = matchedApp.studentId || 'PASS';
+                        await exportCardAsImage('verified-member-card', `UP-Member-Pass-${cleanId}.png`);
+                        setIsExporting(false);
                       }}
-                      className="flex-1 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold text-xs cursor-pointer shadow flex items-center justify-center gap-1.5 transition-all"
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs cursor-pointer shadow flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
                     >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>طباعة أو حفظ البطاقة PDF</span>
+                      <Download className="w-4 h-4" />
+                      <span>{isExporting ? 'جاري تجهيز الصورة...' : 'تحميل البطاقة كصورة رسمية عالية الدقة (PNG) 🖼️'}</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sound.playSuccess();
-                        navigator.clipboard.writeText(verifyUrl);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 3000);
-                      }}
-                      className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-300 text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5"
-                      title="نسخ رابط التحقق المباشر"
-                    >
-                      <Copy className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>{copied ? 'تم النسخ!' : 'نسخ الرابط'}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => printCardAsPdf()}
+                        className="flex-1 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>طباعة / حفظ كـ PDF 📄</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sound.playSuccess();
+                          navigator.clipboard.writeText(verifyUrl);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 3000);
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-300 text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5"
+                        title="نسخ رابط التحقق المباشر"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>{copied ? 'تم النسخ!' : 'نسخ الرابط'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (

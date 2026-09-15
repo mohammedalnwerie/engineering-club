@@ -3,7 +3,8 @@ import { dataService } from '../services/dataService';
 import type { ClubApplication } from '../types';
 import { sound } from '../utils/soundEngine';
 
-import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck } from 'lucide-react';
+import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck, Download } from 'lucide-react';
+import { exportCardAsImage } from '../utils/cardExporter';
 import confetti from 'canvas-confetti';
 
 
@@ -510,7 +511,7 @@ export const JoinClubSection: React.FC = () => {
             </div>
 
             {/* Holographic ID Badge */}
-            <div className="w-full max-w-sm rounded-3xl p-6 bg-gradient-to-b from-[#0f172a] to-[#07090e] border border-cyan-400/40 shadow-[0_0_35px_rgba(0,240,255,0.2)] relative overflow-hidden text-right font-mono">
+            <div id="live-club-badge-preview" className="w-full max-w-sm rounded-3xl p-6 bg-gradient-to-b from-[#0f172a] to-[#07090e] border border-cyan-400/40 shadow-[0_0_35px_rgba(0,240,255,0.2)] relative overflow-hidden text-right font-mono">
               {/* Lanyard Clip Simulation Hole */}
               <div className="w-12 h-2.5 bg-black/80 rounded-full mx-auto mb-4 border border-white/20" />
 
@@ -582,7 +583,22 @@ export const JoinClubSection: React.FC = () => {
               </div>
             </div>
 
-            <p className="text-xs text-gray-400 mt-4 text-center max-w-xs leading-relaxed">
+            {/* Live Card Export Action */}
+            <div className="w-full max-w-sm mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClick();
+                  exportCardAsImage('live-club-badge-preview', `UP-Student-Pass-Preview.png`);
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-cyan-950/60 hover:bg-cyan-500/20 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5 text-cyan-400" />
+                <span>تحميل معاينة البطاقة كصورة (PNG) 🖼️</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-400 mt-3 text-center max-w-xs leading-relaxed">
               معاينة فورية للبطاقة — يتم اعتماد وتوليد بطاقة العضوية الإلكترونية الرسمية بمجرد موافقة إدارة النادي على الطلب.
             </p>
           </div>

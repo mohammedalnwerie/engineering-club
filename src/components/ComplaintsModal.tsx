@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { dataService } from '../services/dataService';
 import type { ComplaintItem } from '../types';
 import { sound } from '../utils/soundEngine';
-import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check } from 'lucide-react';
+import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check, Camera, Upload, Trash2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ComplaintsModalProps {
@@ -23,6 +23,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [attachmentImage, setAttachmentImage] = useState<string | null>(null);
 
   // Submission result state
   const [submittedTicket, setSubmittedTicket] = useState<ComplaintItem | null>(null);
@@ -32,6 +33,51 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const [trackQuery, setTrackQuery] = useState('');
   const [foundTicket, setFoundTicket] = useState<ComplaintItem | null>(null);
   const [trackSearched, setTrackSearched] = useState(false);
+
+  const handleImageUpload = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('الرجاء اختيار ملف صورة مدعوم (JPG, PNG, WebP)');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const raw = e.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const MAX_DIM = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > MAX_DIM) {
+              height = Math.round(height * (MAX_DIM / width));
+              width = MAX_DIM;
+            }
+          } else {
+            if (height > MAX_DIM) {
+              width = Math.round(width * (MAX_DIM / height));
+              height = MAX_DIM;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setAttachmentImage(canvas.toDataURL('image/jpeg', 0.85));
+          } else {
+            setAttachmentImage(raw);
+          }
+          sound.playSuccess();
+        } catch {
+          setAttachmentImage(raw);
+        }
+      };
+      img.src = raw;
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (!isOpen) return null;
 
@@ -50,6 +96,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
       subject: subject.trim(),
       message: message.trim(),
       isAnonymous,
+      attachmentImage: attachmentImage || undefined,
     });
 
     setSubmittedTicket(newComplaint);
@@ -86,6 +133,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
     setSubject('');
     setMessage('');
     setIsAnonymous(false);
+    setAttachmentImage(null);
   };
 
   return (
@@ -321,6 +369,72 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                   />
                 </div>
 
+                {/* Attachment Image Dropzone */}
+                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-gray-300 font-mono text-[11px] flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>إرفاق صورة أو لقطة شاشة تدعم الطلب (اختياري 📸):</span>
+                    </label>
+                    {attachmentImage && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sound.playClick();
+                          setAttachmentImage(null);
+                        }}
+                        className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1 cursor-pointer font-sans"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>حذف الصورة</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {attachmentImage ? (
+                    <div className="relative rounded-xl overflow-hidden border border-cyan-500/40 bg-black/60 p-2.5 flex items-center gap-3.5">
+                      <img
+                        src={attachmentImage}
+                        alt="Attached preview"
+                        className="w-16 h-16 rounded-lg object-cover border border-white/10 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => window.open(attachmentImage, '_blank')}
+                        title="انقر لمعاينة الصورة بالحجم الكامل"
+                      />
+                      <div className="flex-1 min-w-0 text-[11px] text-gray-300 font-sans">
+                        <div className="text-emerald-400 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>تم إرفاق الصورة وضغطها بنجاح</span>
+                        </div>
+                        <div className="text-gray-400 text-[10px] mt-0.5">ستُرسل كدليل مرفق مع التذكرة لمساعدة فريق المتابعة</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="border-2 border-dashed border-white/15 hover:border-cyan-400/50 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all bg-white/[0.01] hover:bg-white/[0.03] group">
+                      <Upload className="w-5 h-5 text-gray-400 group-hover:text-cyan-400 mb-1.5 transition-colors" />
+                      <span className="text-xs text-gray-300 font-sans font-medium">
+                        اضغط لرفع لقطة شاشة أو صورة من جهازك
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-mono mt-0.5">
+                        PNG, JPG, WebP — يتم تحسين الحجم تلقائياً
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onClick={(e) => {
+                          (e.target as HTMLInputElement).value = '';
+                        }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleImageUpload(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
                 {/* Submit Action */}
                 <div className="pt-2">
                   <button
@@ -399,6 +513,23 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                         {foundTicket.message}
                       </p>
                     </div>
+
+                    {/* Attached Image Display */}
+                    {foundTicket.attachmentImage && (
+                      <div className="p-3 rounded-xl bg-black/40 border border-white/10">
+                        <div className="text-[11px] font-mono text-gray-400 mb-2 flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>الصورة المرفقة مع البلاغ:</span>
+                        </div>
+                        <img
+                          src={foundTicket.attachmentImage}
+                          alt="Attached evidence"
+                          className="max-h-48 max-w-full rounded-lg object-contain border border-white/10 cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => window.open(foundTicket.attachmentImage, '_blank')}
+                          title="انقر لفتح الصورة بالحجم الكامل"
+                        />
+                      </div>
+                    )}
 
                     {/* Metadata */}
                     <div className="flex flex-wrap items-center justify-between text-[11px] text-gray-400 pt-1">

@@ -196,3 +196,27 @@
   }
 }
 
+
+/* Official Card & Badge Print Styles for Clean PDF Export */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, footer, main, nav, .no-print, [data-export-ignore] {
+    display: none !important;
+  }
+  #printable-executive-badge,
+  #printable-member-badge,
+  #verified-member-card,
+  #event-confirmed-ticket {
+    display: block !important;
+    position: static !important;
+    margin: 20px auto !important;
+    max-width: 480px !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

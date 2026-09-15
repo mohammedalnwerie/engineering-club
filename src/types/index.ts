@@ -186,6 +186,7 @@ export interface ComplaintItem {
   category: 'complaint' | 'suggestion' | 'inquiry' | 'academic' | 'facilities' | 'club_activities' | 'other';
   subject: string;
   message: string;
+  attachmentImage?: string; // Base64 data URL of student's screenshot/photo
   isAnonymous: boolean;
   status: 'pending' | 'in-progress' | 'resolved' | 'rejected' | 'new' | 'in_progress';
   adminNotes?: string;

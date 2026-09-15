@@ -4,6 +4,7 @@ import { supabaseBridge } from '../services/supabaseClient';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
+import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import type {
   ProjectCaseStudy,
   EventItem,
@@ -1757,6 +1758,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                   ? 'تم الحل والمعالجة ✓'
                                   : 'مرفوض'}
                               </span>
+
+                              {/* Photo Attachment Badge */}
+                              {item.attachmentImage && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 font-mono">
+                                  <Camera className="w-3 h-3 text-cyan-400" />
+                                  <span>مرفق صورة 📸</span>
+                                </span>
+                              )}
                             </div>
 
                             <div className="font-mono text-xs text-gray-400 flex items-center gap-2">
@@ -3089,16 +3098,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-2.5 mt-6">
+                {/* Export Card as PNG Image */}
                 <button
                   type="button"
                   onClick={() => {
-                    sound.playClick();
-                    window.print();
+                    const sId = viewingBadgeApp.studentId || 'ID';
+                    exportCardAsImage('printable-member-badge', `UP-Member-Badge-${sId}.png`);
                   }}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(22,163,74,0.3)] flex items-center justify-center gap-2 transition-all"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(22,163,74,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
                 >
-                  <Printer className="w-4 h-4" />
-                  <span>طباعة أو حفظ البطاقة كـ PDF</span>
+                  <Download className="w-4 h-4" />
+                  <span>تحميل البطاقة كصورة رسمية عالية الدقة (PNG) 🖼️</span>
+                </button>
+
+                {/* Print or Save as PDF */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    printCardAsPdf();
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2 transition-all"
+                >
+                  <Printer className="w-4 h-4 text-emerald-400" />
+                  <span>طباعة أو حفظ البطاقة كـ PDF 📄</span>
                 </button>
 
                 <button
@@ -4206,6 +4228,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   {inspectComplaint.message}
                 </div>
               </div>
+
+              {/* Attached Image Preview from Student if available */}
+              {inspectComplaint.attachmentImage && (
+                <div className="mb-4 p-3.5 rounded-2xl bg-black/40 border border-white/10">
+                  <div className="text-xs font-mono text-cyan-400 mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 font-bold">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>الصورة المرفقة من الطالب (دليل البلاغ):</span>
+                    </span>
+                    <a
+                      href={inspectComplaint.attachmentImage}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-cyan-300 underline font-sans hover:text-cyan-200"
+                    >
+                      فتح بالحجم الكامل ↗
+                    </a>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-white/10 bg-black/60 p-2 flex justify-center">
+                    <img
+                      src={inspectComplaint.attachmentImage}
+                      alt="Complaint attachment"
+                      className="max-h-64 max-w-full rounded-lg object-contain cursor-pointer hover:opacity-95 transition-opacity"
+                      onClick={() => window.open(inspectComplaint.attachmentImage, '_blank')}
+                      title="انقر لفتح الصورة بالحجم الكامل في نافذة جديدة"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Admin Action & Notes */}
               <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 mb-4 space-y-3">

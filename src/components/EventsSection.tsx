@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { EventItem, EventTicket } from '../types';
 import { sound } from '../utils/soundEngine';
-import { Calendar, Clock, MapPin, Users, Ticket, CheckCircle, X, QrCode, Sparkles, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Ticket, CheckCircle, X, QrCode, Sparkles, ShieldCheck, AlertCircle, ArrowLeft, Download, Printer } from 'lucide-react';
+import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import confetti from 'canvas-confetti';
 
 export const EventsSection: React.FC = () => {
@@ -394,12 +395,39 @@ export const EventsSection: React.FC = () => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={closeModal}
-                    className="mt-6 px-6 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-bold text-white transition-colors cursor-pointer"
-                  >
-                    إغلاق التذكرة
-                  </button>
+                  {/* Ticket Export & Action Buttons */}
+                  <div className="flex flex-col gap-2 mt-5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tktNum = issuedTicket?.ticketNumber || 'TKT';
+                        exportCardAsImage('event-confirmed-ticket', `UP-Event-Ticket-${tktNum}.png`);
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs cursor-pointer shadow flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>تحميل التذكرة كصورة رسمية (PNG) 🖼️</span>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => printCardAsPdf()}
+                        className="flex-1 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>طباعة / حفظ PDF 📄</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className="px-5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        إغلاق
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

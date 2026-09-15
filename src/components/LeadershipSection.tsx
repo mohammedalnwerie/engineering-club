@@ -135,16 +135,16 @@ export const LeadershipSection: React.FC = () => {
                     className="rounded-2xl glass-panel border border-blue-500/30 p-5 text-right relative overflow-hidden hover:border-blue-400/60 transition-all flex flex-col justify-between"
                   >
                     <div>
-                      <div className="flex items-center gap-3.5 mb-3">
+                      <div className="flex items-start gap-3.5 mb-3">
                         <img
                           src={exec.avatar}
                           alt={exec.name}
-                          className="w-14 h-14 rounded-xl object-cover border border-blue-400/40 shrink-0"
+                          className="w-14 h-14 rounded-2xl object-cover border border-blue-400/40 shrink-0 shadow-md"
                         />
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-white truncate">{exec.name}</h4>
-                          <div className="text-xs text-blue-400 font-medium truncate">{exec.role}</div>
-                          <div className="text-[11px] text-gray-400 mt-0.5 truncate">{exec.email}</div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-bold text-white leading-snug break-words">{exec.name}</h4>
+                          <div className="text-xs text-blue-400 font-semibold leading-snug mt-1 break-words">{exec.role}</div>
+                          <div className="text-[11px] text-gray-400 mt-1 font-mono break-all">{exec.email}</div>
                         </div>
                       </div>
                       <p className="text-xs text-gray-300 italic mb-3">"{exec.quote}"</p>
@@ -188,16 +188,16 @@ export const LeadershipSection: React.FC = () => {
                     className="rounded-2xl glass-panel border border-amber-500/30 p-5 text-right relative overflow-hidden hover:border-amber-400/60 transition-all flex flex-col justify-between"
                   >
                     <div>
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-start gap-3 mb-3">
                         <img
                           src={comm.avatar}
                           alt={comm.name}
-                          className="w-13 h-13 rounded-xl object-cover border border-amber-400/40 shrink-0"
+                          className="w-13 h-13 rounded-2xl object-cover border border-amber-400/40 shrink-0 shadow-md"
                         />
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-white leading-tight truncate">{comm.name}</h4>
-                          <div className="text-[11px] text-amber-400 mt-0.5 font-medium truncate">{comm.role}</div>
-                          <div className="text-[10px] text-gray-400 truncate">{comm.department}</div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-bold text-white leading-snug break-words">{comm.name}</h4>
+                          <div className="text-[11px] text-amber-400 mt-1 font-semibold leading-snug break-words">{comm.role}</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5 font-mono">{comm.department}</div>
                         </div>
                       </div>
                       <p className="text-xs text-gray-400 italic mb-3">"{comm.quote}"</p>

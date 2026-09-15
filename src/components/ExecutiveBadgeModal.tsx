@@ -1,7 +1,8 @@
 import React from 'react';
 import type { LeaderMember } from '../types';
 import { sound } from '../utils/soundEngine';
-import { X, ShieldCheck, Printer, Award, Sparkles } from 'lucide-react';
+import { X, ShieldCheck, Printer, Award, Sparkles, Download } from 'lucide-react';
+import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 
 interface ExecutiveBadgeModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
 
   const isExecutive = leader.tier === 'executive';
   const badgeSerial = `UP-EXEC-2026-${leader.id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`;
+  const [isExporting, setIsExporting] = React.useState(false);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
@@ -83,13 +85,13 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[10px] text-gray-400 font-sans">الاسم الكريم:</div>
-              <div className="text-base sm:text-lg font-black text-white font-sans truncate">
+              <div className="text-base sm:text-lg font-black text-white font-sans leading-snug">
                 {leader.name}
               </div>
-              <div className="text-xs font-bold text-cyan-300 font-sans mt-0.5 truncate">
+              <div className="text-xs font-bold text-cyan-300 font-sans mt-0.5 leading-tight">
                 {leader.role}
               </div>
-              <div className="text-[11px] text-emerald-400 font-sans mt-0.5 truncate">
+              <div className="text-[11px] text-emerald-400 font-sans mt-0.5 leading-tight">
                 {leader.department}
               </div>
             </div>
@@ -153,18 +155,32 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons: Export PNG & Print PDF */}
         <div className="flex flex-col gap-2.5 mt-6">
+          {/* Export PNG Image Button */}
           <button
             type="button"
-            onClick={() => {
-              sound.playClick();
-              window.print();
+            disabled={isExporting}
+            onClick={async () => {
+              setIsExporting(true);
+              const cleanName = leader.name.replace(/[^a-zA-Z0-9؀-ۿ]/g, '-');
+              await exportCardAsImage('printable-executive-badge', `UP-Executive-Pass-${cleanName}.png`);
+              setIsExporting(false);
             }}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.3)] flex items-center justify-center gap-2 transition-all"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_25px_rgba(0,240,255,0.35)] flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
-            <Printer className="w-4 h-4" />
-            <span>طباعة بطاقة التكليف القيادية الرسمية</span>
+            <Download className="w-4 h-4" />
+            <span>{isExporting ? 'جاري تجهيز الصورة...' : 'تصدير وتحميل كصورة رسمية عالية الدقة (PNG) 🖼️'}</span>
+          </button>
+
+          {/* Print / Save as PDF Button */}
+          <button
+            type="button"
+            onClick={() => printCardAsPdf()}
+            className="w-full py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2 transition-all"
+          >
+            <Printer className="w-4 h-4 text-cyan-400" />
+            <span>طباعة / حفظ كـ ملف PDF 📄</span>
           </button>
 
           <button
@@ -173,9 +189,9 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
               sound.playClick();
               onClose();
             }}
-            className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
+            className="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs transition-colors cursor-pointer"
           >
-            إغلاق
+            إغلاق النافذة
           </button>
         </div>
       </div>

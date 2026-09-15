@@ -540,7 +540,7 @@ class DataService {
       ...data,
       id: 'cmp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
       ticketNumber: `UP-CMP-2026-${randomSuffix}`,
-      status: 'new',
+      status: 'pending',
       createdAt: new Date().toISOString()
     };
     complaints.unshift(newComplaint);
