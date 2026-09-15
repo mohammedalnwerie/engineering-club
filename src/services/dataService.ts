@@ -78,17 +78,47 @@ class DataService {
   private initDefaults() {
     if (typeof window === 'undefined') return;
 
+    // Self-healing migration: unwrap any legacy double-stringified entries in localStorage
+    for (const key of Object.values(STORAGE_KEYS)) {
+      const raw = localStorage.getItem(key);
+      if (raw && (raw.startsWith('"[{') || raw.startsWith('"{') || raw.startsWith('\"'))) {
+        try {
+          let unwrapped = JSON.parse(raw);
+          while (typeof unwrapped === 'string') {
+            unwrapped = JSON.parse(unwrapped);
+          }
+          localStorage.setItem(key, JSON.stringify(unwrapped));
+        } catch {}
+      }
+    }
+
     if (!localStorage.getItem(STORAGE_KEYS.PROJECTS)) {
-      safeStorage.set(STORAGE_KEYS.PROJECTS, JSON.stringify(FLAGSHIP_PROJECTS));
+      safeStorage.set(STORAGE_KEYS.PROJECTS, FLAGSHIP_PROJECTS);
     }
     if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
-      safeStorage.set(STORAGE_KEYS.EVENTS, JSON.stringify(CLUB_EVENTS));
+      safeStorage.set(STORAGE_KEYS.EVENTS, CLUB_EVENTS);
     }
     if (!localStorage.getItem(STORAGE_KEYS.COURSES)) {
-      safeStorage.set(STORAGE_KEYS.COURSES, JSON.stringify(TRAINING_COURSES));
+      safeStorage.set(STORAGE_KEYS.COURSES, TRAINING_COURSES);
     }
     if (!localStorage.getItem(STORAGE_KEYS.APPLICATIONS)) {
       const sampleApplications: StoredApplication[] = [
+        {
+          id: 'app-sample-demo',
+          fullName: 'مهندس تجريبي (عضو معتمد)',
+          studentId: '21222',
+          email: 'demo.engineer@up.edu.ps',
+          phone: '0599000000',
+          academicYear: 'السنة الثالثة',
+          college: 'كلية هندسة برمجيات وذكاء اصطناعي',
+          major: 'هندسة برمجيات ونظم ذكية',
+          skills: ['Python / AI', 'Fullstack Web (React / Node)', 'Git & DevOps'],
+          personalStatement: 'عضوية تجريبية معتمدة لاختبار منصة وفعاليات النادي الهندسي.',
+          targetCommittee: 'لجنة الفعاليات والأنشطة',
+          weeklyCommitmentHours: 8,
+          status: 'تم القبول',
+          submittedAt: '2026-10-01T12:00:00Z',
+        },
         {
           id: 'app-sample-1',
           fullName: 'فيصل بن خالد القحطاني',
@@ -122,7 +152,7 @@ class DataService {
           submittedAt: '2026-10-03T10:15:00Z',
         }
       ];
-      safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(sampleApplications));
+      safeStorage.set(STORAGE_KEYS.APPLICATIONS, sampleApplications);
     }
     if (!localStorage.getItem(STORAGE_KEYS.TICKETS)) {
       const sampleTickets: EventTicket[] = [
@@ -149,33 +179,29 @@ class DataService {
           checkedIn: false,
         }
       ];
-      safeStorage.set(STORAGE_KEYS.TICKETS, JSON.stringify(sampleTickets));
+      safeStorage.set(STORAGE_KEYS.TICKETS, sampleTickets);
     }
     if (!localStorage.getItem(STORAGE_KEYS.LEADERSHIP)) {
-      safeStorage.set(STORAGE_KEYS.LEADERSHIP, JSON.stringify(LEADERSHIP_MEMBERS));
+      safeStorage.set(STORAGE_KEYS.LEADERSHIP, LEADERSHIP_MEMBERS);
     }
     if (!localStorage.getItem(STORAGE_KEYS.COLLEGES)) {
-      safeStorage.set(STORAGE_KEYS.COLLEGES, JSON.stringify(COLLEGES));
+      safeStorage.set(STORAGE_KEYS.COLLEGES, COLLEGES);
     }
     if (!localStorage.getItem(STORAGE_KEYS.MAJORS)) {
-      safeStorage.set(STORAGE_KEYS.MAJORS, JSON.stringify(MAJORS));
+      safeStorage.set(STORAGE_KEYS.MAJORS, MAJORS);
     }
     if (!localStorage.getItem(STORAGE_KEYS.SPOTLIGHT)) {
-      safeStorage.set(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(STUDENT_SPOTLIGHT));
+      safeStorage.set(STORAGE_KEYS.SPOTLIGHT, STUDENT_SPOTLIGHT);
     }
     if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
-      safeStorage.set(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
+      safeStorage.set(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
     }
   }
 
   // --- LEADERSHIP MEMBERS ---
   public getLeadership(): LeaderMember[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.LEADERSHIP);
-      return raw ? JSON.parse(raw) : LEADERSHIP_MEMBERS;
-    } catch {
-      return LEADERSHIP_MEMBERS;
-    }
+    const list = safeStorage.get<LeaderMember[]>(STORAGE_KEYS.LEADERSHIP, LEADERSHIP_MEMBERS);
+    return Array.isArray(list) ? list : LEADERSHIP_MEMBERS;
   }
 
   public saveLeader(member: LeaderMember) {
@@ -186,24 +212,20 @@ class DataService {
     } else {
       list.push(member);
     }
-    safeStorage.set(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.LEADERSHIP, list);
     this.notify();
   }
 
   public deleteLeader(id: string) {
     const list = this.getLeadership().filter((m) => m.id !== id);
-    safeStorage.set(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.LEADERSHIP, list);
     this.notify();
   }
 
   // --- COLLEGES ---
   public getColleges(): College[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.COLLEGES);
-      return raw ? JSON.parse(raw) : COLLEGES;
-    } catch {
-      return COLLEGES;
-    }
+    const list = safeStorage.get<College[]>(STORAGE_KEYS.COLLEGES, COLLEGES);
+    return Array.isArray(list) ? list : COLLEGES;
   }
 
   public saveCollege(college: College) {
@@ -214,18 +236,14 @@ class DataService {
     } else {
       list.push(college);
     }
-    safeStorage.set(STORAGE_KEYS.COLLEGES, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.COLLEGES, list);
     this.notify();
   }
 
   // --- MAJORS ---
   public getMajors(): Major[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.MAJORS);
-      return raw ? JSON.parse(raw) : MAJORS;
-    } catch {
-      return MAJORS;
-    }
+    const list = safeStorage.get<Major[]>(STORAGE_KEYS.MAJORS, MAJORS);
+    return Array.isArray(list) ? list : MAJORS;
   }
 
   public saveMajor(major: Major) {
@@ -236,51 +254,37 @@ class DataService {
     } else {
       list.push(major);
     }
-    safeStorage.set(STORAGE_KEYS.MAJORS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.MAJORS, list);
     this.notify();
   }
 
   // --- SPOTLIGHT ---
   public getSpotlight(): StudentSpotlightData {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.SPOTLIGHT);
-      return raw ? JSON.parse(raw) : STUDENT_SPOTLIGHT;
-    } catch {
-      return STUDENT_SPOTLIGHT;
-    }
+    const data = safeStorage.get<StudentSpotlightData>(STORAGE_KEYS.SPOTLIGHT, STUDENT_SPOTLIGHT);
+    return data && typeof data === "object" ? data : STUDENT_SPOTLIGHT;
   }
 
   public saveSpotlight(data: StudentSpotlightData) {
-    safeStorage.set(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(data));
+    safeStorage.set(STORAGE_KEYS.SPOTLIGHT, data);
     this.notify();
   }
 
   // --- SITE SETTINGS ---
   public getSettings(): SiteSettings {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      if (!raw) return DEFAULT_SETTINGS;
-      const parsed = JSON.parse(raw);
-      return { ...DEFAULT_SETTINGS, ...parsed };
-    } catch {
-      return DEFAULT_SETTINGS;
-    }
+    const data = safeStorage.get<SiteSettings>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+    return data && typeof data === "object" ? { ...DEFAULT_SETTINGS, ...data } : DEFAULT_SETTINGS;
   }
 
   public saveSettings(data: SiteSettings) {
-    safeStorage.set(STORAGE_KEYS.SETTINGS, JSON.stringify(data));
+    safeStorage.set(STORAGE_KEYS.SETTINGS, data);
     this.notify();
   }
 
 
   // --- PROJECTS ---
   public getProjects(): ProjectCaseStudy[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.PROJECTS);
-      return raw ? JSON.parse(raw) : FLAGSHIP_PROJECTS;
-    } catch {
-      return FLAGSHIP_PROJECTS;
-    }
+    const list = safeStorage.get<ProjectCaseStudy[]>(STORAGE_KEYS.PROJECTS, FLAGSHIP_PROJECTS);
+    return Array.isArray(list) ? list : FLAGSHIP_PROJECTS;
   }
 
   public saveProject(project: ProjectCaseStudy) {
@@ -291,24 +295,20 @@ class DataService {
     } else {
       list.unshift(project);
     }
-    safeStorage.set(STORAGE_KEYS.PROJECTS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.PROJECTS, list);
     this.notify();
   }
 
   public deleteProject(id: string) {
     const list = this.getProjects().filter((p) => p.id !== id);
-    safeStorage.set(STORAGE_KEYS.PROJECTS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.PROJECTS, list);
     this.notify();
   }
 
   // --- EVENTS ---
   public getEvents(): EventItem[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.EVENTS);
-      return raw ? JSON.parse(raw) : CLUB_EVENTS;
-    } catch {
-      return CLUB_EVENTS;
-    }
+    const list = safeStorage.get<EventItem[]>(STORAGE_KEYS.EVENTS, CLUB_EVENTS);
+    return Array.isArray(list) ? list : CLUB_EVENTS;
   }
 
   public saveEvent(event: EventItem) {
@@ -319,28 +319,24 @@ class DataService {
     } else {
       list.unshift(event);
     }
-    safeStorage.set(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.EVENTS, list);
     this.notify();
   }
 
   public deleteEvent(id: string) {
     const list = this.getEvents().filter((e) => e.id !== id);
-    safeStorage.set(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.EVENTS, list);
     this.notify();
   }
 
   // --- TICKETS & ATTENDEES ---
   public getTickets(eventId?: string): EventTicket[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.TICKETS);
-      const all: EventTicket[] = raw ? JSON.parse(raw) : [];
-      if (eventId) {
-        return all.filter((t) => t.eventId === eventId);
-      }
-      return all;
-    } catch {
-      return [];
+    const list = safeStorage.get<EventTicket[]>(STORAGE_KEYS.TICKETS, []);
+    const all = Array.isArray(list) ? list : [];
+    if (eventId) {
+      return all.filter((t) => t.eventId === eventId);
     }
+    return all;
   }
 
   public bookTicket(eventId: string, attendeeName: string, studentId?: string): EventTicket {
@@ -394,19 +390,15 @@ class DataService {
     const target = tickets.find((t) => t.id === ticketId);
     if (!target) return false;
     target.checkedIn = !target.checkedIn;
-    safeStorage.set(STORAGE_KEYS.TICKETS, JSON.stringify(tickets));
+    safeStorage.set(STORAGE_KEYS.TICKETS, tickets);
     this.notify();
     return target.checkedIn;
   }
 
   // --- APPLICATIONS ---
   public getApplications(): StoredApplication[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.APPLICATIONS);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
+    const list = safeStorage.get<StoredApplication[]>(STORAGE_KEYS.APPLICATIONS, []);
+    return Array.isArray(list) ? list : [];
   }
 
   public submitApplication(app: ClubApplication): StoredApplication {
@@ -459,14 +451,14 @@ class DataService {
     const app = list.find((a) => a.id === id);
     if (app) {
       app.status = status;
-      safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+      safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
       this.notify();
     }
   }
 
   public deleteApplication(id: string) {
     const list = this.getApplications().filter((a) => a.id !== id);
-    safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
     this.notify();
   }
 
@@ -474,19 +466,15 @@ class DataService {
     const original = this.getApplications();
     const list = original.filter((a) => a.status !== 'مرفوض');
     const removedCount = original.length - list.length;
-    safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
     this.notify();
     return removedCount;
   }
 
   // --- TRAINING COURSES ---
   public getCourses(): TrainingCourse[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.COURSES);
-      return raw ? JSON.parse(raw) : TRAINING_COURSES;
-    } catch {
-      return TRAINING_COURSES;
-    }
+    const list = safeStorage.get<TrainingCourse[]>(STORAGE_KEYS.COURSES, TRAINING_COURSES);
+    return Array.isArray(list) ? list : TRAINING_COURSES;
   }
 
   public saveCourse(course: TrainingCourse) {
@@ -497,7 +485,7 @@ class DataService {
     } else {
       list.unshift(course);
     }
-    safeStorage.set(STORAGE_KEYS.COURSES, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.COURSES, list);
     this.notify();
   }
 
@@ -549,35 +537,31 @@ class DataService {
   }
 
   public getComplaints(): ComplaintItem[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.COMPLAINTS);
-    if (!raw) {
-      const initial: ComplaintItem[] = [
-        {
-          id: 'cmp-sample-1',
-          ticketNumber: 'UP-CMP-2026-1042',
-          studentName: 'محمد أحمد خليل',
-          studentId: '120230554',
-          email: 'mohammed.k@up.edu.ps',
-          phone: '0599000001',
-          college: 'كلية هندسة برمجيات وذكاء اصطناعي',
-          category: 'club_activities',
-          subject: 'اقتراح تنظيم ورشة عمل في أدوات الذكاء الاصطناعي التوليدي',
-          message: 'نرجو من لجنة العلاقات والتدريب تنظيم ورشة تدريبية عملية حول توظيف تقنيات الـ Prompt Engineering وأدوات الذكاء الاصطناعي في تسريع البرمجة للطلبة المبتدئين.',
-          isAnonymous: false,
-          status: 'resolved',
-          adminNotes: 'تمت إحالة المقترح للجنة التدريب وإدراجه ضمن خطة الورش القادمة للفصل الحالي.',
-          createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-      safeStorage.set(STORAGE_KEYS.COMPLAINTS, JSON.stringify(initial));
-      return initial;
+    const list = safeStorage.get<ComplaintItem[]>(STORAGE_KEYS.COMPLAINTS, []);
+    if (Array.isArray(list) && list.length > 0) {
+      return list;
     }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return [];
-    }
+    const initial: ComplaintItem[] = [
+      {
+        id: 'cmp-sample-1',
+        ticketNumber: 'UP-CMP-2026-1042',
+        studentName: 'محمد أحمد خليل',
+        studentId: '120230554',
+        email: 'mohammed.k@up.edu.ps',
+        phone: '0599000001',
+        college: 'كلية هندسة برمجيات وذكاء اصطناعي',
+        category: 'club_activities',
+        subject: 'اقتراح تنظيم ورشة عمل في أدوات الذكاء الاصطناعي التوليدي',
+        message: 'نرجو من لجنة العلاقات والتدريب تنظيم ورشة تدريبية عملية حول توظيف تقنيات الـ Prompt Engineering وأدوات الذكاء الاصطناعي في تسريع البرمجة للطلبة المبتدئين.',
+        isAnonymous: false,
+        status: 'resolved',
+        adminNotes: 'تمت إحالة المقترح للجنة التدريب وإدراجه ضمن خطة الورش القادمة للفصل الحالي.',
+        createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString()
+      }
+    ];
+    safeStorage.set(STORAGE_KEYS.COMPLAINTS, initial);
+    return initial;
   }
 
   public submitComplaint(data: Omit<ComplaintItem, 'id' | 'ticketNumber' | 'status' | 'createdAt'>): ComplaintItem {
@@ -611,7 +595,7 @@ class DataService {
         complaints[idx].adminNotes = adminNotes;
       }
       complaints[idx].updatedAt = new Date().toISOString();
-      safeStorage.set(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
+      safeStorage.set(STORAGE_KEYS.COMPLAINTS, complaints);
       this.notify();
       return complaints[idx];
     }
@@ -621,7 +605,7 @@ class DataService {
   public deleteComplaint(id: string): void {
     let complaints = this.getComplaints();
     complaints = complaints.filter(c => c.id !== id);
-    safeStorage.set(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
+    safeStorage.set(STORAGE_KEYS.COMPLAINTS, complaints);
     this.notify();
   }
 
@@ -636,7 +620,28 @@ class DataService {
     const cleanId = studentId.trim().toLowerCase();
     if (!cleanId) return { isMember: false, status: 'not_found' };
     const applications = this.getApplications();
-    const app = applications.find(a => (a.studentId && a.studentId.trim().toLowerCase() === cleanId) || a.id.toLowerCase() === cleanId);
+    let app = Array.isArray(applications) ? applications.find(a => (a.studentId && a.studentId.trim().toLowerCase() === cleanId) || a.id.toLowerCase() === cleanId) : undefined;
+    
+    // Fallback demo account for instant validation testing (e.g. ID: 21222)
+    if (!app && cleanId === '21222') {
+      app = {
+        id: 'app-sample-demo',
+        fullName: 'مهندس تجريبي (عضو معتمد)',
+        studentId: '21222',
+        email: 'demo.engineer@up.edu.ps',
+        phone: '0599000000',
+        academicYear: 'السنة الثالثة',
+        college: 'كلية هندسة برمجيات وذكاء اصطناعي',
+        major: 'هندسة برمجيات ونظم ذكية',
+        skills: ['Python / AI', 'Fullstack Web (React / Node)', 'Git & DevOps'],
+        personalStatement: 'عضوية تجريبية معتمدة لاختبار منصة وفعاليات النادي الهندسي.',
+        targetCommittee: 'لجنة الفعاليات والأنشطة',
+        weeklyCommitmentHours: 8,
+        status: 'تم القبول',
+        submittedAt: '2026-10-01T12:00:00Z',
+      };
+    }
+
     if (!app) {
       return { isMember: false, status: 'not_found' };
     }
@@ -649,16 +654,16 @@ class DataService {
   public importDatabaseJSON(jsonStr: string): boolean {
     try {
       const data = JSON.parse(jsonStr);
-      if (data.projects) safeStorage.set(STORAGE_KEYS.PROJECTS, JSON.stringify(data.projects));
-      if (data.events) safeStorage.set(STORAGE_KEYS.EVENTS, JSON.stringify(data.events));
-      if (data.courses) safeStorage.set(STORAGE_KEYS.COURSES, JSON.stringify(data.courses));
-      if (data.applications) safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(data.applications));
-      if (data.tickets) safeStorage.set(STORAGE_KEYS.TICKETS, JSON.stringify(data.tickets));
-      if (data.leadership) safeStorage.set(STORAGE_KEYS.LEADERSHIP, JSON.stringify(data.leadership));
-      if (data.colleges) safeStorage.set(STORAGE_KEYS.COLLEGES, JSON.stringify(data.colleges));
-      if (data.majors) safeStorage.set(STORAGE_KEYS.MAJORS, JSON.stringify(data.majors));
-      if (data.spotlight) safeStorage.set(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(data.spotlight));
-      if (data.settings) safeStorage.set(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
+      if (data.projects) safeStorage.set(STORAGE_KEYS.PROJECTS, data.projects);
+      if (data.events) safeStorage.set(STORAGE_KEYS.EVENTS, data.events);
+      if (data.courses) safeStorage.set(STORAGE_KEYS.COURSES, data.courses);
+      if (data.applications) safeStorage.set(STORAGE_KEYS.APPLICATIONS, data.applications);
+      if (data.tickets) safeStorage.set(STORAGE_KEYS.TICKETS, data.tickets);
+      if (data.leadership) safeStorage.set(STORAGE_KEYS.LEADERSHIP, data.leadership);
+      if (data.colleges) safeStorage.set(STORAGE_KEYS.COLLEGES, data.colleges);
+      if (data.majors) safeStorage.set(STORAGE_KEYS.MAJORS, data.majors);
+      if (data.spotlight) safeStorage.set(STORAGE_KEYS.SPOTLIGHT, data.spotlight);
+      if (data.settings) safeStorage.set(STORAGE_KEYS.SETTINGS, data.settings);
       this.notify();
       return true;
     } catch {

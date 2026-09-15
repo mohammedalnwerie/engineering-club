@@ -276,6 +276,24 @@ export const EventsSection: React.FC = () => {
                         onChange={(e) => handleStudentIdChange(e.target.value)}
                         className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm font-mono"
                       />
+                      <div className="flex items-center gap-2 mt-1.5 text-[11px] font-mono text-gray-400">
+                        <span>💡 أرقام تجريبية معتمدة:</span>
+                        <button
+                          type="button"
+                          onClick={() => handleStudentIdChange('21222')}
+                          className="text-cyan-400 hover:text-cyan-300 underline font-bold cursor-pointer"
+                        >
+                          21222
+                        </button>
+                        <span>أو</span>
+                        <button
+                          type="button"
+                          onClick={() => handleStudentIdChange('442019882')}
+                          className="text-cyan-400 hover:text-cyan-300 underline font-bold cursor-pointer"
+                        >
+                          442019882
+                        </button>
+                      </div>
                     </div>
 
                     {/* Live Membership Verification Alert Box */}
@@ -308,16 +326,25 @@ export const EventsSection: React.FC = () => {
                           <span>حجز المقاعد مخصص فقط للأعضاء المسجلين في النادي</span>
                         </div>
                         <p className="text-[11px] text-gray-300 leading-relaxed">
-                          لم نعثر على عضوية معتمدة مسجلة بهذا الرقم الجامعي. يرجى تقديم طلب عضوية مجاني أولاً للانضمام وحضور فعاليات النادي.
+                          لم نعثر على عضوية معتمدة مسجلة بالرقم الجامعي ({studentIdInput}). حجز مقاعد ورش العمل والهاكاثونات متاح حصرياً للطلبة المعتمدين في النادي.
                         </p>
-                        <button
-                          type="button"
-                          onClick={handleGoToJoin}
-                          className="w-full py-2.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/40 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <span>قدّم طلب انضمام للنادي الآن</span>
-                          <ArrowLeft className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={handleGoToJoin}
+                            className="w-full sm:flex-1 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-500/40 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <span>قدّم طلب انضمام للنادي</span>
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleStudentIdChange('21222')}
+                            className="w-full sm:w-auto px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-gray-200 border border-white/10 text-xs font-mono transition-colors cursor-pointer"
+                          >
+                            تجربة الرقم التجريبي: 21222
+                          </button>
+                        </div>
                       </div>
                     )}
 

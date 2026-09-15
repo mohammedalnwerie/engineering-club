@@ -1,4 +1,4 @@
-// Safe Storage Wrapper: Prevents QuotaExceededError crashes & Monitors Storage Health
+// Safe Storage Wrapper: Prevents QuotaExceededError crashes & Auto-Unwraps Double Stringified JSON
 
 export interface StorageHealth {
   usedKb: number;
@@ -16,7 +16,17 @@ export const safeStorage = {
     try {
       const item = localStorage.getItem(key);
       if (item === null) return fallback;
-      return JSON.parse(item) as T;
+      let parsed = JSON.parse(item);
+      // Recursively unwrap any double or triple stringified JSON strings
+      while (typeof parsed === 'string') {
+        try {
+          const unwrapped = JSON.parse(parsed);
+          parsed = unwrapped;
+        } catch {
+          break;
+        }
+      }
+      return parsed as T;
     } catch (err) {
       console.warn(`[SafeStorage] Failed to parse key "${key}":`, err);
       return fallback;
@@ -26,7 +36,12 @@ export const safeStorage = {
   set<T>(key: string, value: T): boolean {
     if (typeof window === 'undefined') return false;
     try {
-      const serialized = JSON.stringify(value);
+      let serialized: string;
+      if (typeof value === 'string') {
+        serialized = value;
+      } else {
+        serialized = JSON.stringify(value);
+      }
       localStorage.setItem(key, serialized);
       return true;
     } catch (err: unknown) {
@@ -35,8 +50,8 @@ export const safeStorage = {
       // Attempt emergency recovery: clean temporary audit logs or old caches
       try {
         localStorage.removeItem('eng_club_security_audit_v1');
-        const retrySerialized = JSON.stringify(value);
-        localStorage.setItem(key, retrySerialized);
+        const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+        localStorage.setItem(key, serialized);
         console.warn(`[SafeStorage] Successfully saved "${key}" after emergency cache trim.`);
         return true;
       } catch {
@@ -66,7 +81,7 @@ export const safeStorage = {
         const k = localStorage.key(i);
         if (k) {
           const v = localStorage.getItem(k) || '';
-          totalBytes += k.length * 2 + v.length * 2; // UTF-16 bytes approx
+          totalBytes += k.length * 2 + v.length * 2;
           itemCount++;
         }
       }

@@ -84,7 +84,16 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim() || !message.trim()) return;
+    if (!subject.trim()) {
+      sound.playError();
+      alert('يرجى كتابة عنوان الشكوى أو المقترح قبل الإرسال.');
+      return;
+    }
+    if (!message.trim()) {
+      sound.playError();
+      alert('يرجى كتابة تفاصيل وموضوع الشكوى أو المقترح بالتفصيل.');
+      return;
+    }
 
     const rateCheck = checkRateLimit('complaint_submission', 4000);
     if (!rateCheck.allowed) {
@@ -121,10 +130,10 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
     const cleanQuery = trackQuery.trim();
     if (!cleanQuery) return;
 
-    // Strict Privacy: If student enters numeric student ID, guide them to use ticket number
-    if (!cleanQuery.toUpperCase().includes('UP-CMP') && /^\d{6,}$/.test(cleanQuery)) {
+    // Strict Privacy: If student enters numeric student ID (any digits), guide them to use ticket number
+    if (!cleanQuery.toUpperCase().includes('UP-CMP') && /^\d+$/.test(cleanQuery)) {
       sound.playError();
-      alert('🔒 لدواعي الأمان وحماية خصوصية الشكاوى، تم حظر الاستعلام بالرقم الجامعي. الاستعلام متاح حصرياً عبر رمز التذكرة السري الفريد (مثال: UP-CMP-2026-1042) الذي استلمته عند تقديم الطلب.');
+      alert('🔒 لدواعي الأمان وحماية خصوصية الشكاوى، تم حظر الاستعلام بالرقم الجامعي. الاستعلام متاح حصرياً عبر رمز التذكرة السري الفريد (مثال: UP-CMP-2026-1042) الذي استلمته عند تقديم الطلب لحفظ سرية الملاحظات.');
       return;
     }
 
@@ -495,6 +504,22 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                   <span>استعلام سري</span>
                 </button>
               </form>
+              <div className="flex items-center gap-2 mt-2 text-[11px] font-mono text-gray-400">
+                <span>💡 رمز تجريبي للمعاينة:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTrackQuery('UP-CMP-2026-1042');
+                    sound.playClick();
+                    const res = dataService.getComplaintByTicket('UP-CMP-2026-1042');
+                    setFoundTicket(res || null);
+                    setTrackSearched(true);
+                  }}
+                  className="text-cyan-400 hover:text-cyan-300 underline font-bold cursor-pointer"
+                >
+                  UP-CMP-2026-1042
+                </button>
+              </div>
             </div>
 
             {trackSearched && (
