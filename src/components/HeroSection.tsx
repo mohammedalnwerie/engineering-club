@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { dataService } from '../services/dataService';
 import type { SiteSettings } from '../types';
-import { ArrowLeft, Code2, Layers, Cpu, Compass } from 'lucide-react';
+import { ArrowLeft, Layers } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 
 interface HeroSectionProps {
@@ -102,22 +102,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
         </p>
 
 
-        {/* Interactive Floating Micro-indicators (Floating CAD specs around title) */}
-        <div className="hidden md:flex items-center justify-center gap-6 mb-10 text-xs font-mono text-gray-400">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
-            <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-            <span>نظم برمجية وصناعية</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
-            <Code2 className="w-3.5 h-3.5 text-blue-400" />
-            <span>ذكاء اصطناعي وأمن سيبراني</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
-            <Compass className="w-3.5 h-3.5 text-emerald-400" />
-            <span>عمارة ومدن ذكية</span>
-          </div>
-        </div>
-
         {/* Call to Actions */}
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-16">
           <button
@@ -126,7 +110,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
               onJoinClick();
             }}
             onMouseEnter={() => sound.playHover()}
-            className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-base text-[#07090e] bg-gradient-to-r from-cyan-400 via-cyan-300 to-teal-300 hover:from-cyan-300 hover:to-cyan-200 shadow-[0_0_35px_rgba(0,240,255,0.4)] hover:shadow-[0_0_45px_rgba(0,240,255,0.6)] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer group"
+            className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-base text-[#07090e] bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 hover:from-emerald-300 hover:to-cyan-200 shadow-[0_0_35px_rgba(22,163,74,0.35)] hover:shadow-[0_0_45px_rgba(22,163,74,0.55)] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer group"
           >
             <span>انضم للنادي وابدأ مسيرتك</span>
             <ArrowLeft className="w-5 h-5 transition-transform duration-200 group-hover:-translate-x-1" />
@@ -138,9 +122,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
               onExploreClick();
             }}
             onMouseEnter={() => sound.playHover()}
-            className="w-full sm:w-auto px-8 py-4 rounded-xl font-medium text-base text-gray-200 bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-cyan-500/40 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer"
+            className="w-full sm:w-auto px-8 py-4 rounded-xl font-medium text-base text-gray-200 bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-emerald-500/40 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer"
           >
-            <Layers className="w-4 h-4 text-cyan-400" />
+            <Layers className="w-4 h-4 text-emerald-400" />
             <span>استكشف الكليات والمسارات</span>
           </button>
         </div>

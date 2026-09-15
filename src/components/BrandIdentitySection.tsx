@@ -52,8 +52,8 @@ export const BrandIdentitySection: React.FC = () => {
             <span>الهوية الرسمية والمرجعية الأكاديمية // BRAND CHARTER</span>
           </div>
 
-          <div className="my-4">
-            <ClubLogo variant="full" theme="light" size="lg" className="mx-auto drop-shadow-[0_10px_25px_rgba(0,0,0,0.5)]" />
+          <div className="my-6">
+            <ClubLogo variant="full" theme="dark" size="xl" className="mx-auto drop-shadow-[0_15px_35px_rgba(0,0,0,0.7)]" />
           </div>
 
           {/* Slogan Banner */}
