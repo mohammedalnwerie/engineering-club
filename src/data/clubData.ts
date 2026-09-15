@@ -80,14 +80,14 @@ export const MAJORS: Major[] = [
     name: 'هندسة برمجيات',
     collegeId: 'software-ai',
     collegeName: 'كلية هندسة برمجيات وذكاء اصطناعي',
-    tagline: 'معمارية النظم الموزعة، الحوسبة السحابية، وهندسة الموثوقية SRE',
-    description: 'بناء النظم الرقمية واسعة النطاق، من الحوسبة الموزعة إلى دورة حياة البرمجيات المتقدمة ومنهجيات DevOps وهندسة الموثوقية SRE.',
+    tagline: 'تصميم وبناء مواقع الويب، تطبيقات الهواتف، والأنظمة البرمجية الحديثة',
+    description: 'يهتم هذا التخصص بتعلم لغات البرمجة الحديثة، وتطوير مواقع الويب وتطبيقات الهاتف الذكية، وبناء قواعد البيانات، وإدارة المشاريع البرمجية من الفكرة حتى إطلاق المشروع لسوق العمل.',
     iconName: 'Terminal',
     accentColor: '#00F0FF',
-    techStack: ['Distributed Systems', 'Go / Rust', 'Kubernetes', 'Next.js / React', 'PostgreSQL / Redis'],
-    careerPaths: ['مهندس برمجيات أول', 'معماري نظم سحابية Cloud Architect', 'مهندس موثوقية مواقع SRE'],
-    keyCourses: ['معمارية النظم الموزعة', 'تصميم واجهات برمجة التطبيقات API', 'الأمان البرمجي واختبار الجودة'],
-    featuredProjectTitle: 'منصة الحوسبة اللامركزية للمشاريع الطلابية'
+    techStack: ['React / Next.js', 'Flutter & Mobile', 'Python', 'Node.js', 'SQL & Databases', 'Git & GitHub'],
+    careerPaths: ['مطور مواقع وإنترنت (Web Developer)', 'مبرمج تطبيقات هواتف (Mobile App Developer)', 'مهندس اختبار وجودة برمجيات (QA)'],
+    keyCourses: ['برمجة وتطوير مواقع الويب (Full-Stack)', 'تطوير تطبيقات الهواتف الذكية', 'هندسة وإدارة المشاريع البرمجية'],
+    featuredProjectTitle: 'منصة الخدمات الطلابية والتواصل الأكاديمي'
   },
   {
     id: 'ai-eng',
@@ -95,14 +95,14 @@ export const MAJORS: Major[] = [
     name: 'هندسة ذكاء اصطناعي',
     collegeId: 'software-ai',
     collegeName: 'كلية هندسة برمجيات وذكاء اصطناعي',
-    tagline: 'التعلم العميق، النماذج التوليدية LLMs، والرؤية الحاسوبية',
-    description: 'تطوير ونشر نماذج الذكاء الاصطناعي السيادية، شبكات الأعصاب العميقة، خوارزميات معالجة اللغات الطبيعية، وهندسة تعلم الآلة MLOps.',
+    tagline: 'تطوير الأنظمة الذكية، تعلم الآلة، وتحليل واستثمار البيانات',
+    description: 'يركز التخصص على تدريب الحواسيب على حل المشكلات والتعلم الذاتي، وبناء تطبيقات التعرف على الصور والأصوات، وتطوير روبوتات المحادثة، وتوظيف أدوات الذكاء الاصطناعي لابتكار حلول عملية.',
     iconName: 'BrainCircuit',
     accentColor: '#818CF8',
-    techStack: ['PyTorch / TensorFlow', 'CUDA & GPU Computing', 'Transformers & LLMs', 'FastAPI & MLOps', 'LangChain & Vector DBs'],
-    careerPaths: ['مهندس ذكاء اصطناعي AI Engineer', 'مهندس تعلم الآلة MLOps', 'عالم أبحاث خوارزميات ذكية'],
-    keyCourses: ['التعلم العميق والشبكات العصبية', 'الرؤية الحاسوبية المتقدمة', 'هندسة معالجة اللغات الطبيعية NLP'],
-    featuredProjectTitle: 'محرك التحليل الذكي للبيانات الحضرية والنماذج التوليدية'
+    techStack: ['Python', 'Machine Learning', 'TensorFlow / PyTorch', 'Data Analysis', 'ChatGPT & AI Tools', 'Computer Vision'],
+    careerPaths: ['مهندس ذكاء اصطناعي (AI Engineer)', 'محلل بيانات (Data Analyst)', 'مطور حلول الأتمتة والأنظمة الذكية'],
+    keyCourses: ['مبادئ الذكاء الاصطناعي وتعلم الآلة', 'تحليل واستكشاف البيانات العلمية', 'الرؤية الحاسوبية ومعالجة اللغات'],
+    featuredProjectTitle: 'المساعد الطلابي الذكي للإرشاد الجامعي'
   },
   {
     id: 'is-major',
@@ -110,14 +110,14 @@ export const MAJORS: Major[] = [
     name: 'تخصص نظم المعلومات',
     collegeId: 'it-computing',
     collegeName: 'كلية تكنولوجيا المعلومات IT',
-    tagline: 'تحليل البيانات، إدارة المعرفة المؤسسية، واستراتيجيات التحول الرقمي',
-    description: 'ربط الأعمال بالحلول التقنية، هندسة قواعد البيانات الضخمة، وتحليل متطلبات المؤسسات لتحقيق التحول الرقمي الأمثل.',
+    tagline: 'إدارة قواعد البيانات، تحليل أنظمة الأعمال، وربط التقنية بالمؤسسات',
+    description: 'حلقة الوصل بين التكنولوجيا وعالم الأعمال؛ يتعلم الطالب فيه كيفية تحليل احتياجات المؤسسات، وتصميم قواعد البيانات، وتطوير الأنظمة الرقمية التي ترفع كفاءة العمل.',
     iconName: 'Cpu',
     accentColor: '#38BDF8',
-    techStack: ['Database Architecture', 'SQL / NoSQL', 'Business Intelligence / PowerBI', 'ERP Systems (SAP)', 'Cloud Integration'],
-    careerPaths: ['محلل نظم معلومات أول', 'مدير مشاريع التحول الرقمي', 'مهندس واستشاري قواعد بيانات'],
-    keyCourses: ['تحليل وتصميم نظم المعلومات', 'إدارة قواعد البيانات الضخمة', 'أمن وحوكمة تقنية المعلومات'],
-    featuredProjectTitle: 'منظومة إدارة البيانات والتحليل التنبؤي لعمليات الحرم الجامعي'
+    techStack: ['SQL Databases', 'Power BI & Excel', 'Business Analysis', 'ERP & Cloud Systems', 'Web Management Apps'],
+    careerPaths: ['محلل نظم أعمال (Business Systems Analyst)', 'مسؤول قواعد بيانات (Database Admin)', 'أخصائي تحول رقمي وحلول مؤسسية'],
+    keyCourses: ['تحليل وتصميم نظم المعلومات', 'إدارة وتصميم قواعد البيانات', 'ذكاء الأعمال والتحول الرقمي'],
+    featuredProjectTitle: 'نظام إدارة الفعاليات والأنشطة الجامعية المؤتمت'
   },
   {
     id: 'multimedia-major',
@@ -125,14 +125,14 @@ export const MAJORS: Major[] = [
     name: 'تخصص الوسائط المتعددة',
     collegeId: 'it-computing',
     collegeName: 'كلية تكنولوجيا المعلومات IT',
-    tagline: 'الواقع المعزز، الرسوم ثلاثية الأبعاد، وتصميم التجارب التفاعلية UX/UI',
-    description: 'ابتكار الوسائط الرقمية المتقدمة، تطوير بيئات الواقع الافتراضي والمعزز (VR/AR)، الرسوم ثلاثية الأبعاد، وتصميم التجارب التفاعلية.',
+    tagline: 'تصميم واجهات وتجربة المستخدم UI/UX، المونتاج، والمحتوى البصري',
+    description: 'يجمع بين الإبداع الفني والمهارة التقنية؛ يتعلم فيه الطالب تصميم واجهات وتطبيقات جذابة وسهلة الاستخدام، والمونتاج وتحريك الرسوم (Motion Graphics)، وإنتاج المحتوى البصري التفاعلي.',
     iconName: 'Sparkles',
     accentColor: '#F59E0B',
-    techStack: ['Unreal Engine / Unity', 'Blender 3D', 'WebXR / Three.js', 'Adobe Creative Suite', 'Figma & Design Systems'],
-    careerPaths: ['مطور وسائط تفاعلية وواقع معزز XR', 'مصمم تجربة مستخدم أول UX/UI Designer', 'فنان ومطور رسومات 3D Graphics'],
-    keyCourses: ['تطوير بيئات الواقع الافتراضي والمعزز', 'النمذجة ثلاثية الأبعاد والتحريك الرقمي', 'تصميم التفاعل وتجربة المستخدم'],
-    featuredProjectTitle: 'البيئة التفاعلية الغامرة ثلاثية الأبعاد لاستكشاف الحرم الجامعي عبر WebXR'
+    techStack: ['Figma (UI/UX)', 'Adobe Premiere', 'After Effects', 'Photoshop & Illustrator', 'Blender 3D'],
+    careerPaths: ['مصمم واجهات وتجربة مستخدم (UI/UX Designer)', 'مصمم موشن جرافيك وفيديو (Motion Designer)', 'مصمم هويات بصرية ومحتوى رقمي'],
+    keyCourses: ['تصميم واجهات وتجربة المستخدم UI/UX', 'التحريك الرقمي والموشن جرافيك', 'المونتاج والإنتاج المرئي الرقمي'],
+    featuredProjectTitle: 'معرض رقمي تفاعلي ثلاثي الأبعاد لإبداعات الطلبة'
   },
   {
     id: 'architecture',
@@ -140,14 +140,14 @@ export const MAJORS: Major[] = [
     name: 'تخصص هندسة معمارية',
     collegeId: 'applied-urban',
     collegeName: 'كلية الهندسة التطبيقية و التخطيط العمراني',
-    tagline: 'التصميم البارامتري، الاستدامة البيئية، ونمذجة معلومات البناء BIM',
-    description: 'تصميم المباني الذكية المستدامة، تكامل الفضاءات الوظيفية والجمالية، وتطبيق أحدث تقنيات النمذجة المعمارية والمحاكاة البيئية.',
+    tagline: 'التصميم المعماري الإبداعي، النمذجة ثلاثية الأبعاد، وتخطيط الفضاءات',
+    description: 'فن وعلم تخطيط وتصميم المباني والمساحات العمرانية؛ يركز على الجمع بين جمال المظهر والراحة والاستدامة، مع إتقان برامج الرسم والنمذجة المعمارية ثلاثية الأبعاد لإخراج المشاريع بواقعية.',
     iconName: 'Compass',
     accentColor: '#34D399',
-    techStack: ['Rhino & Grasshopper', 'Revit BIM', 'Lumion / Unreal Engine', 'Ladybug Energy Modeling', 'Parametric Modeling'],
-    careerPaths: ['مهندس معماري تصميمي', 'أخصائي نمذجة معلومات البناء BIM Manager', 'استشاري استدامة معمارية LEED'],
-    keyCourses: ['التصميم المعماري البارامتري', 'الاستدامة وكفاءة الطاقة في المباني', 'نظريات التصميم والتخطيط العمراني'],
-    featuredProjectTitle: 'مجمع الابتكار المعماري المستدام صفر الانبعاثات'
+    techStack: ['AutoCAD', 'Revit (BIM)', 'Sketchup', 'Lumion / 3ds Max', 'Photoshop Architecture'],
+    careerPaths: ['مهندس معماري مصمم (Architectural Designer)', 'مصمم مناظير ثلاثية الأبعاد (3D Visualizer)', 'أخصائي نمذجة معمارية BIM'],
+    keyCourses: ['مبادئ واستوديو التصميم المعماري', 'الرسم والنمذجة المعمارية بالحاسوب', 'العمارة البيئية والتصميم الداخلي'],
+    featuredProjectTitle: 'تصميم المركز الطلابي الصديق للبيئة'
   },
   {
     id: 'civil-eng',
@@ -155,14 +155,14 @@ export const MAJORS: Major[] = [
     name: 'تخصص هندسة مدنية',
     collegeId: 'applied-urban',
     collegeName: 'كلية الهندسة التطبيقية و التخطيط العمراني',
-    tagline: 'هندسة المنشآت، البنى التحتية، وإدارة وتخطيط المشاريع الكبرى',
-    description: 'تخطيط وتنفيذ أضخم المشاريع الإنشائية، نمذجة الهياكل المقاومة للأحمال، ودمج مجسات إنترنت الأشياء في مراقبة سلامة المنشآت.',
+    tagline: 'التصميم الإنشائي، إدارة مواقع البناء، وهندسة البنية التحتية',
+    description: 'أساس بناء وتطوير المدن والمرافق؛ يتعلم فيه الطالب حساب الأحمال وتصميم المنشآت الخرسانية والمعدنية، وإدارة مواقع البناء، وحساب الكميات والتكاليف، وهندسة الطرق والمياه.',
     iconName: 'Building2',
     accentColor: '#10B981',
-    techStack: ['ETABS / SAP2000', 'Civil 3D', 'Primavera P6', 'Structural Health Monitoring', 'Geotechnical GIS'],
-    careerPaths: ['مهندس تصميم إنشائي Structural Engineer', 'مدير مشاريع تشييد وبنية تحتية', 'أخصائي ميكانيكا تربة وجيوتقنية'],
-    keyCourses: ['تحليل وتصميم المنشآت الخرسانية والمعدنية', 'هندسة الأساسات وميكانيكا التربة', 'إدارة وتخطيط مشاريع التشييد'],
-    featuredProjectTitle: 'شبكة الجسور الذكية المزودة بحساسات قياس الإجهاد'
+    techStack: ['AutoCAD', 'ETABS / SAP2000', 'حساب الكميات والتكاليف', 'Primavera / Project Management', 'Excel الهندسي'],
+    careerPaths: ['مهندس موقع وتنفيذ (Site Engineer)', 'مهندس تصميم إنشائي (Structural Engineer)', 'مهندس حساب كميات ومكتب فني'],
+    keyCourses: ['تصميم المنشآت والخرسانة المسلحة', 'إدارة وتنفيذ المشاريع الإنشائية', 'ميكانيكا التربة والأساسات والمساحة'],
+    featuredProjectTitle: 'دراسة وتصميم مبنى سكني متكامل مع حساب الكميات'
   }
 ];
 

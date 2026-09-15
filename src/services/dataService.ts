@@ -21,7 +21,7 @@ const STORAGE_KEYS = {
   TICKETS: 'eng_club_tickets_v1',
   LEADERSHIP: 'eng_club_leadership_v2',
   COLLEGES: 'eng_club_colleges_v2',
-  MAJORS: 'eng_club_majors_v2',
+  MAJORS: 'eng_club_majors_v3',
   SPOTLIGHT: 'eng_club_spotlight_v1',
   SETTINGS: 'eng_club_settings_v1',
   SUPABASE_CONFIG: 'eng_club_supabase_config_v1',

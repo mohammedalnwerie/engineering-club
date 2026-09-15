@@ -155,8 +155,9 @@ export const MajorsSection: React.FC = () => {
 
                 {/* Key Courses */}
                 <div className="mb-6">
-                  <h5 className="font-mono text-xs uppercase tracking-wider text-gray-400 mb-3">
-                    // المقررات والموضوعات الجوهرية:
+                  <h5 className="font-mono text-xs uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-1.5">
+                    <span>//</span>
+                    <span>ما ستتعلمه وتكتسبه في هذا التخصص:</span>
                   </h5>
                   <div className="space-y-2">
                     {activeMajor.keyCourses.map((course, idx) => (
@@ -168,7 +169,7 @@ export const MajorsSection: React.FC = () => {
                           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                           <span>{course}</span>
                         </div>
-                        <span className="font-mono text-[10px] text-gray-500">MOD-{idx + 1}</span>
+                        <span className="font-mono text-[10px] text-gray-500">مسار {idx + 1}</span>
                       </div>
                     ))}
                   </div>
@@ -180,9 +181,9 @@ export const MajorsSection: React.FC = () => {
             <div className="lg:col-span-6 flex flex-col gap-6">
               {/* Tech Stack Chips */}
               <div className="p-6 rounded-2xl bg-black/30 border border-white/10">
-                <h5 className="font-mono text-xs uppercase tracking-wider text-cyan-400 mb-4 flex items-center gap-2">
-                  <Layers className="w-4 h-4" />
-                  <span>الأدوات والتقنيات المعتمدة (Tech Stack):</span>
+                <h5 className="font-mono text-xs uppercase tracking-wider text-cyan-300 mb-4 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-cyan-400" />
+                  <span>أبرز البرامج والأدوات التي ستتقنها:</span>
                 </h5>
                 <div className="flex flex-wrap gap-2">
                   {activeMajor.techStack.map((tech, idx) => (
@@ -200,7 +201,7 @@ export const MajorsSection: React.FC = () => {
               <div className="p-6 rounded-2xl bg-black/30 border border-white/10">
                 <h5 className="font-mono text-xs uppercase tracking-wider text-emerald-400 mb-4 flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
-                  <span>المسارات والمسميات الوظيفية المستقبلية:</span>
+                  <span>المجالات والفرص المهنية بعد التخرج:</span>
                 </h5>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {activeMajor.careerPaths.map((career, idx) => (
@@ -218,7 +219,7 @@ export const MajorsSection: React.FC = () => {
               {/* Featured Outcome Spotlight */}
               <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/30 via-cyan-950/20 to-transparent border border-blue-500/30 flex items-center justify-between">
                 <div>
-                  <div className="font-mono text-[10px] text-blue-400 uppercase">مشروع طلابي بارز في المسار</div>
+                  <div className="font-mono text-[10px] text-blue-400 uppercase">نموذج مشروع تطبيقي في المسار</div>
                   <div className="text-sm font-bold text-white mt-0.5">{activeMajor.featuredProjectTitle}</div>
                 </div>
                 <button

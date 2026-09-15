@@ -5,7 +5,11 @@ import { ClubLogo } from './ClubLogo';
 import { dataService } from '../services/dataService';
 
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenVerify?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onOpenVerify }) => {
   const [subscribed, setSubscribed] = useState(false);
   const [email, setEmail] = useState('');
   const settings = dataService.getSettings();
@@ -158,6 +162,15 @@ export const Footer: React.FC = () => {
                 <a href="#join" className="hover:text-cyan-400 transition-colors">
                   بوابة تقديم العضوية
                 </a>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={onOpenVerify}
+                  className="hover:text-emerald-400 text-emerald-400/90 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>التحقق من بطاقة العضوية 🪪</span>
+                </button>
               </li>
               <li>
                 <span className="text-gray-500 font-mono">contact@engclub.edu</span>

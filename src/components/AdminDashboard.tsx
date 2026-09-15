@@ -40,7 +40,6 @@ import {
   Link as LinkIcon,
   LogOut,
   Printer,
-  QrCode,
   ShieldCheck,
   CreditCard,
   Copy
@@ -606,14 +605,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-2xl overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#07090e] w-screen h-screen overflow-hidden text-right select-none animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-3xl glass-panel border border-cyan-500/40 shadow-[0_25px_80px_rgba(0,0,0,0.9)] flex flex-col animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#090d16]/90">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-[#090d16]/95 shrink-0">
+          <div className="flex items-center gap-3.5">
             <ClubLogo variant="emblem" size="md" />
             <div>
               <div className="flex flex-wrap items-center gap-2">
@@ -637,7 +636,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {isAuthenticated && (
               <button
                 onClick={() => {
@@ -646,7 +645,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   setPasscode('');
                   showToast('تم تسجيل الخروج من لوحة الإدارة');
                 }}
-                className="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-red-950/40 border border-white/10 hover:border-red-500/30 text-gray-400 hover:text-red-300 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-red-950/40 border border-white/10 hover:border-red-500/30 text-gray-400 hover:text-red-300 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
                 title="تسجيل الخروج"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -659,10 +658,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 sound.playClick();
                 onClose();
               }}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
-              title="إغلاق لوحة التحكم"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/40 text-cyan-300 hover:text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md"
+              title="العودة إلى الموقع الرئيسي"
             >
-              <X className="w-5 h-5" />
+              <span>← العودة إلى الموقع الرئيسي</span>
             </button>
           </div>
         </div>
@@ -967,10 +966,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <tbody className="divide-y divide-white/5 text-gray-300">
                       {applications
                         .filter((app) => {
+                          const q = appSearch.trim().toLowerCase();
                           const matchesSearch =
-                            app.fullName.includes(appSearch) ||
-                            app.studentId.includes(appSearch) ||
-                            app.major.includes(appSearch);
+                            !q ||
+                            app.fullName.toLowerCase().includes(q) ||
+                            (app.studentId && app.studentId.toLowerCase().includes(q)) ||
+                            (app.id && app.id.toLowerCase().includes(q)) ||
+                            `up-eng-${app.id.slice(-8)}`.toLowerCase().includes(q) ||
+                            app.major.toLowerCase().includes(q) ||
+                            app.targetCommittee.toLowerCase().includes(q) ||
+                            app.email.toLowerCase().includes(q);
                           const matchesFilter =
                             appStatusFilter === 'all' || app.status === appStatusFilter;
                           return matchesSearch && matchesFilter;
@@ -2649,8 +2654,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <div className="text-cyan-400 font-bold">UP-ENG-{(viewingBadgeApp.id || 'VALID').slice(-8).toUpperCase()}</div>
                     <div className="text-[8px] text-gray-500 mt-1">ISSUED BY UNIVERSITY OF PALESTINE</div>
                   </div>
-                  <div className="p-1.5 rounded-xl bg-white text-black">
-                    <QrCode className="w-9 h-9" />
+                  {/* Scannable Verification QR Code */}
+                  <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(
+                        `${window.location.origin}/?verify=${encodeURIComponent(viewingBadgeApp.studentId || viewingBadgeApp.id)}`
+                      )}`}
+                      alt="Verification QR"
+                      className="w-12 h-12 object-contain"
+                    />
                   </div>
                 </div>
               </div>

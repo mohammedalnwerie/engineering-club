@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, ShieldAlert } from 'lucide-react';
+import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
 
@@ -7,9 +7,10 @@ import { ClubLogo } from './ClubLogo';
 interface NavbarProps {
   onOpenJoinModal?: () => void;
   onOpenAdmin?: () => void;
+  onOpenVerify?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, onOpenVerify }) => {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMuted, setIsMuted] = useState(sound.getMuted());
@@ -84,6 +85,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin }) 
 
         {/* Action Controls: Admin + Sound Toggle + Join Button */}
         <div className="flex items-center gap-2.5">
+          {/* Membership Verification Modal trigger */}
+          <button
+            onClick={() => {
+              sound.playClick();
+              if (onOpenVerify) onOpenVerify();
+            }}
+            title="التحقق من صحة بطاقات العضوية الرسمية"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-emerald-400 text-xs font-mono text-emerald-300 hover:text-white transition-all cursor-pointer"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>التحقق من العضوية</span>
+          </button>
+
           {/* Admin Control Center HUD trigger */}
           <button
             onClick={() => {
@@ -155,6 +169,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin }) 
               <span className="font-mono text-xs text-gray-500">↗</span>
             </button>
           ))}
+          <button
+            onClick={() => {
+              sound.playClick();
+              setMobileMenuOpen(false);
+              if (onOpenVerify) onOpenVerify();
+            }}
+            className="w-full py-2.5 rounded-xl font-mono text-xs text-emerald-300 bg-white/5 border border-emerald-500/30 flex items-center justify-center gap-2"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>التحقق من بطاقة العضوية 🪪</span>
+          </button>
           <button
             onClick={() => {
               sound.playClick();

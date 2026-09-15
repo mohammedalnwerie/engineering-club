@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { CanvasBackground } from './components/CanvasBackground';
 import { CustomCursor } from './components/CustomCursor';
@@ -15,9 +15,47 @@ import { JoinClubSection } from './components/JoinClubSection';
 import { LiveFeedSection } from './components/LiveFeedSection';
 import { Footer } from './components/Footer';
 import { AdminDashboard } from './components/AdminDashboard';
+import { MembershipVerifyModal } from './components/MembershipVerifyModal';
 
 export function App() {
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyCode, setVerifyCode] = useState('');
+
+  useEffect(() => {
+    // Check if URL has ?verify=...
+    const params = new URLSearchParams(window.location.search);
+    const vParam = params.get('verify');
+    if (vParam) {
+      setVerifyCode(vParam);
+      setShowVerifyModal(true);
+    }
+
+    // Check if URL has #/admin or ?admin=1
+    if (window.location.hash === '#/admin' || params.get('admin') === '1') {
+      setShowAdminModal(true);
+    }
+
+    const handleHashChange = () => {
+      if (window.location.hash === '#/admin') {
+        setShowAdminModal(true);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const handleOpenAdmin = () => {
+    setShowAdminModal(true);
+    window.location.hash = '#/admin';
+  };
+
+  const handleCloseAdmin = () => {
+    setShowAdminModal(false);
+    if (window.location.hash === '#/admin') {
+      window.history.pushState(null, '', window.location.pathname + window.location.search);
+    }
+  };
 
   const handleJoinClick = () => {
     const target = document.querySelector('#join');
@@ -40,13 +78,24 @@ export function App() {
       {/* Floating Glass Navigation HUD */}
       <Navbar
         onOpenJoinModal={handleJoinClick}
-        onOpenAdmin={() => setShowAdminModal(true)}
+        onOpenAdmin={handleOpenAdmin}
+        onOpenVerify={() => {
+          setVerifyCode('');
+          setShowVerifyModal(true);
+        }}
       />
 
-      {/* Integrated Admin HUD & Data Management Dashboard */}
+      {/* Integrated Admin Full Page Dashboard */}
       <AdminDashboard
         isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
+        onClose={handleCloseAdmin}
+      />
+
+      {/* Public Digital Membership Card Verification Portal */}
+      <MembershipVerifyModal
+        isOpen={showVerifyModal}
+        onClose={() => setShowVerifyModal(false)}
+        initialCode={verifyCode}
       />
 
 
@@ -87,7 +136,12 @@ export function App() {
       </main>
 
       {/* 11: Technical Blueprint Footer */}
-      <Footer />
+      <Footer
+        onOpenVerify={() => {
+          setVerifyCode('');
+          setShowVerifyModal(true);
+        }}
+      />
     </div>
   );
 }
