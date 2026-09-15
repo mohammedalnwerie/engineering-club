@@ -3,8 +3,7 @@ import { dataService } from '../services/dataService';
 import type { ClubApplication } from '../types';
 import { sound } from '../utils/soundEngine';
 
-import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck, Download } from 'lucide-react';
-import { exportCardAsImage } from '../utils/cardExporter';
+import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 
@@ -583,20 +582,7 @@ export const JoinClubSection: React.FC = () => {
               </div>
             </div>
 
-            {/* Live Card Export Action */}
-            <div className="w-full max-w-sm mt-3">
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playClick();
-                  exportCardAsImage('live-club-badge-preview', `UP-Student-Pass-Preview.png`);
-                }}
-                className="w-full py-2 px-3 rounded-xl bg-cyan-950/60 hover:bg-cyan-500/20 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
-              >
-                <Download className="w-3.5 h-3.5 text-cyan-400" />
-                <span>تحميل معاينة البطاقة كصورة (PNG) 🖼️</span>
-              </button>
-            </div>
+
 
             <p className="text-xs text-gray-400 mt-3 text-center max-w-xs leading-relaxed">
               معاينة فورية للبطاقة — يتم اعتماد وتوليد بطاقة العضوية الإلكترونية الرسمية بمجرد موافقة إدارة النادي على الطلب.

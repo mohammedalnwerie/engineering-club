@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { LeaderMember } from '../types';
 import { sound } from '../utils/soundEngine';
-import { Shield, Award } from 'lucide-react';
-import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
+import { Shield } from 'lucide-react';
 
 export const LeadershipSection: React.FC = () => {
   const [leadershipList, setLeadershipList] = useState<LeaderMember[]>([]);
   const [activeTier, setActiveTier] = useState<'all' | 'executive' | 'committee-lead'>('all');
-  const [selectedLeaderBadge, setSelectedLeaderBadge] = useState<LeaderMember | null>(null);
+  
 
   useEffect(() => {
     setLeadershipList(dataService.getLeadership());
@@ -107,18 +106,13 @@ export const LeadershipSection: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Official Executive Credential Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.playClick();
-                      setSelectedLeaderBadge(president);
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-400 hover:text-black border border-cyan-400/40 text-xs font-bold text-cyan-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                  >
-                    <Award className="w-3.5 h-3.5" />
-                    <span>بطاقة التكليف والاعتماد القيادي 🪪</span>
-                  </button>
+                  {/* Official Contact Footer */}
+                  <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-mono text-gray-400">
+                    <span className="text-gray-500">البريد الرسمي:</span>
+                    <a href={`mailto:${president.email}`} className="text-cyan-300 hover:text-cyan-200 hover:underline">
+                      {president.email}
+                    </a>
+                  </div>
                 </div>
               </div>
             )}
@@ -159,17 +153,12 @@ export const LeadershipSection: React.FC = () => {
                         ))}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          sound.playClick();
-                          setSelectedLeaderBadge(exec);
-                        }}
-                        className="w-full py-2 rounded-xl bg-blue-500/15 hover:bg-blue-400 hover:text-black border border-blue-400/30 text-[11px] font-bold text-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer"
-                      >
-                        <Award className="w-3 h-3" />
-                        <span>بطاقة الاعتماد القيادية 🪪</span>
-                      </button>
+                      <div className="pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
+                        <span className="text-gray-500">البريد الرسمي:</span>
+                        <a href={`mailto:${exec.email}`} className="text-blue-300 hover:text-cyan-300 hover:underline transition-colors truncate">
+                          {exec.email}
+                        </a>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -212,17 +201,12 @@ export const LeadershipSection: React.FC = () => {
                         ))}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          sound.playClick();
-                          setSelectedLeaderBadge(comm);
-                        }}
-                        className="w-full py-2 rounded-xl bg-amber-500/15 hover:bg-amber-400 hover:text-black border border-amber-400/30 text-[11px] font-bold text-amber-200 transition-all flex items-center justify-center gap-1 cursor-pointer"
-                      >
-                        <Award className="w-3 h-3" />
-                        <span>بطاقة التكليف القيادية 🪪</span>
-                      </button>
+                      <div className="pt-2.5 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
+                        <span className="text-gray-500">البريد الرسمي:</span>
+                        <a href={`mailto:${comm.email}`} className="text-amber-300 hover:text-cyan-300 hover:underline transition-colors truncate">
+                          {comm.email}
+                        </a>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -279,28 +263,13 @@ export const LeadershipSection: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.playClick();
-                    setSelectedLeaderBadge(member);
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-400 hover:text-black border border-cyan-400/40 text-xs font-bold text-cyan-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <Award className="w-3.5 h-3.5" />
-                  <span>استعراض بطاقة التكليف القيادية 🪪</span>
-                </button>
+
               </div>
             ))}
           </div>
         )}
 
-        {/* Executive Credential ID Card Modal */}
-        <ExecutiveBadgeModal
-          isOpen={!!selectedLeaderBadge}
-          onClose={() => setSelectedLeaderBadge(null)}
-          leader={selectedLeaderBadge}
-        />
+
       </div>
     </section>
   );
