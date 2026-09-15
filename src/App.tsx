@@ -10,7 +10,6 @@ import { CollegesSection } from './components/CollegesSection';
 import { MajorsSection } from './components/MajorsSection';
 import { ProjectsSection } from './components/ProjectsSection';
 import { EventsSection } from './components/EventsSection';
-import { TrainingSection } from './components/TrainingSection';
 import { LeadershipSection } from './components/LeadershipSection';
 import { JoinClubSection } from './components/JoinClubSection';
 import { LiveFeedSection } from './components/LiveFeedSection';
@@ -77,10 +76,7 @@ export function App() {
         {/* 06: Events & Hackathons Hub */}
         <EventsSection />
 
-        {/* 07: Training Academy & Bootcamps */}
-        <TrainingSection />
-
-        {/* 08: Visual Leadership Hierarchy */}
+        {/* 07: Visual Leadership Hierarchy */}
         <LeadershipSection />
 
         {/* 09: 5-Step Join The Club Journey & Live ID Badge Generator */}

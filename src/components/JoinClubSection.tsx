@@ -19,10 +19,10 @@ export const JoinClubSection: React.FC = () => {
     academicYear: 'السنة الثالثة',
     college: 'كلية هندسة برمجيات وذكاء اصطناعي',
     major: 'هندسة برمجيات',
-    skills: ['Python', 'CAD / 3D Modeling'],
+    skills: [],
     personalStatement: '',
-    targetCommittee: 'لجنة الفعاليات والأنشطة',
-    weeklyCommitmentHours: 6,
+    targetCommittee: 'عضوية عامة (عضو بالنادي)',
+    weeklyCommitmentHours: 4,
   });
 
   const availableSkills = [
@@ -41,9 +41,34 @@ export const JoinClubSection: React.FC = () => {
   ];
 
   const committees = [
-    { id: 'events', name: 'لجنة الفعاليات والأنشطة', desc: 'تخطيط وتنظيم الفعاليات، المسابقات، ورش العمل، والهاكاثونات والملتقيات الهندسية الميدانية.' },
-    { id: 'training', name: 'لجنة العلاقات والتدريب', desc: 'بناء الشراكات مع الشركات والجهات المهنية، وتنظيم المعسكرات والبرامج التدريبية المتقدمة.' },
-    { id: 'media', name: 'اللجنة الإعلامية', desc: 'صناعة المحتوى الرقمي، التغطيات الحية، الإنتاج المرئي، وإدارة الهوية الرقمية والتواصل.' },
+    {
+      id: 'general',
+      name: 'عضوية عامة (عضو بالنادي)',
+      desc: 'حضور ورش العمل والفعاليات والمسابقات والاستفادة من أنشطة وبرامج النادي (دون أي التزام إداري أو تنظيمي في اللجان).',
+      badge: 'متاح للجميع',
+      badgeColor: 'text-emerald-400 bg-emerald-950/70 border-emerald-500/30'
+    },
+    {
+      id: 'events',
+      name: 'لجنة الفعاليات والأنشطة',
+      desc: 'فريق تخطيط وتنظيم الفعاليات، المسابقات، ورش العمل، والهاكاثونات الميدانية.',
+      badge: 'فريق تنظيمي (مقاعد محددة)',
+      badgeColor: 'text-cyan-400 bg-cyan-950/70 border-cyan-500/30'
+    },
+    {
+      id: 'training',
+      name: 'لجنة العلاقات والتدريب',
+      desc: 'فريق بناء الشراكات، التنسيق مع المؤسسات والمدربين، وتطوير الدورات التدريبية.',
+      badge: 'فريق تنظيمي (مقاعد محددة)',
+      badgeColor: 'text-blue-400 bg-blue-950/70 border-blue-500/30'
+    },
+    {
+      id: 'media',
+      name: 'اللجنة الإعلامية',
+      desc: 'فريق صناعة المحتوى الرقمي، التغطيات الحية، التصميم والمونتاج، وإدارة السوشيال ميديا.',
+      badge: 'فريق تنظيمي (مقاعد محددة)',
+      badgeColor: 'text-purple-400 bg-purple-950/70 border-purple-500/30'
+    },
   ];
 
   const handleNext = () => {
@@ -64,11 +89,13 @@ export const JoinClubSection: React.FC = () => {
 
   const toggleSkill = (skill: string) => {
     sound.playHover();
-    if (formData.skills.includes(skill)) {
-      setFormData({ ...formData, skills: formData.skills.filter((s) => s !== skill) });
+    let updated = formData.skills.filter((s) => s !== 'طالب جديد — شغوف بالتعلم من الصفر');
+    if (updated.includes(skill)) {
+      updated = updated.filter((s) => s !== skill);
     } else {
-      setFormData({ ...formData, skills: [...formData.skills, skill] });
+      updated.push(skill);
     }
+    setFormData({ ...formData, skills: updated });
   };
 
   const handleSubmit = () => {
@@ -270,28 +297,65 @@ export const JoinClubSection: React.FC = () => {
                 {/* Step 3: Skills */}
                 {currentStep === 3 && (
                   <div className="space-y-4 animate-in fade-in duration-200">
-                    <p className="text-xs text-gray-400">
-                      حدد المهارات والتقنيات التي تمتلك خبرة سابقة أو شغفاً بتعلمها وتطبيقها:
-                    </p>
-                    <div className="flex flex-wrap gap-2.5">
-                      {availableSkills.map((skill) => {
-                        const isSelected = formData.skills.includes(skill);
-                        return (
-                          <button
-                            key={skill}
-                            type="button"
-                            onClick={() => toggleSkill(skill)}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-mono transition-all cursor-pointer flex items-center gap-1.5 ${
-                              isSelected
-                                ? 'bg-cyan-400 text-black font-bold shadow-[0_0_10px_rgba(0,240,255,0.4)]'
-                                : 'bg-black/40 text-gray-300 border border-white/10 hover:border-white/30'
-                            }`}
-                          >
-                            {isSelected && <Check className="w-3.5 h-3.5" />}
-                            <span>{skill}</span>
-                          </button>
-                        );
-                      })}
+                    <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 text-xs flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="leading-relaxed">
+                        <span className="font-bold text-white block mb-0.5">المهارات والاهتمامات (اختيارية تماماً):</span>
+                        لا يشترط وجود أي مهارات أو خبرة برمجية مسبقة! إذا كنت طالباً مستجداً أو ترغب في التعلم من الصفر، فالنادي تأسس خصيصاً لمساندتك وتطويرك خطوة بخطوة.
+                      </div>
+                    </div>
+
+                    {/* Dedicated Beginner / Eager to learn toggle */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playHover();
+                        const beginnerSkill = 'طالب جديد — شغوف بالتعلم من الصفر';
+                        if (formData.skills.includes(beginnerSkill)) {
+                          setFormData({ ...formData, skills: formData.skills.filter((s) => s !== beginnerSkill) });
+                        } else {
+                          setFormData({ ...formData, skills: [beginnerSkill] });
+                        }
+                      }}
+                      className={`w-full p-3.5 rounded-xl border text-xs font-bold transition-all text-right flex items-center justify-between cursor-pointer ${
+                        formData.skills.includes('طالب جديد — شغوف بالتعلم من الصفر')
+                          ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                          : 'bg-black/40 border-white/10 text-gray-300 hover:border-emerald-500/40'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-base">🌱</span>
+                        <span>أنا طالب مستجد / شغوف بالتعلم وتطوير مهاراتي من الصفر (لا أمتلك خبرة مسبقة)</span>
+                      </span>
+                      {formData.skills.includes('طالب جديد — شغوف بالتعلم من الصفر') && (
+                        <Check className="w-4 h-4 text-emerald-400" />
+                      )}
+                    </button>
+
+                    <div className="pt-2">
+                      <p className="text-xs text-gray-400 mb-2">
+                        أو حدد ما تتقنه أو تهتم به من المجالات التالية (إن وجد):
+                      </p>
+                      <div className="flex flex-wrap gap-2.5">
+                        {availableSkills.map((skill) => {
+                          const isSelected = formData.skills.includes(skill);
+                          return (
+                            <button
+                              key={skill}
+                              type="button"
+                              onClick={() => toggleSkill(skill)}
+                              className={`px-3.5 py-2 rounded-xl text-xs font-mono transition-all cursor-pointer flex items-center gap-1.5 ${
+                                isSelected
+                                  ? 'bg-cyan-400 text-black font-bold shadow-[0_0_10px_rgba(0,240,255,0.4)]'
+                                  : 'bg-black/40 text-gray-300 border border-white/10 hover:border-white/30'
+                              }`}
+                            >
+                              {isSelected && <Check className="w-3.5 h-3.5" />}
+                              <span>{skill}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -329,42 +393,59 @@ export const JoinClubSection: React.FC = () => {
 
                 {/* Step 5: Target Committee & Commitment */}
                 {currentStep === 5 && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="space-y-5 animate-in fade-in duration-200">
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-2">اختر اللجنة التي ترغب في الانضمام لها:</label>
+                      <label className="block text-xs font-mono text-gray-300 mb-2">
+                        اختر نوع الانضمام / اللجنة التي تناسبك:
+                      </label>
                       <div className="space-y-2.5">
-                        {committees.map((comm) => (
-                          <div
-                            key={comm.id}
-                            onClick={() => {
-                              sound.playHover();
-                              setFormData({ ...formData, targetCommittee: comm.name });
-                            }}
-                            className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                              formData.targetCommittee === comm.name
-                                ? 'bg-cyan-950/40 border-cyan-400 text-white'
-                                : 'bg-black/30 border-white/5 text-gray-400 hover:border-white/20'
-                            }`}
-                          >
-                            <div className="text-xs font-bold text-white mb-0.5">{comm.name}</div>
-                            <div className="text-[11px] text-gray-400">{comm.desc}</div>
-                          </div>
-                        ))}
+                        {committees.map((comm) => {
+                          const isSelected = formData.targetCommittee === comm.name;
+                          return (
+                            <div
+                              key={comm.id}
+                              onClick={() => {
+                                sound.playHover();
+                                setFormData({ ...formData, targetCommittee: comm.name });
+                              }}
+                              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'bg-cyan-950/40 border-cyan-400 text-white shadow-[0_0_15px_rgba(0,240,255,0.15)]'
+                                  : 'bg-black/30 border-white/5 text-gray-400 hover:border-white/20'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="text-xs font-bold text-white">{comm.name}</span>
+                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${comm.badgeColor}`}>
+                                  {comm.badge}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-gray-400 leading-relaxed">{comm.desc}</p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-xs font-mono text-gray-300 mb-1">
-                        الساعات المتاحة للمشاركة أسبوعياً ({formData.weeklyCommitmentHours} ساعات):
+                        {formData.targetCommittee.includes('عضوية عامة')
+                          ? `ساعات الحضور المقترحة أسبوعياً (${formData.weeklyCommitmentHours} ساعات - مرنة حسب رغبتك ومواعيد الفعاليات):`
+                          : `الساعات المتاحة للمشاركة والعمل مع اللجنة أسبوعياً (${formData.weeklyCommitmentHours} ساعات):`}
                       </label>
                       <input
                         type="range"
-                        min={3}
+                        min={2}
                         max={15}
                         value={formData.weeklyCommitmentHours}
                         onChange={(e) => setFormData({ ...formData, weeklyCommitmentHours: Number(e.target.value) })}
-                        className="w-full accent-cyan-400"
+                        className="w-full accent-cyan-400 cursor-pointer"
                       />
+                      <div className="flex justify-between text-[10px] font-mono text-gray-500 mt-1">
+                        <span>2 ساعات (مشاركة خفيفة)</span>
+                        <span>8 ساعات (متوسط)</span>
+                        <span>15 ساعة (قيادي/نشط)</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -405,7 +486,7 @@ export const JoinClubSection: React.FC = () => {
                   مرحبًا بك في النادي الهندسي!
                 </h3>
                 <p className="text-sm text-gray-300 max-w-md mx-auto mb-8 leading-relaxed">
-                  تم استلام ملف انضمامك بنجاح، وتوليد بطاقة عضويتك الرقمية. سيصلك تأكيد تفعيل الحساب عبر بريدك الجامعي خلال 24 ساعة.
+                  تم استلام طلب انضمامك بنجاح. سيتم مراجعة الطلب من قِبل إدارة النادي واعتماد بطاقة عضويتك الإلكترونية فور القبول.
                 </p>
 
                 <button
@@ -416,7 +497,7 @@ export const JoinClubSection: React.FC = () => {
                   }}
                   className="px-6 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs font-mono text-gray-300 transition-colors"
                 >
-                  تعديل البيانات أو تقديم طلب جديد
+                  تقديم طلب جديد أو تعديل البيانات
                 </button>
               </div>
             )}
@@ -437,9 +518,11 @@ export const JoinClubSection: React.FC = () => {
               <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4 text-[11px]">
                 <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
                   <Cpu className="w-4 h-4" />
-                  <span>ENG-CLUB SAUDI</span>
+                  <span>UP ENGINEERING CLUB</span>
                 </div>
-                <span className="text-emerald-400">STATUS: ACTIVE</span>
+                <span className="text-amber-400 text-[10px] bg-amber-950/70 px-2 py-0.5 rounded border border-amber-500/40">
+                  قيد المراجعة // PENDING
+                </span>
               </div>
 
               {/* Student Identity */}
@@ -464,20 +547,24 @@ export const JoinClubSection: React.FC = () => {
                   <div className="font-bold text-gray-200">{formData.academicYear}</div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-gray-500">اللجنة المستهدفة:</div>
+                  <div className="text-gray-500">نوع العضوية / اللجنة:</div>
                   <div className="font-bold text-cyan-300 truncate">{formData.targetCommittee}</div>
                 </div>
               </div>
 
               {/* Skills preview on badge */}
               <div className="mb-4">
-                <div className="text-[10px] text-gray-500 mb-1">المهارات المعتمدة:</div>
+                <div className="text-[10px] text-gray-500 mb-1">المهارات والاهتمامات:</div>
                 <div className="flex flex-wrap gap-1">
-                  {formData.skills.slice(0, 3).map((s, i) => (
-                    <span key={i} className="px-1.5 py-0.5 rounded bg-cyan-950/60 text-[9px] text-cyan-300 border border-cyan-500/30">
-                      {s.split(' ')[0]}
-                    </span>
-                  ))}
+                  {formData.skills.length === 0 ? (
+                    <span className="text-[10px] text-gray-400 italic">شغف بالتعلم من الصفر</span>
+                  ) : (
+                    formData.skills.slice(0, 3).map((s, i) => (
+                      <span key={i} className="px-1.5 py-0.5 rounded bg-cyan-950/60 text-[9px] text-cyan-300 border border-cyan-500/30">
+                        {s.split(' ')[0]}
+                      </span>
+                    ))
+                  )}
                   {formData.skills.length > 3 && (
                     <span className="text-[9px] text-gray-500">+{formData.skills.length - 3}</span>
                   )}
@@ -487,16 +574,16 @@ export const JoinClubSection: React.FC = () => {
               {/* Barcode & Security Chip */}
               <div className="pt-3 border-t border-dashed border-white/10 flex items-center justify-between">
                 <div className="text-[9px] text-gray-500 text-left">
-                  AUTH VERIFIED // 2026-2027
+                  UNIVERSITY OF PALESTINE
                   <br />
-                  ENCRYPTED NFC CHIP
+                  DIGITAL PASS // 2026-2027
                 </div>
                 <QrCode className="w-10 h-10 text-cyan-400" />
               </div>
             </div>
 
-            <p className="text-xs text-gray-500 mt-4 text-center max-w-xs">
-              تتحدث بيانات بطاقتك الذكية لحظياً وتُرسل لك بصيغة Apple Wallet / Digital Badge فور القبول.
+            <p className="text-xs text-gray-400 mt-4 text-center max-w-xs leading-relaxed">
+              معاينة فورية للبطاقة — يتم اعتماد وتوليد بطاقة العضوية الإلكترونية الرسمية بمجرد موافقة إدارة النادي على الطلب.
             </p>
           </div>
         </div>

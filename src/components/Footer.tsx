@@ -133,10 +133,10 @@ export const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <a href="#training" className="hover:text-cyan-400 transition-colors">
-                  أكاديمية المعسكرات التدريبية
-                </a>
-              </li>
+                 <a href="#join" className="hover:text-cyan-400 transition-colors">
+                   طلب الانضمام والعضوية
+                 </a>
+               </li>
             </ul>
           </div>
 

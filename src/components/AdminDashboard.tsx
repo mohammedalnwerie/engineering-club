@@ -38,7 +38,12 @@ import {
   Camera,
   Upload,
   Link as LinkIcon,
-  LogOut
+  LogOut,
+  Printer,
+  QrCode,
+  ShieldCheck,
+  CreditCard,
+  Copy
 } from 'lucide-react';
 
 // Client-side image compressor & lightweight base64 converter
@@ -237,6 +242,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
   // Selected application for detail modal
   const [inspectApp, setInspectApp] = useState<StoredApplication | null>(null);
+  // Selected application for digital ID badge card modal
+  const [viewingBadgeApp, setViewingBadgeApp] = useState<StoredApplication | null>(null);
 
   // New Project Form State
   const [showAddProject, setShowAddProject] = useState(false);
@@ -1004,6 +1011,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                 </button>
+
+                                {app.status === 'تم القبول' && (
+                                  <button
+                                    onClick={() => setViewingBadgeApp(app)}
+                                    className="p-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-colors"
+                                    title="إصدار وعرض بطاقة العضوية الرقمية"
+                                  >
+                                    <CreditCard className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
 
                                 <button
                                   onClick={() => handleUpdateAppStatus(app.id, 'تم القبول')}
@@ -2484,16 +2501,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 )}
               </div>
 
+              {/* Direct access to Digital Member ID Card */}
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewingBadgeApp(inspectApp);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500/20 via-cyan-500/20 to-emerald-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow-lg transition-all"
+                >
+                  <CreditCard className="w-4 h-4 text-emerald-400" />
+                  <span>معاينة وإصدار بطاقة العضوية الإلكترونية الرسمية (Digital ID Badge)</span>
+                </button>
+              </div>
+
               <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/10">
                 <button
                   onClick={() => {
                     handleUpdateAppStatus(inspectApp.id, 'تم القبول');
                     showToast(`تم قبول عضوية (${inspectApp.fullName}) بنجاح`);
+                    setViewingBadgeApp({ ...inspectApp, status: 'تم القبول' });
                     setInspectApp(null);
                   }}
-                  className="flex-1 min-w-[100px] py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer shadow-md"
+                  className="flex-1 min-w-[100px] py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer shadow-md flex items-center justify-center gap-1.5"
                 >
-                  قبول العضوية
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>قبول وإصدار البطاقة</span>
                 </button>
                 <button
                   onClick={() => {
@@ -2525,6 +2558,129 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>حذف نهائي</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Digital Member ID Card Modal (Official UP Engineering Club Pass) */}
+        {viewingBadgeApp && (
+          <div className="absolute inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
+            <div className="w-full max-w-md rounded-3xl glass-panel border border-emerald-500/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(22,163,74,0.3)] relative text-right animate-in zoom-in-95 duration-200">
+              <button
+                onClick={() => setViewingBadgeApp(null)}
+                className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-xs mb-3">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>بطاقة عضوية رقمية معتمدة // CERTIFIED PASS</span>
+                </div>
+                <h3 className="text-xl font-black text-white">بطاقة العضوية الرسمية</h3>
+                <p className="text-xs text-gray-400 mt-1">النادي الهندسي — جامعة فلسطين</p>
+              </div>
+
+              {/* The Actual Digital Badge Card */}
+              <div
+                id="printable-member-badge"
+                className="w-full rounded-3xl p-6 bg-gradient-to-b from-[#0c1e38] via-[#081326] to-[#050b14] border-2 border-emerald-500/50 shadow-[0_0_35px_rgba(22,163,74,0.25)] relative overflow-hidden font-mono text-right"
+              >
+                {/* Decorative Tech Elements */}
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                {/* Badge Top Header */}
+                <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <img src="/brand/emblem.png" alt="UP" className="h-9 w-auto object-contain drop-shadow" />
+                    <div>
+                      <div className="text-xs font-black text-white font-sans">النادي الهندسي</div>
+                      <div className="text-[9px] text-gray-400">جامعة فلسطين - UP</div>
+                    </div>
+                  </div>
+                  <div className="text-left">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      عضو معتمد
+                    </span>
+                    <div className="text-[9px] text-gray-500 mt-0.5">2026 - 2027</div>
+                  </div>
+                </div>
+
+                {/* Member Info */}
+                <div className="mb-4">
+                  <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
+                  <div className="text-lg font-extrabold text-white font-sans mt-0.5 tracking-wide">
+                    {viewingBadgeApp.fullName}
+                  </div>
+                  <div className="text-xs text-cyan-300 mt-1 font-bold">
+                    الرقم الجامعي: {viewingBadgeApp.studentId || 'UP-STUDENT'}
+                  </div>
+                </div>
+
+                {/* Academic Fields */}
+                <div className="space-y-2 p-3 rounded-2xl bg-black/40 border border-white/10 mb-4 text-xs font-sans">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-[11px]">الكلية:</span>
+                    <span className="font-bold text-gray-200 text-[11px] text-left truncate max-w-[210px]">{viewingBadgeApp.college}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-[11px]">التخصص:</span>
+                    <span className="font-bold text-cyan-300 text-[11px]">{viewingBadgeApp.major}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-[11px]">السنة الدراسية:</span>
+                    <span className="font-bold text-gray-300 text-[11px]">{viewingBadgeApp.academicYear}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1 border-t border-white/5">
+                    <span className="text-gray-400 text-[11px]">نوع العضوية / الصفة:</span>
+                    <span className="font-bold text-emerald-400 text-[11px]">{viewingBadgeApp.targetCommittee}</span>
+                  </div>
+                </div>
+
+                {/* Verification Barcode & Seal */}
+                <div className="pt-3 border-t border-dashed border-white/15 flex items-center justify-between">
+                  <div className="text-[9px] text-gray-400 leading-tight">
+                    <div className="text-white font-bold mb-0.5">AUTH CODE:</div>
+                    <div className="text-cyan-400 font-bold">UP-ENG-{(viewingBadgeApp.id || 'VALID').slice(-8).toUpperCase()}</div>
+                    <div className="text-[8px] text-gray-500 mt-1">ISSUED BY UNIVERSITY OF PALESTINE</div>
+                  </div>
+                  <div className="p-1.5 rounded-xl bg-white text-black">
+                    <QrCode className="w-9 h-9" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2.5 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    window.print();
+                  }}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(22,163,74,0.3)] flex items-center justify-center gap-2 transition-all"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>طباعة أو حفظ البطاقة كـ PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playSuccess();
+                    const text = `🎉 تهانينا يا م. ${viewingBadgeApp.fullName}!\nتم قبول انضمامك رسمياً للنادي الهندسي بجامعة فلسطين.\nنوع العضوية: ${viewingBadgeApp.targetCommittee}\nرقم الاعتماد: UP-ENG-${(viewingBadgeApp.id || 'VALID').slice(-8).toUpperCase()}\nأهلاً بك معنا في صُنع أثر الغد! 🚀`;
+                    navigator.clipboard.writeText(text);
+                    showToast('تم نسخ رسالة القبول والاعتماد للحافظة بنجاح!');
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-200 font-medium text-xs cursor-pointer flex items-center justify-center gap-2 transition-all"
+                >
+                  <Copy className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>نسخ رسالة القبول الرسمية (لإرسالها للطالب)</span>
                 </button>
               </div>
             </div>

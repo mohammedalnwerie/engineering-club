@@ -33,8 +33,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin }) 
     { label: 'التخصصات', href: '#majors' },
     { label: 'المشاريع', href: '#projects' },
     { label: 'الفعاليات', href: '#events' },
-    { label: 'الأكاديمية', href: '#training' },
     { label: 'القيادة', href: '#leadership' },
+    { label: 'انضم إلينا', href: '#join' },
   ];
 
   const handleNavClick = (href: string) => {
