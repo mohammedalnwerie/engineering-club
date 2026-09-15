@@ -4,6 +4,7 @@ import type { ComplaintItem } from '../types';
 import { sound } from '../utils/soundEngine';
 import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check, Camera, Upload, Trash2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { checkRateLimit } from '../utils/security';
 
 interface ComplaintsModalProps {
   isOpen: boolean;
@@ -84,6 +85,13 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim() || !message.trim()) return;
+
+    const rateCheck = checkRateLimit('complaint_submission', 4000);
+    if (!rateCheck.allowed) {
+      sound.playError();
+      alert(`يرجى الانتظار ${rateCheck.waitSeconds} ثوانٍ قبل إرسال بلاغ آخر لحماية النظام من الضغط.`);
+      return;
+    }
 
     sound.playSuccess();
     const newComplaint = dataService.submitComplaint({

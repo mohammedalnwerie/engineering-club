@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { EventItem, EventTicket } from '../types';
 import { sound } from '../utils/soundEngine';
+import { checkRateLimit } from '../utils/security';
 import { Calendar, Clock, MapPin, Users, Ticket, CheckCircle, X, QrCode, Sparkles, ShieldCheck, AlertCircle, ArrowLeft, Download, Printer } from 'lucide-react';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import confetti from 'canvas-confetti';
@@ -72,11 +73,24 @@ export const EventsSection: React.FC = () => {
       return;
     }
 
-    sound.playSuccess();
-    const finalName = attendeeName.trim() || check.app?.fullName || 'عضو النادي الهندسي';
-    const ticket = dataService.bookTicket(selectedEvent.id, finalName, studentIdInput.trim());
-    setIssuedTicket(ticket);
-    setRegisteredSuccess(true);
+    const rateCheck = checkRateLimit('event_booking', 3000);
+    if (!rateCheck.allowed) {
+      sound.playError();
+      alert(`يرجى الانتظار ${rateCheck.waitSeconds} ثوانٍ قبل إرسال طلب حجز آخر.`);
+      return;
+    }
+
+    try {
+      const finalName = attendeeName.trim() || check.app?.fullName || 'عضو النادي الهندسي';
+      const ticket = dataService.bookTicket(selectedEvent.id, finalName, studentIdInput.trim());
+      sound.playSuccess();
+      setIssuedTicket(ticket);
+      setRegisteredSuccess(true);
+    } catch (err: unknown) {
+      sound.playError();
+      alert(err instanceof Error ? err.message : 'تعذر حجز المقعد.');
+      return;
+    }
 
     confetti({
       particleCount: 70,

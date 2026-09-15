@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { dataService } from '../services/dataService';
 import type { ClubApplication } from '../types';
 import { sound } from '../utils/soundEngine';
+import { checkRateLimit } from '../utils/security';
 
 import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -99,6 +100,13 @@ export const JoinClubSection: React.FC = () => {
   };
 
   const handleSubmit = () => {
+    const rateCheck = checkRateLimit('join_submission', 4000);
+    if (!rateCheck.allowed) {
+      sound.playError();
+      alert(`يرجى الانتظار ${rateCheck.waitSeconds} ثوانٍ قبل إعادة الإرسال لحماية الخادم.`);
+      return;
+    }
+
     sound.playSuccess();
     // Persist real application to database/storage
     dataService.submitApplication(formData);

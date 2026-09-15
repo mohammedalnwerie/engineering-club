@@ -3,6 +3,18 @@ import { dataService } from '../services/dataService';
 import { supabaseBridge } from '../services/supabaseClient';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
+import {
+  verifyAdminPassword,
+  changeAdminPassword,
+  getLockoutStatus,
+  recordFailedLogin,
+  resetLockout,
+  downloadCsv,
+  getSecurityAuditLogs,
+  type SecurityAuditEntry,
+  type LockoutStatus
+} from '../utils/security';
+import { safeStorage } from '../services/safeStorage';
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
 import { CommitteeBadgeModal } from './CommitteeBadgeModal';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
@@ -45,6 +57,7 @@ import {
   LogOut,
   Printer,
   ShieldCheck,
+  ShieldAlert,
   CreditCard,
   Copy,
   MessageSquare,
@@ -189,8 +202,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState(false);
+  const [lockoutState, setLockoutState] = useState<LockoutStatus>(getLockoutStatus());
+  const [isVerifyingAuth, setIsVerifyingAuth] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<SecurityAuditEntry[]>([]);
+  const [storageHealth, setStorageHealth] = useState(safeStorage.getHealth());
+  const [currentAdminPass, setCurrentAdminPass] = useState('');
+  const [newAdminPass, setNewAdminPass] = useState('');
+  const [confirmAdminPass, setConfirmAdminPass] = useState('');
+  const [changePassStatus, setChangePassStatus] = useState<{ message: string; isError: boolean } | null>(null);
+  const [appCommitteeFilter, setAppCommitteeFilter] = useState<string>('الكل');
 
-  const [activeTab, setActiveTab] = useState<'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud'>('applications');
+  const [activeTab, setActiveTab] = useState<'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud' | 'security'>('applications');
 
   // Live Data states
   const [applications, setApplications] = useState<StoredApplication[]>([]);
@@ -482,15 +504,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     return () => unsubscribe();
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Lockout countdown timer
+  useEffect(() => {
+    if (!lockoutState.isLocked) return;
+    const interval = setInterval(() => {
+      const current = getLockoutStatus();
+      setLockoutState(current);
+      if (!current.isLocked) {
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutState.isLocked]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Default master passcode for demo
-    if (passcode === 'eng2026' || passcode === 'admin') {
+    const currentLock = getLockoutStatus();
+    if (currentLock.isLocked) {
+      setLockoutState(currentLock);
+      sound.playError();
+      return;
+    }
+
+    setIsVerifyingAuth(true);
+    const isValid = await verifyAdminPassword(passcode);
+    setIsVerifyingAuth(false);
+
+    if (isValid) {
       sound.playSuccess();
+      resetLockout();
       setIsAuthenticated(true);
       setPasscodeError(false);
+      setLockoutState({ isLocked: false, remainingSeconds: 0, failedCount: 0 });
+      setPasscode('');
+      setAuditLogs(getSecurityAuditLogs());
+      setStorageHealth(safeStorage.getHealth());
     } else {
+      sound.playError();
+      const updatedLock = recordFailedLogin();
+      setLockoutState(updatedLock);
       setPasscodeError(true);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newAdminPass !== confirmAdminPass) {
+      sound.playError();
+      setChangePassStatus({ message: 'كلمة المرور الجديدة وتأكيدها غير متطابقين.', isError: true });
+      return;
+    }
+    const res = await changeAdminPassword(currentAdminPass, newAdminPass);
+    if (res.success) {
+      sound.playSuccess();
+      setChangePassStatus({ message: res.message, isError: false });
+      setCurrentAdminPass('');
+      setNewAdminPass('');
+      setConfirmAdminPass('');
+      setAuditLogs(getSecurityAuditLogs());
+    } else {
+      sound.playError();
+      setChangePassStatus({ message: res.message, isError: true });
     }
   };
 
@@ -719,51 +793,69 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
           </div>
         )}
 
-        {/* Authentication Gate */}
+        {/* Authentication Gate with Cryptographic SHA-256 & Brute-force Lockout */}
         {!isAuthenticated ? (
           <div className="p-8 sm:p-16 flex flex-col items-center justify-center text-center my-auto">
-            <div className="w-14 h-14 rounded-2xl bg-cyan-950/60 border border-cyan-400/40 text-cyan-400 flex items-center justify-center mb-6">
-              <Lock className="w-7 h-7" />
+            <div className="w-16 h-16 rounded-3xl bg-cyan-950/80 border-2 border-cyan-400/40 text-cyan-400 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,240,255,0.25)]">
+              <Lock className="w-8 h-8" />
             </div>
 
-            <h3 className="text-2xl font-bold text-white mb-2">تسجيل دخول المشرفين وقادة اللجان</h3>
-            <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-4">
-              أدخل كلمة سر الإدارة للوصول إلى أدوات التحكم وإدارة بيانات الكادر والفعاليات.
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 font-mono text-xs mb-3">
+              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+              <span>SECURE ACCESS // بوابة المشرفين المعتمدة</span>
+            </div>
+
+            <h3 className="text-2xl sm:text-3xl font-black text-white mb-2">تسجيل دخول إدارة النادي الهندسي</h3>
+            <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-6 leading-relaxed">
+              منطقة مشفرة ومحمية ببروتوكول حماية من التخمين الشامل. يُرجى إدخال الرمز السري للإدارة للوصول إلى منظومة التحكم.
             </p>
 
-            <button
-              type="button"
-              onClick={() => {
-                setPasscode('eng2026');
-                sound.playClick();
-              }}
-              className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 hover:bg-cyan-950/70 border border-cyan-500/30 px-3 py-1.5 rounded-xl font-mono cursor-pointer mb-6 transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>انقر للتعبئة السريعة: eng2026</span>
-            </button>
+            {lockoutState.isLocked ? (
+              <div className="w-full max-w-sm p-5 rounded-2xl bg-red-950/70 border-2 border-red-500/60 text-red-200 text-xs text-center space-y-2.5 mb-4 animate-in zoom-in-95 duration-200 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
+                <div className="font-extrabold flex items-center justify-center gap-2 text-sm text-red-400">
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>تم تفعيل القفل الأمني التلقائي</span>
+                </div>
+                <p className="leading-relaxed">
+                  تم تجميد محاولات الدخول مؤقتاً لحماية النظام بعد 5 محاولات خاطئة متتالية.
+                </p>
+                <div className="font-mono text-sm font-bold text-white bg-black/60 py-2 rounded-xl border border-red-500/30">
+                  الوقت المتبقي لفك القفل: {lockoutState.remainingSeconds} ثانية
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleLogin} className="w-full max-w-xs space-y-3.5">
+                <div className="relative">
+                  <input
+                    type="password"
+                    required
+                    placeholder="رمز المرور المشفر (Passcode)"
+                    value={passcode}
+                    disabled={isVerifyingAuth}
+                    onChange={(e) => {
+                      setPasscode(e.target.value);
+                      if (passcodeError) setPasscodeError(false);
+                    }}
+                    className="w-full px-4 py-3.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-center font-mono tracking-widest text-sm transition-all"
+                  />
+                </div>
 
-            <form onSubmit={handleLogin} className="w-full max-w-xs space-y-3">
-              <input
-                type="password"
-                required
-                placeholder="رمز المرور (Passcode)"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-center font-mono tracking-widest text-sm"
-              />
+                {passcodeError && (
+                  <div className="p-2.5 rounded-xl bg-red-950/50 border border-red-500/40 text-xs text-red-400 font-medium">
+                    رمز المرور غير صحيح. (محاولات متبقية قبل القفل: {Math.max(0, 5 - lockoutState.failedCount)})
+                  </div>
+                )}
 
-              {passcodeError && (
-                <div className="text-xs text-red-400 font-mono">رمز المرور غير صحيح، جرب eng2026</div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full py-3 rounded-xl font-bold text-sm text-black bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)] transition-all cursor-pointer"
-              >
-                تأكيد الدخول
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={isVerifyingAuth || !passcode}
+                  className="w-full py-3.5 rounded-xl font-bold text-sm text-black bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>{isVerifyingAuth ? 'جاري التحقق المشفر...' : 'تأكيد الدخول الآمن'}</span>
+                </button>
+              </form>
+            )}
           </div>
         ) : (
           /* Main Authenticated Dashboard */
@@ -895,6 +987,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <Database className="w-4 h-4 shrink-0" />
                   <span>السحابة والنسخ الاحتياطي</span>
                 </button>
+
+                <button
+                  onClick={() => {
+                    sound.playClick();
+                    setActiveTab('security');
+                    setAuditLogs(getSecurityAuditLogs());
+                    setStorageHealth(safeStorage.getHealth());
+                  }}
+                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    activeTab === 'security'
+                      ? 'bg-cyan-400 text-black shadow-md'
+                      : 'text-gray-300 hover:bg-white/5'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <span>الأمان وسجل النظام</span>
+                </button>
               </div>
 
               {/* Status Telemetry */}
@@ -987,6 +1096,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       <option value="تم القبول">تم القبول</option>
                       <option value="مرفوض">مرفوض</option>
                     </select>
+
+                    <select
+                      value={appCommitteeFilter}
+                      onChange={(e) => setAppCommitteeFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-cyan-300 focus:outline-none cursor-pointer font-medium"
+                    >
+                      <option value="الكل">كافة اللجان</option>
+                      <option value="فعاليات">لجنة الفعاليات ⚡</option>
+                      <option value="علاقات">لجنة العلاقات والتدريب 🤝</option>
+                      <option value="إعلام">اللجنة الإعلامية 🎨</option>
+                      <option value="عامة">عضوية عامة</option>
+                    </select>
                   </div>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -1005,11 +1126,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <button
                       onClick={() => {
                         sound.playClick();
-                        dataService.exportToCSV(applications, `club_applicants_${new Date().toISOString().split('T')[0]}`);
+                        const headers = ['الاسم الكامل', 'الرقم الجامعي', 'الكلية', 'التخصص', 'السنة الدراسية', 'اللجنة المستهدفة', 'البريد الإلكتروني', 'رقم الهاتف', 'الحالة', 'تاريخ التقديم'];
+                        const rows = applications.map((a) => [
+                          a.fullName,
+                          a.studentId,
+                          a.college,
+                          a.major,
+                          a.academicYear,
+                          a.targetCommittee,
+                          a.email,
+                          a.phone || '',
+                          a.status,
+                          a.submittedAt ? new Date(a.submittedAt).toLocaleDateString('ar-SA') : ''
+                        ]);
+                        downloadCsv(`UP_Engineering_Club_Applicants_${new Date().toISOString().split('T')[0]}`, headers, rows);
+                        showToast('تم تصدير ملف المتقدمين كـ CSV متوافق مع Excel بنجاح');
                       }}
-                      className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs text-cyan-300 flex items-center gap-2 transition-colors cursor-pointer shrink-0"
+                      className="px-4 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/40 text-xs text-emerald-300 font-bold flex items-center gap-2 transition-colors cursor-pointer shrink-0 shadow-sm"
                     >
-                      <Download className="w-4 h-4" />
+                      <Download className="w-4 h-4 text-emerald-400" />
                       <span>تصدير Excel (CSV)</span>
                     </button>
                   </div>
@@ -1043,7 +1178,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             app.email.toLowerCase().includes(q);
                           const matchesFilter =
                             appStatusFilter === 'all' || app.status === appStatusFilter;
-                          return matchesSearch && matchesFilter;
+                          const matchesCommittee =
+                            appCommitteeFilter === 'الكل' ||
+                            (app.targetCommittee && app.targetCommittee.includes(appCommitteeFilter));
+                          return matchesSearch && matchesFilter && matchesCommittee;
                         })
                         .map((app) => (
                           <tr key={app.id} className="hover:bg-white/[0.02] transition-colors">
@@ -1436,12 +1574,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             <button
                               onClick={() => {
                                 sound.playClick();
-                                dataService.exportToCSV(eventTickets, `attendance_${ev.id}`);
+                                const headers = ['رقم التذكرة', 'اسم الحاضر', 'الرقم الجامعي', 'تاريخ التسجيل', 'حالة الحضور'];
+                                const rows = eventTickets.map((t) => [
+                                  t.ticketNumber,
+                                  t.attendeeName,
+                                  t.studentId || '',
+                                  t.registeredAt,
+                                  t.checkedIn ? 'حاضر' : 'لم يحضر'
+                                ]);
+                                downloadCsv(`Attendance_${ev.title.replace(/\s+/g, '_')}`, headers, rows);
+                                showToast('تم تصدير كشف الحضور بنجاح');
                               }}
-                              className="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-cyan-400 hover:text-black text-xs font-mono text-cyan-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/40 text-xs font-bold text-emerald-300 flex items-center gap-1.5 transition-colors cursor-pointer"
                               title="تصدير كشف حضور هذه الفعالية"
                             >
-                              <Download className="w-3.5 h-3.5" />
+                              <Download className="w-3.5 h-3.5 text-emerald-400" />
                               <span>تصدير الكشف</span>
                             </button>
 
@@ -1525,6 +1672,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        sound.playClick();
+                        const headers = ['رقم التذكرة', 'الاسم', 'الرقم الجامعي', 'الكلية', 'التصنيف', 'الموضوع', 'الرسالة', 'الحالة', 'تاريخ الإرسال'];
+                        const rows = complaints.map((c) => [
+                          c.ticketNumber,
+                          c.isAnonymous ? 'مجهول (سري)' : c.studentName,
+                          c.isAnonymous ? 'مخفي' : c.studentId,
+                          c.college,
+                          c.category,
+                          c.subject,
+                          c.message,
+                          c.status,
+                          c.createdAt ? new Date(c.createdAt).toLocaleDateString('ar-SA') : ''
+                        ]);
+                        downloadCsv(`UP_Engineering_Club_Complaints_${new Date().toISOString().split('T')[0]}`, headers, rows);
+                        showToast('تم تصدير سجل الشكاوى كـ CSV متوافق مع Excel بنجاح');
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/40 text-xs text-emerald-300 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                      title="تصدير الشكاوى إلى جدول إكسل متوافق مع الحروف العربية"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>تصدير Excel (CSV)</span>
+                    </button>
+
                     <button
                       onClick={() => {
                         setComplaints(dataService.getComplaints());
@@ -2982,6 +3154,236 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       استعادة البيانات الافتراضية
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Security & System Audit */}
+            {activeTab === 'security' && (
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 font-mono text-xs mb-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>SECURITY & SYSTEM RESILIENCE // مركز الحماية والرقابة</span>
+                  </div>
+                  <h3 className="text-base font-bold text-white">إعدادات الأمان وسجل النظام والرقابة</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    إدارة كلمة المرور المشفرة للوحة التحكم، مراقبة استهلاك سعة التخزين المحلي، وتتبع سجل العمليات الأمنية.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Card 1: Change Master Password */}
+                  <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-cyan-400" />
+                        <span>تغيير الرمز السري الرئيسي للإدارة</span>
+                      </h4>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                        SHA-256 ENCRYPTED
+                      </span>
+                    </div>
+
+                    <form onSubmit={handleChangePassword} className="space-y-3">
+                      <div>
+                        <label className="block text-xs text-gray-300 mb-1">كلمة المرور الحالية:</label>
+                        <input
+                          type="password"
+                          required
+                          placeholder="أدخل كلمة المرور الحالية..."
+                          value={currentAdminPass}
+                          onChange={(e) => setCurrentAdminPass(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-xs text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-300 mb-1">كلمة المرور الجديدة (6 خانات على الأقل):</label>
+                        <input
+                          type="password"
+                          required
+                          placeholder="كلمة المرور الجديدة..."
+                          value={newAdminPass}
+                          onChange={(e) => setNewAdminPass(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-xs text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-300 mb-1">تأكيد كلمة المرور الجديدة:</label>
+                        <input
+                          type="password"
+                          required
+                          placeholder="أعد إدخال كلمة المرور الجديدة..."
+                          value={confirmAdminPass}
+                          onChange={(e) => setConfirmAdminPass(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-xs text-white"
+                        />
+                      </div>
+
+                      {changePassStatus && (
+                        <div
+                          className={`p-3 rounded-xl border text-xs ${
+                            changePassStatus.isError
+                              ? 'bg-red-950/50 border-red-500/40 text-red-300'
+                              : 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300'
+                          }`}
+                        >
+                          {changePassStatus.message}
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        className="w-full py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>حفظ وتشفير كلمة المرور الجديدة</span>
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Card 2: Local Storage Health & Quota Safety */}
+                  <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                          <Database className="w-4 h-4 text-emerald-400" />
+                          <span>سلامة وسعة التخزين المحلي (Storage Health)</span>
+                        </h4>
+                        <span
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                            storageHealth.status === 'healthy'
+                              ? 'bg-emerald-950 text-emerald-300 border-emerald-500/30'
+                              : storageHealth.status === 'warning'
+                              ? 'bg-amber-950 text-amber-300 border-amber-500/30'
+                              : 'bg-red-950 text-red-300 border-red-500/30'
+                          }`}
+                        >
+                          {storageHealth.status === 'healthy'
+                            ? '🟢 وضع ممتاز وآمن'
+                            : storageHealth.status === 'warning'
+                            ? '🟡 يقترب من الحد'
+                            : '🔴 حرج'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between items-center text-gray-300">
+                          <span>المساحة المستهلكة حالياً:</span>
+                          <span className="font-mono font-bold text-white">
+                            {storageHealth.usedKb} KB من أصل {storageHealth.maxKb} KB ({storageHealth.percent}%)
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full h-3 rounded-full bg-black/60 border border-white/10 overflow-hidden p-0.5">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              storageHealth.status === 'healthy'
+                                ? 'bg-emerald-400'
+                                : storageHealth.status === 'warning'
+                                ? 'bg-amber-400'
+                                : 'bg-red-500'
+                            }`}
+                            style={{ width: `${Math.max(4, storageHealth.percent)}%` }}
+                          />
+                        </div>
+
+                        <div className="flex justify-between items-center text-gray-400 text-[11px]">
+                          <span>عدد السجلات والمفاتيح النشطة:</span>
+                          <span className="font-mono text-cyan-300">{storageHealth.itemCount} ملف بيانات</span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-gray-400 leading-relaxed">
+                          🛡️ درع <strong className="text-white">SafeStorage</strong> مفعل تلقائياً لمنع أي انهيار تحت ضغط الاستخدام. يقوم النظام بحجب أخطاء سعة الذاكرة وحماية كافة البيانات.
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStorageHealth(safeStorage.getHealth());
+                        showToast('تم تحديث مؤشر صحة التخزين بنجاح');
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>إعادة فحص واختبار سعة التخزين الآن</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card 3: Security & Activity Audit Log */}
+                <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-amber-400" />
+                        <span>سجل الرقابة والعمليات الأمنية (Security Audit Trail)</span>
+                      </h4>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        يوثق النظام تلقائياً عمليات الدخول، المحاولات الفاشلة، وتصدير البيانات لحماية خصوصية النادي.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuditLogs(getSecurityAuditLogs());
+                        sound.playClick();
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs flex items-center gap-1 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3 text-cyan-400" />
+                      <span>تحديث السجل</span>
+                    </button>
+                  </div>
+
+                  {auditLogs.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-gray-500 font-mono">
+                      لا توجد عمليات أمنية مسجلة حتى الآن.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-right text-xs">
+                        <thead>
+                          <tr className="border-b border-white/10 text-gray-400 font-mono text-[11px]">
+                            <th className="pb-2">الوقت والتاريخ</th>
+                            <th className="pb-2">نوع العملية</th>
+                            <th className="pb-2">تفاصيل العملية</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 text-gray-300 font-sans">
+                          {auditLogs.map((log) => (
+                            <tr key={log.id} className="hover:bg-white/[0.02]">
+                              <td className="py-2.5 font-mono text-[10px] text-gray-400 whitespace-nowrap">
+                                {new Date(log.timestamp).toLocaleString('ar-SA')}
+                              </td>
+                              <td className="py-2.5 whitespace-nowrap">
+                                <span
+                                  className={`inline-block px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
+                                    log.action === 'LOGIN_SUCCESS'
+                                      ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                                      : log.action === 'LOGIN_FAILED'
+                                      ? 'bg-red-950 text-red-400 border border-red-500/30'
+                                      : log.action === 'PASSWORD_CHANGED'
+                                      ? 'bg-blue-950 text-blue-400 border border-blue-500/30'
+                                      : 'bg-cyan-950 text-cyan-400 border border-cyan-500/30'
+                                  }`}
+                                >
+                                  {log.action}
+                                </span>
+                              </td>
+                              <td className="py-2.5 text-xs text-gray-200">{log.details}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

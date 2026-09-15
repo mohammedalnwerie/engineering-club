@@ -1,3 +1,5 @@
+import { safeStorage } from './safeStorage';
+import { sanitizeText, sanitizeUrl } from '../utils/security';
 import { FLAGSHIP_PROJECTS, CLUB_EVENTS, TRAINING_COURSES, LEADERSHIP_MEMBERS, COLLEGES, MAJORS, STUDENT_SPOTLIGHT } from '../data/clubData';
 import type {
   ProjectCaseStudy,
@@ -77,13 +79,13 @@ class DataService {
     if (typeof window === 'undefined') return;
 
     if (!localStorage.getItem(STORAGE_KEYS.PROJECTS)) {
-      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(FLAGSHIP_PROJECTS));
+      safeStorage.set(STORAGE_KEYS.PROJECTS, JSON.stringify(FLAGSHIP_PROJECTS));
     }
     if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
-      localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(CLUB_EVENTS));
+      safeStorage.set(STORAGE_KEYS.EVENTS, JSON.stringify(CLUB_EVENTS));
     }
     if (!localStorage.getItem(STORAGE_KEYS.COURSES)) {
-      localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(TRAINING_COURSES));
+      safeStorage.set(STORAGE_KEYS.COURSES, JSON.stringify(TRAINING_COURSES));
     }
     if (!localStorage.getItem(STORAGE_KEYS.APPLICATIONS)) {
       const sampleApplications: StoredApplication[] = [
@@ -120,7 +122,7 @@ class DataService {
           submittedAt: '2026-10-03T10:15:00Z',
         }
       ];
-      localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(sampleApplications));
+      safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(sampleApplications));
     }
     if (!localStorage.getItem(STORAGE_KEYS.TICKETS)) {
       const sampleTickets: EventTicket[] = [
@@ -147,22 +149,22 @@ class DataService {
           checkedIn: false,
         }
       ];
-      localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(sampleTickets));
+      safeStorage.set(STORAGE_KEYS.TICKETS, JSON.stringify(sampleTickets));
     }
     if (!localStorage.getItem(STORAGE_KEYS.LEADERSHIP)) {
-      localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(LEADERSHIP_MEMBERS));
+      safeStorage.set(STORAGE_KEYS.LEADERSHIP, JSON.stringify(LEADERSHIP_MEMBERS));
     }
     if (!localStorage.getItem(STORAGE_KEYS.COLLEGES)) {
-      localStorage.setItem(STORAGE_KEYS.COLLEGES, JSON.stringify(COLLEGES));
+      safeStorage.set(STORAGE_KEYS.COLLEGES, JSON.stringify(COLLEGES));
     }
     if (!localStorage.getItem(STORAGE_KEYS.MAJORS)) {
-      localStorage.setItem(STORAGE_KEYS.MAJORS, JSON.stringify(MAJORS));
+      safeStorage.set(STORAGE_KEYS.MAJORS, JSON.stringify(MAJORS));
     }
     if (!localStorage.getItem(STORAGE_KEYS.SPOTLIGHT)) {
-      localStorage.setItem(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(STUDENT_SPOTLIGHT));
+      safeStorage.set(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(STUDENT_SPOTLIGHT));
     }
     if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
+      safeStorage.set(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
     }
   }
 
@@ -184,13 +186,13 @@ class DataService {
     } else {
       list.push(member);
     }
-    localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
     this.notify();
   }
 
   public deleteLeader(id: string) {
     const list = this.getLeadership().filter((m) => m.id !== id);
-    localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.LEADERSHIP, JSON.stringify(list));
     this.notify();
   }
 
@@ -212,7 +214,7 @@ class DataService {
     } else {
       list.push(college);
     }
-    localStorage.setItem(STORAGE_KEYS.COLLEGES, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.COLLEGES, JSON.stringify(list));
     this.notify();
   }
 
@@ -234,7 +236,7 @@ class DataService {
     } else {
       list.push(major);
     }
-    localStorage.setItem(STORAGE_KEYS.MAJORS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.MAJORS, JSON.stringify(list));
     this.notify();
   }
 
@@ -249,7 +251,7 @@ class DataService {
   }
 
   public saveSpotlight(data: StudentSpotlightData) {
-    localStorage.setItem(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(data));
+    safeStorage.set(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(data));
     this.notify();
   }
 
@@ -266,7 +268,7 @@ class DataService {
   }
 
   public saveSettings(data: SiteSettings) {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data));
+    safeStorage.set(STORAGE_KEYS.SETTINGS, JSON.stringify(data));
     this.notify();
   }
 
@@ -289,13 +291,13 @@ class DataService {
     } else {
       list.unshift(project);
     }
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.PROJECTS, JSON.stringify(list));
     this.notify();
   }
 
   public deleteProject(id: string) {
     const list = this.getProjects().filter((p) => p.id !== id);
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.PROJECTS, JSON.stringify(list));
     this.notify();
   }
 
@@ -317,13 +319,13 @@ class DataService {
     } else {
       list.unshift(event);
     }
-    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.EVENTS, JSON.stringify(list));
     this.notify();
   }
 
   public deleteEvent(id: string) {
     const list = this.getEvents().filter((e) => e.id !== id);
-    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.EVENTS, JSON.stringify(list));
     this.notify();
   }
 
@@ -342,32 +344,47 @@ class DataService {
   }
 
   public bookTicket(eventId: string, attendeeName: string, studentId?: string): EventTicket {
+    const cleanStudentId = (studentId || '').trim();
+    const tickets = this.getTickets();
+
+    // Check if student already booked a ticket for this event (prevent duplicate booking / spam)
+    if (cleanStudentId && cleanStudentId !== 'N/A') {
+      const existing = tickets.find(
+        (t) => t.eventId === eventId && t.studentId?.trim().toLowerCase() === cleanStudentId.toLowerCase()
+      );
+      if (existing) {
+        return existing;
+      }
+    }
+
     const events = this.getEvents();
     const ev = events.find((e) => e.id === eventId);
     const eventTitle = ev ? ev.title : 'فعالية النادي الهندسي';
 
-    // Increment count on event
+    // Strictly enforce capacity
     if (ev) {
+      if (ev.registeredCount >= ev.capacity) {
+        throw new Error('عذراً، اكتملت جميع المقاعد المتاحة لهذه الفعالية.');
+      }
       ev.registeredCount = Math.min(ev.capacity, (ev.registeredCount || 0) + 1);
       this.saveEvent(ev);
     }
 
     const ticketNum = `TKT-${Math.floor(100000 + Math.random() * 900000)}`;
     const newTicket: EventTicket = {
-      id: `ticket-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `ticket-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       eventId,
       eventTitle,
-      attendeeName,
-      studentId: studentId || 'N/A',
+      attendeeName: sanitizeText(attendeeName),
+      studentId: cleanStudentId || 'N/A',
       ticketNumber: ticketNum,
       qrHash: `QR_${ticketNum}_ENG_VERIFIED`,
       registeredAt: new Date().toLocaleString('ar-SA'),
       checkedIn: false,
     };
 
-    const tickets = this.getTickets();
     tickets.unshift(newTicket);
-    localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(tickets));
+    safeStorage.set(STORAGE_KEYS.TICKETS, tickets);
     this.notify();
     return newTicket;
   }
@@ -377,7 +394,7 @@ class DataService {
     const target = tickets.find((t) => t.id === ticketId);
     if (!target) return false;
     target.checkedIn = !target.checkedIn;
-    localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(tickets));
+    safeStorage.set(STORAGE_KEYS.TICKETS, JSON.stringify(tickets));
     this.notify();
     return target.checkedIn;
   }
@@ -393,16 +410,46 @@ class DataService {
   }
 
   public submitApplication(app: ClubApplication): StoredApplication {
-    const newApp: StoredApplication = {
+    const list = this.getApplications();
+    const cleanStudentId = (app.studentId || '').trim();
+
+    // Check if application already exists for this studentId
+    const existingIndex = list.findIndex(
+      (a) => cleanStudentId && a.studentId && a.studentId.trim().toLowerCase() === cleanStudentId.toLowerCase()
+    );
+
+    const sanitizedApp = {
       ...app,
-      id: `app-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      fullName: sanitizeText(app.fullName),
+      personalStatement: sanitizeText(app.personalStatement || ''),
+      portfolioUrl: sanitizeUrl(app.portfolioUrl),
+    };
+
+    if (existingIndex !== -1) {
+      // Update existing application rather than creating duplicates
+      const existing = list[existingIndex];
+      const updated: StoredApplication = {
+        ...existing,
+        ...sanitizedApp,
+        // Keep existing status if accepted
+        status: existing.status === 'تم القبول' ? 'تم القبول' : 'قيد المراجعة',
+        submittedAt: new Date().toISOString(),
+      };
+      list[existingIndex] = updated;
+      safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
+      this.notify();
+      return updated;
+    }
+
+    const newApp: StoredApplication = {
+      ...sanitizedApp,
+      id: `app-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       status: 'قيد المراجعة',
       submittedAt: new Date().toISOString(),
     };
 
-    const list = this.getApplications();
     list.unshift(newApp);
-    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
     this.notify();
     return newApp;
   }
@@ -412,14 +459,14 @@ class DataService {
     const app = list.find((a) => a.id === id);
     if (app) {
       app.status = status;
-      localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+      safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
       this.notify();
     }
   }
 
   public deleteApplication(id: string) {
     const list = this.getApplications().filter((a) => a.id !== id);
-    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
     this.notify();
   }
 
@@ -427,7 +474,7 @@ class DataService {
     const original = this.getApplications();
     const list = original.filter((a) => a.status !== 'مرفوض');
     const removedCount = original.length - list.length;
-    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(list));
     this.notify();
     return removedCount;
   }
@@ -450,7 +497,7 @@ class DataService {
     } else {
       list.unshift(course);
     }
-    localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(list));
+    safeStorage.set(STORAGE_KEYS.COURSES, JSON.stringify(list));
     this.notify();
   }
 
@@ -523,7 +570,7 @@ class DataService {
           updatedAt: new Date(Date.now() - 86400000).toISOString()
         }
       ];
-      localStorage.setItem(STORAGE_KEYS.COMPLAINTS, JSON.stringify(initial));
+      safeStorage.set(STORAGE_KEYS.COMPLAINTS, JSON.stringify(initial));
       return initial;
     }
     try {
@@ -538,13 +585,19 @@ class DataService {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const newComplaint: ComplaintItem = {
       ...data,
+      studentName: sanitizeText(data.studentName),
+      studentId: sanitizeText(data.studentId || ''),
+      email: sanitizeText(data.email || ''),
+      phone: data.phone ? sanitizeText(data.phone) : undefined,
+      subject: sanitizeText(data.subject),
+      message: sanitizeText(data.message),
       id: 'cmp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
       ticketNumber: `UP-CMP-2026-${randomSuffix}`,
       status: 'pending',
       createdAt: new Date().toISOString()
     };
     complaints.unshift(newComplaint);
-    localStorage.setItem(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
+    safeStorage.set(STORAGE_KEYS.COMPLAINTS, complaints);
     this.notify();
     return newComplaint;
   }
@@ -558,7 +611,7 @@ class DataService {
         complaints[idx].adminNotes = adminNotes;
       }
       complaints[idx].updatedAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
+      safeStorage.set(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
       this.notify();
       return complaints[idx];
     }
@@ -568,14 +621,15 @@ class DataService {
   public deleteComplaint(id: string): void {
     let complaints = this.getComplaints();
     complaints = complaints.filter(c => c.id !== id);
-    localStorage.setItem(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
+    safeStorage.set(STORAGE_KEYS.COMPLAINTS, JSON.stringify(complaints));
     this.notify();
   }
 
   public getComplaintByTicket(ticketNumber: string): ComplaintItem | undefined {
     const complaints = this.getComplaints();
     const cleanNum = ticketNumber.trim().toUpperCase();
-    return complaints.find(c => c.ticketNumber.toUpperCase() === cleanNum || (c.studentId && c.studentId.trim().toUpperCase() === cleanNum));
+    // For privacy, tracking is strictly permitted via the unique secret Ticket Number
+    return complaints.find(c => c.ticketNumber.toUpperCase() === cleanNum);
   }
 
   public isStudentMember(studentId: string): { isMember: boolean; status: 'approved' | 'pending' | 'rejected' | 'not_found'; app?: StoredApplication } {
@@ -595,16 +649,16 @@ class DataService {
   public importDatabaseJSON(jsonStr: string): boolean {
     try {
       const data = JSON.parse(jsonStr);
-      if (data.projects) localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(data.projects));
-      if (data.events) localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(data.events));
-      if (data.courses) localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(data.courses));
-      if (data.applications) localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(data.applications));
-      if (data.tickets) localStorage.setItem(STORAGE_KEYS.TICKETS, JSON.stringify(data.tickets));
-      if (data.leadership) localStorage.setItem(STORAGE_KEYS.LEADERSHIP, JSON.stringify(data.leadership));
-      if (data.colleges) localStorage.setItem(STORAGE_KEYS.COLLEGES, JSON.stringify(data.colleges));
-      if (data.majors) localStorage.setItem(STORAGE_KEYS.MAJORS, JSON.stringify(data.majors));
-      if (data.spotlight) localStorage.setItem(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(data.spotlight));
-      if (data.settings) localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
+      if (data.projects) safeStorage.set(STORAGE_KEYS.PROJECTS, JSON.stringify(data.projects));
+      if (data.events) safeStorage.set(STORAGE_KEYS.EVENTS, JSON.stringify(data.events));
+      if (data.courses) safeStorage.set(STORAGE_KEYS.COURSES, JSON.stringify(data.courses));
+      if (data.applications) safeStorage.set(STORAGE_KEYS.APPLICATIONS, JSON.stringify(data.applications));
+      if (data.tickets) safeStorage.set(STORAGE_KEYS.TICKETS, JSON.stringify(data.tickets));
+      if (data.leadership) safeStorage.set(STORAGE_KEYS.LEADERSHIP, JSON.stringify(data.leadership));
+      if (data.colleges) safeStorage.set(STORAGE_KEYS.COLLEGES, JSON.stringify(data.colleges));
+      if (data.majors) safeStorage.set(STORAGE_KEYS.MAJORS, JSON.stringify(data.majors));
+      if (data.spotlight) safeStorage.set(STORAGE_KEYS.SPOTLIGHT, JSON.stringify(data.spotlight));
+      if (data.settings) safeStorage.set(STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings));
       this.notify();
       return true;
     } catch {
