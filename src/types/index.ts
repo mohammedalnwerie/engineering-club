@@ -159,6 +159,7 @@ export interface SiteSettings {
   universityNameEn: string;
   sloganAr: string;
   sloganEn: string;
+  aboutUs?: string;
   vision: string;
   mission: string;
   values: BrandValue[];

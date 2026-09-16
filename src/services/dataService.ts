@@ -43,8 +43,9 @@ const DEFAULT_SETTINGS: SiteSettings = {
   universityNameEn: 'University of Palestine',
   sloganAr: 'هندسة اليوم .. تصنع أثر الغد',
   sloganEn: 'ENGINEERING TODAY .. IMPACT TOMORROW',
-  vision: 'أن يكون النادي الهندسي منصة طلابية رائدة لتمكين الطلبة وتطوير قدراتهم الأكاديمية والمهنية والشخصية، وربطهم بالابتكار وسوق العمل والمجتمع، وبناء جيل قادر على تحويل المعرفة والأفكار إلى أثر حقيقي.',
-  mission: 'نسعى إلى توفير بيئة هندسية متكاملة تدعم طلبة الكليات والتخصصات المختلفة من خلال تقديم الدورات والورش والبرامج التدريبية، وتنفيذ المشاريع والمسابقات، وبناء الشراكات مع المؤسسات وسوق العمل، وتمثيل صوت الطلبة ونقل احتياجاتهم وتطلعاتهم، بما يسهم في تطوير مهاراتهم وتعزيز فرصهم وتمكينهم من المشاركة الفاعلة في المجتمع.',
+  aboutUs: 'النادي الهندسي هو إطار طلابي تطوعي، غير ربحي، وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية، ولا يهدف إلى تحقيق أي مكاسب مادية. تأسس النادي بمبادرة من طلبة كلية هندسة البرمجيات والذكاء الاصطناعي في جامعة فلسطين، ليكون منصة طلابية جامعة تجمع طلبة التخصصات الهندسية والتقنية في الجامعة تحت مظلة واحدة، بهدف تنمية مهاراتهم الأكاديمية والعملية والتقنية، وتعزيز روح التعاون والإبداع بينهم.',
+  vision: 'أن يكون النادي الهندسي مجتمعًا طلابيًا فاعلًا يجمع طلبة الكليات والتخصصات الهندسية والتقنية في جامعة فلسطين، ويسهم في بناء طالب يمتلك المعرفة والمهارة والقدرة على الابتكار والقيادة، ويكون أكثر استعدادًا للمستقبل وسوق العمل، وقادرًا على صناعة أثر حقيقي في مجتمعه.',
+  mission: 'نعمل على تطوير الطلبة أكاديميًا وعمليًا وشخصيًا من خلال التدريب، والورش، والمشاريع، والمسابقات، والمبادرات، وتبادل الخبرات، وبناء الشراكات مع الخبراء والمؤسسات وسوق العمل، مع توفير بيئة طلابية تعزز التعاون وتمثّل احتياجات الطلبة وتمنحهم فرصًا حقيقية للتعلم والتجربة والمشاركة وصناعة الفرص.',
   values: [
     { id: 'v1', name: 'الابتكار', description: 'تحويل الأفكار الإبداعية إلى حلول هندسية تطبيقية ذات قيمة مضافة.', iconName: 'Lightbulb' },
     { id: 'v2', name: 'التعاون', description: 'روح الفريق والعمل التكاملي بين مختلف الكليات والتخصصات الهندسية.', iconName: 'Users' },
@@ -272,7 +273,18 @@ class DataService {
   // --- SITE SETTINGS ---
   public getSettings(): SiteSettings {
     const data = safeStorage.get<SiteSettings>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-    return data && typeof data === "object" ? { ...DEFAULT_SETTINGS, ...data } : DEFAULT_SETTINGS;
+    if (!data || typeof data !== 'object') return DEFAULT_SETTINGS;
+    const oldVisionPrefix = 'أن يكون النادي الهندسي منصة طلابية رائدة';
+    const oldMissionPrefix = 'نسعى إلى توفير بيئة هندسية متكاملة تدعم';
+    const vision = (data.vision && !data.vision.startsWith(oldVisionPrefix)) ? data.vision : DEFAULT_SETTINGS.vision;
+    const mission = (data.mission && !data.mission.startsWith(oldMissionPrefix)) ? data.mission : DEFAULT_SETTINGS.mission;
+    return {
+      ...DEFAULT_SETTINGS,
+      ...data,
+      aboutUs: data.aboutUs || DEFAULT_SETTINGS.aboutUs,
+      vision,
+      mission
+    };
   }
 
   public saveSettings(data: SiteSettings) {

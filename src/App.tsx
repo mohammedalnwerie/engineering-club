@@ -5,6 +5,7 @@ import { CustomCursor } from './components/CustomCursor';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { BrandIdentitySection } from './components/BrandIdentitySection';
+import { AboutPage } from './components/AboutPage';
 import { StoryScroll } from './components/StoryScroll';
 import { CollegesSection } from './components/CollegesSection';
 import { MajorsSection } from './components/MajorsSection';
@@ -23,6 +24,7 @@ export function App() {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
   const [showComplaintsModal, setShowComplaintsModal] = useState(false);
+  const [showAboutPage, setShowAboutPage] = useState(false);
 
   useEffect(() => {
     // Check if URL has ?verify=...
@@ -33,24 +35,37 @@ export function App() {
       setShowVerifyModal(true);
     }
 
-    // Check if URL has #/admin or ?admin=1
-        // Check if URL has #/complaints or ?complaints=1
+    // Check if URL has #/about or ?about=1
+    if (window.location.hash === '#/about' || params.get('about') === '1') {
+      setShowAboutPage(true);
+    }
+
+    // Check if URL has #/complaints or ?complaints=1
     if (window.location.hash === '#/complaints' || params.get('complaints') === '1') {
       setShowComplaintsModal(true);
     }
 
+    // Check if URL has #/admin or ?admin=1
     if (window.location.hash === '#/admin' || params.get('admin') === '1') {
       setShowAdminModal(true);
     }
 
     const handleHashChange = () => {
-            if (window.location.hash === '#/complaints') {
+      if (window.location.hash === '#/about') {
+        setShowAboutPage(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setShowAboutPage(false);
+      }
+
+      if (window.location.hash === '#/complaints') {
         setShowComplaintsModal(true);
       }
       if (window.location.hash === '#/admin') {
         setShowAdminModal(true);
       }
     };
+
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -62,15 +77,33 @@ export function App() {
 
   const handleCloseAdmin = () => {
     setShowAdminModal(false);
-          if (window.location.hash === '#/complaints') {
-        setShowComplaintsModal(true);
-      }
-      if (window.location.hash === '#/admin') {
+    if (window.location.hash === '#/admin') {
+      window.history.pushState(null, '', window.location.pathname + window.location.search);
+    }
+  };
+
+  const handleOpenAbout = () => {
+    setShowAboutPage(true);
+    window.location.hash = '#/about';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCloseAbout = () => {
+    setShowAboutPage(false);
+    if (window.location.hash === '#/about') {
       window.history.pushState(null, '', window.location.pathname + window.location.search);
     }
   };
 
   const handleJoinClick = () => {
+    if (showAboutPage) {
+      handleCloseAbout();
+      setTimeout(() => {
+        const target = document.querySelector('#join');
+        target?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+      return;
+    }
     const target = document.querySelector('#join');
     target?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -88,23 +121,6 @@ export function App() {
       {/* Dynamic Interactive Canvas Blueprint Background */}
       <CanvasBackground />
 
-      {/* Floating Glass Navigation HUD */}
-      <Navbar
-        onOpenJoinModal={handleJoinClick}
-        onOpenAdmin={handleOpenAdmin}
-        onOpenComplaints={() => setShowComplaintsModal(true)}
-        onOpenVerify={() => {
-          setVerifyCode('');
-          setShowVerifyModal(true);
-        }}
-      />
-
-      {/* Integrated Admin Full Page Dashboard */}
-      <AdminDashboard
-        isOpen={showAdminModal}
-        onClose={handleCloseAdmin}
-      />
-
       {/* Public Digital Membership Card Verification Portal */}
       <MembershipVerifyModal
         isOpen={showVerifyModal}
@@ -112,8 +128,7 @@ export function App() {
         initialCode={verifyCode}
       />
 
-
-            {/* Complaints & Suggestions Student Portal */}
+      {/* Complaints & Suggestions Student Portal */}
       <ComplaintsModal
         isOpen={showComplaintsModal}
         onClose={() => {
@@ -124,50 +139,80 @@ export function App() {
         }}
       />
 
-      {/* Main Content Sections */}
-      <main className="relative z-10">
-        {/* 01: Hero Section */}
-        <HeroSection
-          onJoinClick={handleJoinClick}
-          onExploreClick={handleExploreClick}
-        />
-
-        {/* 02: Official Brand Identity, Vision & Mission */}
-        <BrandIdentitySection />
-
-        {/* 03: Narrative Arc / Story Scroll */}
-        <StoryScroll />
-
-        {/* 03: Colleges Interactive Showcase */}
-        <CollegesSection />
-
-        {/* 04: Majors Creative Matrix */}
-        <MajorsSection />
-
-        {/* 05: Flagship Case Studies / Projects Showcase */}
-        <ProjectsSection />
-
-        {/* 06: Events & Hackathons Hub */}
-        <EventsSection />
-
-        {/* 07: Visual Leadership Hierarchy */}
-        <LeadershipSection />
-
-        {/* 09: 5-Step Join The Club Journey & Live ID Badge Generator */}
-        <JoinClubSection />
-
-        {/* 10: Real-time Live Activity Stream & Student Spotlight */}
-        <LiveFeedSection />
-      </main>
-
-      {/* 11: Technical Blueprint Footer */}
-      <Footer
-        onOpenComplaints={() => setShowComplaintsModal(true)}
-        onOpenVerify={() => {
-          setVerifyCode('');
-          setShowVerifyModal(true);
-        }}
+      {/* Integrated Admin Full Page Dashboard */}
+      <AdminDashboard
+        isOpen={showAdminModal}
+        onClose={handleCloseAdmin}
       />
+
+      {showAboutPage ? (
+        /* Dedicated Full-Screen Official Charter Page */
+        <AboutPage
+          onClose={handleCloseAbout}
+          onOpenJoin={handleJoinClick}
+        />
+      ) : (
+        <>
+          {/* Floating Glass Navigation HUD */}
+          <Navbar
+            onOpenJoinModal={handleJoinClick}
+            onOpenAdmin={handleOpenAdmin}
+            onOpenAbout={handleOpenAbout}
+            onOpenComplaints={() => setShowComplaintsModal(true)}
+            onOpenVerify={() => {
+              setVerifyCode('');
+              setShowVerifyModal(true);
+            }}
+          />
+
+          {/* Main Content Sections */}
+          <main className="relative z-10">
+            {/* 01: Hero Section */}
+            <HeroSection
+              onJoinClick={handleJoinClick}
+              onExploreClick={handleExploreClick}
+            />
+
+            {/* 02: Official Brand Identity, Vision & Mission (Concise with CTA to Full Charter) */}
+            <BrandIdentitySection
+              onOpenAboutPage={handleOpenAbout}
+            />
+
+            {/* 03: Narrative Arc / Story Scroll */}
+            <StoryScroll />
+
+            {/* 04: Colleges Interactive Showcase */}
+            <CollegesSection />
+
+            {/* 05: Majors Creative Matrix */}
+            <MajorsSection />
+
+            {/* 06: Flagship Case Studies / Projects Showcase */}
+            <ProjectsSection />
+
+            {/* 07: Events & Hackathons Hub */}
+            <EventsSection />
+
+            {/* 08: Visual Leadership Hierarchy */}
+            <LeadershipSection />
+
+            {/* 09: 5-Step Join The Club Journey & Live ID Badge Generator */}
+            <JoinClubSection />
+
+            {/* 10: Real-time Live Activity Stream & Student Spotlight */}
+            <LiveFeedSection />
+          </main>
+
+          {/* 11: Technical Blueprint Footer */}
+          <Footer
+            onOpenComplaints={() => setShowComplaintsModal(true)}
+            onOpenVerify={() => {
+              setVerifyCode('');
+              setShowVerifyModal(true);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

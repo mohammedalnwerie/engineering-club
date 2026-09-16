@@ -88,26 +88,21 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
 
           {/* Col 3: Colleges */}
           <div>
-            <h4 className="text-xs font-mono uppercase text-gray-300 mb-4 tracking-wider">// الكليات الهندسية</h4>
+            <h4 className="text-xs font-mono uppercase text-gray-300 mb-4 tracking-wider">// الكليات الشريكة</h4>
             <ul className="space-y-2.5 text-xs text-gray-400">
               <li>
                 <a href="#colleges" className="hover:text-cyan-400 transition-colors">
-                  الهندسة الصناعية والبرمجيات
+                  كلية هندسة البرمجيات والذكاء الاصطناعي
+                </a>
+              </li>
+              <li>
+                <a href="#colleges" className="hover:text-cyan-400 transition-colors">
+                  كلية الهندسة التطبيقية والتخطيط العمراني
                 </a>
               </li>
               <li>
                 <a href="#colleges" className="hover:text-cyan-400 transition-colors">
                   كلية تكنولوجيا المعلومات
-                </a>
-              </li>
-              <li>
-                <a href="#colleges" className="hover:text-cyan-400 transition-colors">
-                  الهندسة المعمارية والمدنية
-                </a>
-              </li>
-              <li>
-                <a href="#colleges" className="hover:text-cyan-400 transition-colors">
-                  المعامل والمختبرات البحثية
                 </a>
               </li>
             </ul>
@@ -181,6 +176,14 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
                 >
                   <span>التحقق من بطاقة العضوية 🪪</span>
                 </button>
+              </li>
+              <li>
+                <a
+                  href="#/about"
+                  className="hover:text-emerald-400 text-emerald-400/90 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>الميثاق التأسيسي والهوية 📄</span>
+                </a>
               </li>
               <li>
                 <a href="mailto:eng.club@up.edu.ps" className="text-gray-400 hover:text-cyan-300 font-mono transition-colors">eng.club@up.edu.ps</a>

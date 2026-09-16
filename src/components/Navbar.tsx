@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, ShieldAlert, ShieldCheck, MessageSquare } from 'lucide-react';
+import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, ShieldAlert, ShieldCheck, MessageSquare, FileText } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
 
@@ -9,9 +9,10 @@ interface NavbarProps {
   onOpenAdmin?: () => void;
   onOpenVerify?: () => void;
   onOpenComplaints?: () => void;
+  onOpenAbout?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, onOpenVerify, onOpenComplaints }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, onOpenVerify, onOpenComplaints, onOpenAbout }) => {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMuted, setIsMuted] = useState(sound.getMuted());
@@ -31,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
   };
 
   const navLinks = [
+    { label: 'من نحن', href: '#brand-identity' },
     { label: 'الكليات', href: '#colleges' },
     { label: 'التخصصات', href: '#majors' },
     { label: 'المشاريع', href: '#projects' },
@@ -41,6 +43,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
   const handleNavClick = (href: string) => {
     sound.playClick();
     setMobileMenuOpen(false);
+    if (window.location.hash.startsWith('#/')) {
+      window.location.hash = '';
+    }
     const element = document.querySelector(href);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
@@ -85,6 +90,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
 
         {/* Action Controls: Admin + Sound Toggle + Join Button */}
         <div className="flex items-center gap-2 lg:gap-2.5 shrink-0">
+          {/* Charter Full Page trigger */}
+          <button
+            onClick={() => {
+              sound.playClick();
+              if (onOpenAbout) onOpenAbout();
+              else window.location.hash = '#/about';
+            }}
+            title="الميثاق التأسيسي والهوية الرسمية للنادي"
+            className="hidden xl:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-emerald-400 text-xs font-mono text-emerald-300 hover:text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
+          >
+            <FileText className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="whitespace-nowrap">الميثاق</span>
+          </button>
+
           {/* Membership Verification Modal trigger */}
           <button
             onClick={() => {
@@ -182,6 +201,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
               <span className="font-mono text-xs text-gray-500">↗</span>
             </button>
           ))}
+          <button
+            onClick={() => {
+              sound.playClick();
+              setMobileMenuOpen(false);
+              if (onOpenAbout) onOpenAbout();
+              else window.location.hash = '#/about';
+            }}
+            className="w-full py-2.5 rounded-xl font-mono text-xs text-emerald-300 bg-white/5 border border-emerald-500/30 flex items-center justify-center gap-2"
+          >
+            <FileText className="w-4 h-4 text-emerald-400" />
+            <span>الميثاق والهوية الرسمية 📄</span>
+          </button>
           <button
             onClick={() => {
               sound.playClick();
