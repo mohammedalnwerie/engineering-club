@@ -96,7 +96,7 @@ export const EventsSection: React.FC = () => {
   }
 
   return (
-    <section id="events" className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#07090e]/80 border-t border-white/5">
+    <section id="events" className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/80 border-t border-white/5">
       <div className="max-w-6xl mx-auto">
         
         {/* Section Header */}

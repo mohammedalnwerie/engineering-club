@@ -60,7 +60,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
   };
 
   return (
-    <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#07090e]/90 border-t border-white/5">
+    <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/90 border-t border-white/5">
       <div className="max-w-5xl mx-auto">
         
         {/* Section Header */}

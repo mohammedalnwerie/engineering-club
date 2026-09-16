@@ -144,7 +144,7 @@ export const JoinClubSection: React.FC = () => {
 
 
   return (
-    <section id="join" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#07090e]">
+    <section id="join" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">

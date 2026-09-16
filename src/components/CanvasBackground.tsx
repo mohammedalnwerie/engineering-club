@@ -84,12 +84,12 @@ export const CanvasBackground: React.FC = () => {
       <canvas ref={canvasRef} className="absolute inset-0 block w-full h-full" />
       
       {/* Soft, warm architectural gradient ambient orbs */}
-      <div className="absolute -top-40 right-1/4 w-[600px] h-[600px] bg-[#0B2D5B]/20 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-emerald-950/25 rounded-full blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[550px] h-[550px] bg-[#0B2D5B]/15 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute -top-40 right-1/4 w-[600px] h-[600px] bg-[#7F1AB2]/20 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-[#3FE7E3]/12 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[550px] h-[550px] bg-[#35BC2B]/10 rounded-full blur-[150px] pointer-events-none" />
 
       {/* Top and bottom subtle darkening */}
-      <div className="absolute inset-0 bg-[#07090e]/70 pointer-events-none" />
+      <div className="absolute inset-0 bg-[#08041D]/75 pointer-events-none" />
     </div>
   );
 };

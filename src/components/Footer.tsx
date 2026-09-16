@@ -28,7 +28,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
   };
 
   return (
-    <footer className="relative z-10 border-t border-white/10 bg-[#05070a] pt-16 pb-12 px-4 sm:px-6 lg:px-8">
+    <footer className="relative z-10 border-t border-white/10 bg-[#08041D] pt-16 pb-12 px-4 sm:px-6 lg:px-8">
       {/* Blueprint Grid background in footer */}
       <div className="absolute inset-0 bg-blueprint-subgrid opacity-20 pointer-events-none" />
 

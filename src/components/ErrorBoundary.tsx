@@ -52,8 +52,8 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#07090e] text-white flex items-center justify-center p-4 sm:p-6 font-sans text-right" dir="rtl">
-          <div className="w-full max-w-xl rounded-3xl bg-[#0d121d] border-2 border-red-500/40 p-6 sm:p-8 shadow-[0_0_80px_rgba(239,68,68,0.25)] relative overflow-hidden">
+        <div className="min-h-screen bg-[#08041D] text-white flex items-center justify-center p-4 sm:p-6 font-sans text-right" dir="rtl">
+          <div className="w-full max-w-xl rounded-3xl bg-[#0E082C] border-2 border-red-500/40 p-6 sm:p-8 shadow-[0_0_80px_rgba(239,68,68,0.25)] relative overflow-hidden">
             {/* Header Badge */}
             <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
               <div className="flex items-center gap-3">

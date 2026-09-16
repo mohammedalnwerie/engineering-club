@@ -744,13 +744,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#07090e] w-screen h-screen overflow-hidden text-right select-none animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#08041D] w-screen h-screen overflow-hidden text-right select-none animate-in fade-in duration-200">
       <div
         className="relative w-full h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-[#090d16]/95 shrink-0">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-[#08041D]/95 shrink-0">
           <div className="flex items-center gap-3.5">
             <ClubLogo variant="emblem" size="md" />
             <div>
@@ -2947,7 +2947,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   </form>
 
                   {/* Card 2: Live Brand Identity & Logo Preview */}
-                  <div className="p-6 rounded-2xl bg-[#090d16] border border-white/10 space-y-4 flex flex-col justify-between">
+                  <div className="p-6 rounded-2xl bg-[#08041D] border border-white/10 space-y-4 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
                         <div className="flex items-center gap-2">

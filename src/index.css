@@ -1,5 +1,48 @@
 @import "tailwindcss";
 
+@theme {
+  /* University of Palestine Official Brand Palette */
+  --color-purple-50: #F3EDF8;
+  --color-purple-100: #E8DAF1;
+  --color-purple-200: #D1B5E3;
+  --color-purple-300: #B991D4;
+  --color-purple-400: #A26CC6;
+  --color-purple-500: #7F1AB2;
+  --color-purple-600: #6F3993;
+  --color-purple-700: #532B6E;
+  --color-purple-800: #381C4A;
+  --color-purple-900: #1C0E25;
+  --color-purple-950: #0E0712;
+
+  --color-cyan-50: #F0FDFC;
+  --color-cyan-100: #CCFBF7;
+  --color-cyan-200: #98F7F1;
+  --color-cyan-300: #3FE7E3;
+  --color-cyan-400: #2CD3D5;
+  --color-cyan-500: #13B5B9;
+  --color-cyan-600: #0C8F95;
+  --color-cyan-700: #0E7277;
+  --color-cyan-800: #11595E;
+  --color-cyan-900: #134A4E;
+  --color-cyan-950: #042A2F;
+
+  --color-emerald-50: #F3FCF1;
+  --color-emerald-100: #E0FADE;
+  --color-emerald-200: #C2F4BE;
+  --color-emerald-300: #92E98C;
+  --color-emerald-400: #5CD653;
+  --color-emerald-500: #35BC2B;
+  --color-emerald-600: #269B1E;
+  --color-emerald-700: #217A1B;
+  --color-emerald-800: #1E611A;
+  --color-emerald-900: #195017;
+  --color-emerald-950: #082C07;
+
+  --color-up-navy: #08041D;
+  --color-up-surface: #0E082C;
+  --color-up-card: #140C38;
+}
+
 @layer base {
   :root {
     --font-sans: 'Alexandria', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
@@ -14,14 +57,14 @@
 
   html {
     font-family: var(--font-sans);
-    background-color: #07090e;
+    background-color: #08041D;
     color: #f3f4f6;
   }
 
   body {
     margin: 0;
     padding: 0;
-    background-color: #07090e;
+    background-color: #08041D;
     color: #f3f4f6;
     overflow-x: hidden;
   }
@@ -38,24 +81,24 @@
     text-align: right;
   }
 
-  /* Custom Sleek Scrollbar */
+  /* Custom University of Palestine Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #07090e;
+    background: #08041D;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: #1C0E25;
     border-radius: 4px;
-    border: 1px solid rgba(0, 240, 255, 0.15);
+    border: 1px solid rgba(63, 231, 227, 0.2);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #00f0ff33;
+    background: #381C4A;
   }
 }
 
@@ -63,28 +106,28 @@
 .bg-blueprint-grid {
   background-size: 48px 48px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
 .bg-blueprint-subgrid {
   background-size: 16px 16px;
   background-image: 
-    linear-gradient(to right, rgba(0, 240, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 240, 255, 0.025) 1px, transparent 1px);
+    linear-gradient(to right, rgba(63, 231, 227, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(63, 231, 227, 0.025) 1px, transparent 1px);
 }
 
 .bg-dots-pattern {
-  background-image: radial-gradient(rgba(0, 240, 255, 0.15) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(63, 231, 227, 0.15) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* Glassmorphism HUD Panels */
+/* Glassmorphism HUD Panels in UP Dark Navy */
 .glass-panel {
-  background: rgba(13, 19, 31, 0.72);
+  background: rgba(14, 8, 44, 0.78);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(127, 26, 178, 0.22);
 }
 
 .glass-panel-hover {
@@ -92,51 +135,9 @@
 }
 
 .glass-panel-hover:hover {
-  border-color: rgba(0, 240, 255, 0.3);
-  box-shadow: 0 10px 30px -10px rgba(0, 240, 255, 0.15);
+  border-color: rgba(63, 231, 227, 0.35);
+  box-shadow: 0 10px 30px -10px rgba(63, 231, 227, 0.15);
   transform: translateY(-2px);
-}
-
-/* CAD Crosshairs and Technical Markers */
-.cad-corner {
-  position: relative;
-}
-
-.cad-corner::before,
-.cad-corner::after {
-  content: '';
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  pointer-events: none;
-}
-
-.cad-corner::before {
-  top: -1px;
-  left: -1px;
-  border-top: 2px solid #00f0ff;
-  border-left: 2px solid #00f0ff;
-}
-
-.cad-corner::after {
-  bottom: -1px;
-  right: -1px;
-  border-bottom: 2px solid #00f0ff;
-  border-right: 2px solid #00f0ff;
-}
-
-/* Laser Scanline Effect */
-@keyframes scanline {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(1000%);
-  }
-}
-
-.animate-scanline {
-  animation: scanline 8s linear infinite;
 }
 
 /* Subtle Pulse Glow */
@@ -153,7 +154,7 @@
   animation: glow-pulse 4s ease-in-out infinite;
 }
 
-/* Text Shimmer Effect */
+/* Text Shimmer Effect in UP Purple & Turquoise */
 @keyframes text-shimmer {
   0% {
     background-position: 200% 0;
@@ -167,9 +168,9 @@
   background: linear-gradient(
     90deg,
     #ffffff 0%,
-    #00f0ff 25%,
+    #3FE7E3 25%,
     #ffffff 50%,
-    #38bdf8 75%,
+    #A26CC6 75%,
     #ffffff 100%
   );
   background-size: 200% auto;
@@ -189,13 +190,11 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .animate-scanline,
   .animate-glow-pulse,
   .animate-shimmer {
     animation: none !important;
   }
 }
-
 
 /* Official Card & Badge Print Styles for Clean PDF Export */
 @media print {

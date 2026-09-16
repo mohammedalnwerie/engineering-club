@@ -61,7 +61,7 @@ export const StoryScroll: React.FC = () => {
   };
 
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 border-y border-white/5 bg-[#0a0d14]/70 backdrop-blur-md">
+    <section className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 border-y border-white/5 bg-[#08041D]/70 backdrop-blur-md">
       <div className="max-w-6xl mx-auto">
         {/* Narrative Flow Indicator */}
         <div className="text-center mb-12">

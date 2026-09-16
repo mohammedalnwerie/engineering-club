@@ -54,7 +54,7 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
   const conciseAbout = settings.aboutUs || 'النادي الهندسي هو إطار طلابي تطوعي، غير ربحي، وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية، ولا يهدف إلى تحقيق أي مكاسب مادية. تأسس النادي بمبادرة من طلبة كلية هندسة البرمجيات والذكاء الاصطناعي في جامعة فلسطين، ليكون منصة طلابية جامعة تجمع طلبة التخصصات الهندسية والتقنية في الجامعة تحت مظلة واحدة، بهدف تنمية مهاراتهم الأكاديمية والعملية والتقنية، وتعزيز روح التعاون والإبداع بينهم.';
 
   return (
-    <section id="brand-identity" className="relative py-20 px-4 sm:px-6 lg:px-8 z-10 overflow-hidden bg-[#07090e]/80 border-t border-white/5">
+    <section id="brand-identity" className="relative py-20 px-4 sm:px-6 lg:px-8 z-10 overflow-hidden bg-[#08041D]/80 border-t border-white/5">
       {/* Subtle Background Glows */}
       <div className="absolute top-1/4 -right-40 w-96 h-96 bg-[#0B2D5B]/30 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -left-40 w-96 h-96 bg-[#16A34A]/20 rounded-full blur-3xl pointer-events-none" />

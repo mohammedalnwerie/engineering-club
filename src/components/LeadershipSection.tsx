@@ -33,7 +33,7 @@ export const LeadershipSection: React.FC = () => {
   const committees = leadershipList.filter((m) => m.tier === 'committee-lead');
 
   return (
-    <section id="leadership" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#07090e]/80">
+    <section id="leadership" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/80">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">

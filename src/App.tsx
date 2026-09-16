@@ -114,7 +114,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-[#F3F4F6] relative selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#08041D] text-[#F3F4F6] relative selection:bg-cyan-500/30 selection:text-cyan-200">
 
       {/* Dynamic Interactive Canvas Blueprint Background */}
       <CanvasBackground />

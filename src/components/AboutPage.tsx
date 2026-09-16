@@ -116,7 +116,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
   ];
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-[#F3F4F6] relative z-50 selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className="min-h-screen bg-[#08041D] text-[#F3F4F6] relative z-50 selection:bg-emerald-500/30 selection:text-emerald-200">
       {/* Print-specific style helper */}
       <style>{`
         @media print {
@@ -128,7 +128,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
       `}</style>
 
       {/* Top Floating Action Bar (Sticky Header) */}
-      <header className="sticky top-0 inset-x-0 z-50 bg-[#07090e]/90 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 lg:px-8 py-3.5 no-print">
+      <header className="sticky top-0 inset-x-0 z-50 bg-[#08041D]/90 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 lg:px-8 py-3.5 no-print">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           {/* Back Button */}
           <button

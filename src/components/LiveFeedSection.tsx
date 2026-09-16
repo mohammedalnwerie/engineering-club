@@ -103,7 +103,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
   };
 
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 border-t border-white/5 bg-[#090d16]/80">
+    <section className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 border-t border-white/5 bg-[#08041D]/80">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           

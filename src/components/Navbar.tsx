@@ -61,8 +61,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
       <div
         className={`max-w-7xl mx-auto rounded-2xl transition-all duration-300 px-4 sm:px-6 py-2.5 flex items-center justify-between ${
           isScrolled
-            ? 'glass-panel shadow-[0_10px_35px_-10px_rgba(0,0,0,0.8)] border border-emerald-500/20 py-2'
-            : 'bg-[#07090e]/70 backdrop-blur-md border border-white/5'
+            ? 'glass-panel shadow-[0_10px_35px_-10px_rgba(0,0,0,0.8)] border border-[#7F1AB2]/30 py-2'
+            : 'bg-[#08041D]/80 backdrop-blur-md border border-white/5'
         }`}
       >
         {/* Official Brand Logo */}
@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
               key={link.href}
               onClick={() => handleNavClick(link.href)}
               onMouseEnter={() => sound.playHover()}
-              className="px-3.5 py-1.5 text-sm font-medium text-gray-300 hover:text-cyan-400 hover:bg-white/[0.05] rounded-lg transition-all cursor-pointer"
+              className="px-3.5 py-1.5 text-sm font-medium text-gray-300 hover:text-[#3FE7E3] hover:bg-white/[0.05] rounded-lg transition-all cursor-pointer"
             >
               {link.label}
             </button>
