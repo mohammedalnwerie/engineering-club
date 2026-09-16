@@ -18,6 +18,8 @@ import { safeStorage } from '../services/safeStorage';
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
 import { CommitteeBadgeModal } from './CommitteeBadgeModal';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
+import { AcceptanceDispatchModal } from './AcceptanceDispatchModal';
+import { emailService, type EmailConfig } from '../services/emailService';
 import type {
   ProjectCaseStudy,
   EventItem,
@@ -61,6 +63,8 @@ import {
   CreditCard,
   Copy,
   MessageSquare,
+  Send,
+  Mail,
 } from 'lucide-react';
 
 // Client-side image compressor & lightweight base64 converter
@@ -211,6 +215,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [confirmAdminPass, setConfirmAdminPass] = useState('');
   const [changePassStatus, setChangePassStatus] = useState<{ message: string; isError: boolean } | null>(null);
   const [appCommitteeFilter, setAppCommitteeFilter] = useState<string>('الكل');
+  const [dispatchModalApp, setDispatchModalApp] = useState<StoredApplication | null>(null);
+  const [emailConfig, setEmailConfig] = useState<EmailConfig>(emailService.getConfig());
 
   const [activeTab, setActiveTab] = useState<'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud' | 'security'>('applications');
 
@@ -572,6 +578,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const handleUpdateAppStatus = (id: string, status: StoredApplication['status']) => {
     sound.playClick();
     dataService.updateApplicationStatus(id, status);
+    if (status === 'تم القبول') {
+      const found = applications.find((a) => a.id === id);
+      if (found) {
+        setDispatchModalApp({ ...found, status: 'تم القبول' });
+      }
+    }
   };
 
   // Delete single application
@@ -1221,13 +1233,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                 </button>
 
                                 {app.status === 'تم القبول' && (
-                                  <button
-                                    onClick={() => setViewingBadgeApp(app)}
-                                    className="p-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-colors"
-                                    title="إصدار وعرض بطاقة العضوية الرقمية"
-                                  >
-                                    <CreditCard className="w-3.5 h-3.5" />
-                                  </button>
+                                  <>
+                                    <button
+                                      onClick={() => setDispatchModalApp(app)}
+                                      className="p-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-colors"
+                                      title="إرسال رسالة القبول وبطاقة العضوية (إيميل / واتساب)"
+                                    >
+                                      <Send className="w-3.5 h-3.5 text-emerald-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => setViewingBadgeApp(app)}
+                                      className="p-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-colors"
+                                      title="إصدار وعرض بطاقة العضوية الرقمية"
+                                    >
+                                      <CreditCard className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
                                 )}
 
                                 {app.status === 'تم القبول' && app.targetCommittee && !app.targetCommittee.includes('عامة') && (
@@ -2562,6 +2583,83 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Card: Email & WhatsApp Dispatch Configuration */}
+                  <div className="p-6 rounded-2xl bg-black/40 border border-cyan-500/30 space-y-4 lg:col-span-2">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-cyan-400" />
+                        <div>
+                          <h4 className="text-sm font-bold text-white">إعدادات الإرسال التلقائي لإيميلات القبول (EmailJS Integration)</h4>
+                          <p className="text-[11px] text-gray-400">ربط المنصة بحساب إيميل النادي لإرسال رسائل القبول وبطاقات العضوية تلقائياً للطلبة</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30">
+                        EMAIL DISPATCH
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-gray-300 leading-relaxed">
+                      💡 <strong>ملاحظة للمشرف:</strong> خيار الإرسال المباشر عبر <strong>Gmail</strong> وخيار <strong>واتساب</strong> يعملان فورياً وبنقرة واحدة لجميع الطلبة دون الحاجة لأي إعدادات. إذا رغبت بإرسال الإيميلات تلقائياً في الخلفية، يمكنك ربط حسابك المجاني في EmailJS وإدخال المفاتيح أدناه.
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <label className="block text-gray-300 mb-1 font-mono">Service ID:</label>
+                        <input
+                          type="text"
+                          placeholder="service_xxxxxxx"
+                          value={emailConfig.serviceId}
+                          onChange={(e) => setEmailConfig({ ...emailConfig, serviceId: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-1 font-mono">Template ID:</label>
+                        <input
+                          type="text"
+                          placeholder="template_xxxxxxx"
+                          value={emailConfig.templateId}
+                          onChange={(e) => setEmailConfig({ ...emailConfig, templateId: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-1 font-mono">Public Key (User ID):</label>
+                        <input
+                          type="text"
+                          placeholder="user_xxxxxxx / xxxxx"
+                          value={emailConfig.publicKey}
+                          onChange={(e) => setEmailConfig({ ...emailConfig, publicKey: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-1 font-mono">إيميل مرسل النادي:</label>
+                        <input
+                          type="email"
+                          placeholder="eng.club@up.edu.ps"
+                          value={emailConfig.senderEmail}
+                          onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          emailService.saveConfig(emailConfig);
+                          sound.playSuccess();
+                          showToast('تم حفظ إعدادات إرسال الإيميلات بنجاح!');
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>حفظ إعدادات الإيميل</span>
+                      </button>
+                    </div>
+                  </div>
                   {/* Card 1: Official Brand Identity & Vision/Mission Form */}
                   <form
                     onSubmit={handleSaveSettings}
@@ -3173,6 +3271,83 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Card: Email & WhatsApp Dispatch Configuration */}
+                  <div className="p-6 rounded-2xl bg-black/40 border border-cyan-500/30 space-y-4 lg:col-span-2">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-cyan-400" />
+                        <div>
+                          <h4 className="text-sm font-bold text-white">إعدادات الإرسال التلقائي لإيميلات القبول (EmailJS Integration)</h4>
+                          <p className="text-[11px] text-gray-400">ربط المنصة بحساب إيميل النادي لإرسال رسائل القبول وبطاقات العضوية تلقائياً للطلبة</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30">
+                        EMAIL DISPATCH
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-gray-300 leading-relaxed">
+                      💡 <strong>ملاحظة للمشرف:</strong> خيار الإرسال المباشر عبر <strong>Gmail</strong> وخيار <strong>واتساب</strong> يعملان فورياً وبنقرة واحدة لجميع الطلبة دون الحاجة لأي إعدادات. إذا رغبت بإرسال الإيميلات تلقائياً في الخلفية، يمكنك ربط حسابك المجاني في EmailJS وإدخال المفاتيح أدناه.
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <label className="block text-gray-300 mb-1 font-mono">Service ID:</label>
+                        <input
+                          type="text"
+                          placeholder="service_xxxxxxx"
+                          value={emailConfig.serviceId}
+                          onChange={(e) => setEmailConfig({ ...emailConfig, serviceId: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-1 font-mono">Template ID:</label>
+                        <input
+                          type="text"
+                          placeholder="template_xxxxxxx"
+                          value={emailConfig.templateId}
+                          onChange={(e) => setEmailConfig({ ...emailConfig, templateId: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-1 font-mono">Public Key (User ID):</label>
+                        <input
+                          type="text"
+                          placeholder="user_xxxxxxx / xxxxx"
+                          value={emailConfig.publicKey}
+                          onChange={(e) => setEmailConfig({ ...emailConfig, publicKey: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-300 mb-1 font-mono">إيميل مرسل النادي:</label>
+                        <input
+                          type="email"
+                          placeholder="eng.club@up.edu.ps"
+                          value={emailConfig.senderEmail}
+                          onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          emailService.saveConfig(emailConfig);
+                          sound.playSuccess();
+                          showToast('تم حفظ إعدادات إرسال الإيميلات بنجاح!');
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>حفظ إعدادات الإيميل</span>
+                      </button>
+                    </div>
+                  </div>
                   {/* Card 1: Change Master Password */}
                   <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-white/10">
@@ -3481,17 +3656,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               </div>
 
               <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/10">
+                {inspectApp.status === 'تم القبول' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDispatchModalApp(inspectApp);
+                    }}
+                    className="w-full mb-2 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600/30 via-teal-600/30 to-cyan-600/30 hover:from-emerald-600/40 hover:to-cyan-600/40 border border-emerald-500/40 text-emerald-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow-lg transition-all"
+                  >
+                    <Send className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>إرسال رسالة القبول والبطاقة للطالب (إيميل / واتساب) 🚀</span>
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     handleUpdateAppStatus(inspectApp.id, 'تم القبول');
                     showToast(`تم قبول عضوية (${inspectApp.fullName}) بنجاح`);
-                    setViewingBadgeApp({ ...inspectApp, status: 'تم القبول' });
+                    setDispatchModalApp({ ...inspectApp, status: 'تم القبول' });
                     setInspectApp(null);
                   }}
                   className="flex-1 min-w-[100px] py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer shadow-md flex items-center justify-center gap-1.5"
                 >
                   <CheckCircle className="w-3.5 h-3.5" />
-                  <span>قبول وإصدار البطاقة</span>
+                  <span>قبول وإرسال الإشعار</span>
                 </button>
                 <button
                   onClick={() => {
@@ -3652,6 +3839,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 >
                   <Printer className="w-4 h-4 text-emerald-400" />
                   <span>طباعة أو حفظ البطاقة كـ PDF 📄</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDispatchModalApp(viewingBadgeApp);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600/40 via-teal-600/40 to-cyan-600/40 hover:from-emerald-600/50 hover:to-cyan-600/50 border border-emerald-500/40 text-emerald-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 transition-all shadow-md"
+                >
+                  <Send className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>إرسال البطاقة للطالب عبر واتساب / الإيميل 🚀</span>
                 </button>
 
                 <button
@@ -4899,6 +5097,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             isOpen={Boolean(viewingCommitteeApp)}
             app={viewingCommitteeApp}
             onClose={() => setViewingCommitteeApp(null)}
+          />
+        )}
+
+        {/* Acceptance Dispatch Modal (WhatsApp / Email / Direct Link) */}
+        {dispatchModalApp && (
+          <AcceptanceDispatchModal
+            isOpen={Boolean(dispatchModalApp)}
+            app={dispatchModalApp}
+            onClose={() => setDispatchModalApp(null)}
+            onViewBadge={(a) => setViewingBadgeApp(a)}
           />
         )}
 
