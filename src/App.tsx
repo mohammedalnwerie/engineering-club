@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 
 import { CanvasBackground } from './components/CanvasBackground';
-import { CustomCursor } from './components/CustomCursor';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { BrandIdentitySection } from './components/BrandIdentitySection';
@@ -115,8 +114,6 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#07090e] text-[#F3F4F6] relative selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* Precision CAD Custom Cursor (Active on Desktop) */}
-      <CustomCursor />
 
       {/* Dynamic Interactive Canvas Blueprint Background */}
       <CanvasBackground />

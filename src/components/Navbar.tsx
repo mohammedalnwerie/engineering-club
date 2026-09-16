@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Menu, X, Terminal, ArrowUpRight, ShieldAlert, ShieldCheck, MessageSquare, FileText } from 'lucide-react';
+import { Menu, X, Terminal, ArrowUpRight, ShieldAlert, ShieldCheck, MessageSquare, FileText } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
 
@@ -15,7 +15,6 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, onOpenVerify, onOpenComplaints, onOpenAbout }) => {
 
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMuted, setIsMuted] = useState(sound.getMuted());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -25,11 +24,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const toggleSound = () => {
-    const nextState = sound.toggleMute();
-    setIsMuted(nextState);
-  };
 
   const navLinks = [
     { label: 'من نحن', href: '#brand-identity' },
@@ -132,14 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
             </button>
           </div>
 
-          {/* Sound FX Synthesizer Toggle */}
-          <button
-            onClick={toggleSound}
-            title={isMuted ? 'تفعيل المؤثرات الصوتية التقنية' : 'كتم المؤثرات الصوتية'}
-            className="p-2 rounded-xl bg-white/[0.04] border border-white/10 hover:border-cyan-500/40 text-gray-400 hover:text-cyan-400 transition-all cursor-pointer shrink-0"
-          >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
-          </button>
+
 
           {/* CTA: Join Club */}
           <button

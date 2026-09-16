@@ -127,7 +127,7 @@ export const JoinClubSection: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 text-xs font-mono mb-4">
             <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span>مكانك معنا // BECOME A MEMBER</span>
+            <span>مكانك معنا في النادي الهندسي</span>
           </div>
 
           <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight mb-4">
@@ -148,7 +148,7 @@ export const JoinClubSection: React.FC = () => {
                 <div className="flex items-center justify-between pb-6 mb-8 border-b border-white/10">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-sm font-extrabold text-cyan-400 px-2.5 py-1 rounded bg-cyan-950/60 border border-cyan-500/30">
-                      STEP 0{currentStep} / 05
+                      الخطوة {currentStep} من 5
                     </span>
                     <span className="text-sm font-bold text-white">
                       {currentStep === 1 && 'من أنت؟'}
@@ -528,7 +528,7 @@ export const JoinClubSection: React.FC = () => {
           {/* Right Column: Live Holographic Engineering ID Card Generator */}
           <div className="lg:col-span-5 flex flex-col items-center">
             <div className="w-full text-center font-mono text-xs text-cyan-400 mb-3 tracking-wider">
-              // LIVE DIGITAL ENG-BADGE PREVIEW
+              معاينة حية لبطاقة العضوية
             </div>
 
             {/* Holographic ID Badge */}
@@ -543,7 +543,7 @@ export const JoinClubSection: React.FC = () => {
                   <span>UP ENGINEERING CLUB</span>
                 </div>
                 <span className="text-amber-400 text-[10px] bg-amber-950/70 px-2 py-0.5 rounded border border-amber-500/40">
-                  قيد المراجعة // PENDING
+                  قيد المراجعة والاعتماد
                 </span>
               </div>
 
