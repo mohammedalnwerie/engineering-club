@@ -756,7 +756,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-extrabold text-white text-base">لوحة الإدارة الهندسية المركزية</span>
-                <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#0B2D5B] text-cyan-300 border border-cyan-500/30 font-bold">
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#381C4A] text-[#3FE7E3] border border-[#3FE7E3]/30 font-bold">
                   ENG-ADMIN v3.0
                 </span>
                 <span className="hidden md:inline-flex items-center gap-1 font-mono text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold">
@@ -2960,7 +2960,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       </div>
 
                       {/* Official Logo Banner */}
-                      <div className="p-4 rounded-xl bg-[#0B2D5B]/40 border border-emerald-500/30 flex items-center justify-between gap-4 mb-4">
+                      <div className="p-4 rounded-xl bg-[#381C4A]/40 border border-[#7F1AB2]/30 flex items-center justify-between gap-4 mb-4">
                         <ClubLogo variant="horizontal" size="md" />
                         <span className="text-[11px] font-mono text-emerald-300 font-bold px-2.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40">
                           {settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}
@@ -3912,10 +3912,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 {/* Badge Top Header */}
                 <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
                   <div className="flex items-center gap-2.5">
-                    <img src="/brand/emblem.png" alt="UP" className="h-9 w-auto object-contain drop-shadow" />
+                    <img src="/brand/emblem.png" alt="شعار النادي الهندسي" className="h-9 w-auto object-contain drop-shadow" />
                     <div>
                       <div className="text-xs font-black text-white font-sans">النادي الهندسي</div>
-                      <div className="text-[9px] text-gray-400">جامعة فلسطين - UP</div>
+                      <div className="text-[9px] text-gray-400">جامعة فلسطين</div>
                     </div>
                   </div>
                   <div className="text-left">

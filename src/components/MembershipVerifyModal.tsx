@@ -171,7 +171,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                     {/* Header with Emblem */}
                     <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
                       <div className="flex items-center gap-2.5">
-                        <img src="/brand/emblem.png" alt="UP" className="h-8 w-auto object-contain" />
+                        <img src="/brand/emblem.png" alt="شعار النادي الهندسي" className="h-8 w-auto object-contain" />
                         <div>
                           <div className="text-xs font-black text-white font-sans">النادي الهندسي</div>
                           <div className="text-[9px] text-gray-400">جامعة فلسطين — UNIVERSITY OF PALESTINE</div>

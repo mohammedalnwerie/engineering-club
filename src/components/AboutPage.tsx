@@ -204,17 +204,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
       </header>
 
       {/* Background Decorative Ambient Lights */}
-      <div className="absolute top-20 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none no-print" />
-      <div className="absolute top-1/3 left-0 w-96 h-96 bg-[#0B2D5B]/30 rounded-full blur-3xl pointer-events-none no-print" />
-      <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none no-print" />
+      <div className="absolute top-20 right-0 w-96 h-96 bg-[#7F1AB2]/15 rounded-full blur-3xl pointer-events-none no-print" />
+      <div className="absolute top-1/3 left-0 w-96 h-96 bg-[#381C4A]/40 rounded-full blur-3xl pointer-events-none no-print" />
+      <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-[#3FE7E3]/10 rounded-full blur-3xl pointer-events-none no-print" />
 
       {/* Main Charter Content */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 relative z-10">
         
         {/* Document Header & Seal */}
         <section className="text-center mb-16 pb-12 border-b border-white/10 relative">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0B2D5B]/60 border border-emerald-500/30 text-emerald-400 text-xs font-mono mb-6 shadow-[0_0_20px_rgba(22,163,74,0.15)]">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-6 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
+            <span className="w-2 h-2 rounded-full bg-[#3FE7E3] animate-pulse" />
             <span>وثيقة رسمية معتمدة // OFFICIAL CLUB CHARTER</span>
           </div>
 
@@ -225,7 +225,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4">
             الميثاق التأسيسي والهوية الرسمية
           </h1>
-          <p className="text-base sm:text-lg text-emerald-400 font-semibold mb-2">
+          <p className="text-base sm:text-lg text-white font-bold mb-2">
             النادي الهندسي — جامعة فلسطين
           </p>
           <p className="text-xs sm:text-sm text-gray-400 max-w-2xl mx-auto font-mono">
@@ -237,7 +237,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
             <span className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
               🌱 إطار طلابي تطوعي غير ربحي
             </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300">
+            <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300">
               ⚖️ مستقل وغير مسيّس
             </span>
             <span className="px-3.5 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
@@ -249,11 +249,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
           </div>
 
           {/* Slogan Pill */}
-          <div className="mt-8 inline-flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#0B2D5B]/70 via-[#16A34A]/20 to-[#0B2D5B]/70 border border-emerald-500/40 shadow-[0_0_25px_rgba(22,163,74,0.15)]">
-            <Sparkles className="w-4 h-4 text-emerald-400" />
+          <div className="mt-8 inline-flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#381C4A]/70 via-[#7F1AB2]/20 to-[#381C4A]/70 border border-[#7F1AB2]/40 shadow-[0_0_25px_rgba(127,26,178,0.2)]">
+            <Sparkles className="w-4 h-4 text-[#3FE7E3]" />
             <span className="text-base sm:text-lg font-black text-white">هندسة اليوم .. تصنع أثر الغد</span>
             <span className="text-gray-500">|</span>
-            <span className="font-mono text-xs font-semibold text-emerald-300 uppercase">ENGINEERING TODAY .. IMPACT TOMORROW</span>
+            <span className="font-mono text-xs font-semibold text-[#3FE7E3] uppercase">ENGINEERING TODAY .. IMPACT TOMORROW</span>
           </div>
         </section>
 
@@ -285,8 +285,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
             </p>
 
             {/* Visual Highlight Quote */}
-            <div className="mt-8 p-4 sm:p-6 rounded-2xl bg-[#0B2D5B]/40 border border-blue-500/30 flex items-start gap-4">
-              <Sparkles className="w-5 h-5 text-emerald-400 shrink-0 mt-1" />
+            <div className="mt-8 p-4 sm:p-6 rounded-2xl bg-[#381C4A]/40 border border-[#7F1AB2]/30 flex items-start gap-4">
+              <Sparkles className="w-5 h-5 text-[#3FE7E3] shrink-0 mt-1" />
               <div className="text-sm sm:text-base text-gray-300">
                 <span className="text-white font-bold block mb-1">رسالة الانتماء والمسؤولية:</span>
                 نؤمن بأن الطالب الجامعي ليس متلقياً للعلم فحسب، بل هو شريك فاعل في البناء وصناعة الفرص وإعمار الوطن بعقله ومهاراته الهندسية.
@@ -377,17 +377,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
         {/* SECTION 03: رسالة النادي (Full Official Mission - 5 Action Paths) */}
         <section className="mb-20 scroll-mt-24" id="mission">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-[#0B2D5B]/70 border border-blue-400/40 flex items-center justify-center text-blue-300 shadow-[0_0_15px_rgba(11,45,91,0.4)]">
+            <div className="w-12 h-12 rounded-2xl bg-[#381C4A]/80 border border-[#7F1AB2]/40 flex items-center justify-center text-[#B991D4] shadow-[0_0_15px_rgba(127,26,178,0.3)]">
               <Compass className="w-6 h-6" />
             </div>
             <div>
-              <span className="font-mono text-[11px] text-blue-400 uppercase tracking-widest">MISSION STATEMENT</span>
+              <span className="font-mono text-[11px] text-[#B991D4] uppercase tracking-widest">MISSION STATEMENT</span>
               <h2 className="text-2xl sm:text-3xl font-black text-white">رسالة النادي</h2>
             </div>
           </div>
 
-          <div className="p-6 sm:p-10 rounded-3xl glass-panel border border-blue-500/30 relative overflow-hidden space-y-8">
-            <div className="border-r-4 border-blue-400 pr-4">
+          <div className="p-6 sm:p-10 rounded-3xl glass-panel border border-[#7F1AB2]/30 relative overflow-hidden space-y-8">
+            <div className="border-r-4 border-[#7F1AB2] pr-4">
               <h3 className="text-lg sm:text-xl font-bold text-white mb-2">الغايات الكبرى للرسالة:</h3>
               <p className="text-base sm:text-lg text-gray-200 leading-relaxed font-light">
                 تتمثل رسالة النادي الهندسي في تمكين طالب جامعة فلسطين والطالب الفلسطيني من تطوير قدراته العلمية والعملية والشخصية، وتهيئته للانتقال من البيئة الجامعية إلى الحياة المهنية والمجتمعية بثقة وكفاءة.
@@ -531,7 +531,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
             {coreValues.map((val, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-emerald-500/40 hover:bg-[#0B2D5B]/30 transition-all duration-300 flex flex-col justify-between"
+                className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-[#7F1AB2]/40 hover:bg-[#381C4A]/30 transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
                   <div className="font-mono text-xs text-emerald-400 font-bold mb-2">VALUE {val.num}</div>
@@ -581,7 +581,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
         </section>
 
         {/* Bottom Official Seal & Verification Footer */}
-        <section className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-[#0B2D5B]/70 via-[#16A34A]/10 to-[#0B2D5B]/70 border border-emerald-500/40 text-center relative overflow-hidden">
+        <section className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-[#381C4A]/70 via-[#7F1AB2]/20 to-[#381C4A]/70 border border-[#7F1AB2]/40 text-center relative overflow-hidden">
           <div className="max-w-2xl mx-auto space-y-4">
             <ClubLogo variant="horizontal" size="md" className="mx-auto mb-4" />
             <h3 className="text-2xl font-black text-white">معاً نصنع المستقبل الهندسي لفلسطين</h3>

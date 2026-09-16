@@ -102,7 +102,7 @@ export const EventsSection: React.FC = () => {
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-12">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0B2D5B]/60 border border-emerald-500/30 text-emerald-400 text-xs font-mono mb-3">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-3 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
               <Sparkles className="w-3.5 h-3.5" />
               <span>البرامج والأنشطة القادمة // قيد التنسيق والتحضير</span>
             </div>

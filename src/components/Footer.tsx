@@ -40,7 +40,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 font-mono text-xs text-gray-400">
-            <div className="px-3 py-1 rounded-full bg-[#0B2D5B]/60 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
+            <div className="px-3 py-1 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
               <Sparkles className="w-3.5 h-3.5" />
               <span>{settings.sloganAr || 'هندسة اليوم .. تصنع أثر الغد'}</span>
             </div>

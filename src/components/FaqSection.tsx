@@ -65,7 +65,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
         
         {/* Section Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0B2D5B]/60 border border-emerald-500/30 text-emerald-400 text-xs font-mono mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-4 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
             <HelpCircle className="w-4 h-4" />
             <span>الأسئلة الشائعة والإرشاد الطلابي</span>
           </div>
@@ -88,7 +88,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
                 key={faq.id}
                 className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
                   isOpen
-                    ? 'bg-white/[0.04] border-emerald-500/40 shadow-[0_4px_20px_rgba(22,163,74,0.1)]'
+                    ? 'bg-white/[0.04] border-[#7F1AB2]/40 shadow-[0_4px_20px_rgba(127,26,178,0.15)]'
                     : 'bg-black/30 border-white/10 hover:border-white/20'
                 }`}
               >
@@ -98,7 +98,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
                   className="w-full p-5 sm:p-6 text-right flex items-center justify-between gap-4 cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-white/5 text-emerald-300 border border-white/5 shrink-0 hidden sm:inline-block">
+                    <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-white/5 text-[#3FE7E3] border border-white/5 shrink-0 hidden sm:inline-block">
                       {faq.category}
                     </span>
                     <h3 className="text-base sm:text-lg font-bold text-white text-right">
@@ -108,7 +108,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
 
                   <div
                     className={`w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-gray-300 shrink-0 transition-transform duration-300 ${
-                      isOpen ? 'rotate-180 text-emerald-400 bg-emerald-500/10' : ''
+                      isOpen ? 'rotate-180 text-[#3FE7E3] bg-[#3FE7E3]/10' : ''
                     }`}
                   >
                     <ChevronDown className="w-4 h-4" />
@@ -126,9 +126,9 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
         </div>
 
         {/* Bottom Callout Banner */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#0B2D5B]/60 via-[#16A34A]/10 to-[#0B2D5B]/60 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#381C4A]/70 via-[#7F1AB2]/20 to-[#381C4A]/70 border border-[#7F1AB2]/30 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 text-center sm:text-right">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-[#7F1AB2]/20 border border-[#7F1AB2]/30 flex items-center justify-center text-[#3FE7E3] shrink-0">
               <MessageSquare className="w-6 h-6" />
             </div>
             <div>

@@ -38,6 +38,15 @@
   --color-emerald-900: #195017;
   --color-emerald-950: #082C07;
 
+  /* University of Palestine Official Core Palette */
+  --color-up-purple: #7F1AB2;
+  --color-up-dark-purple: #381C4A;
+  --color-up-dark: #08041D;
+  --color-up-turquoise: #3FE7E3;
+  --color-up-dark-turquoise: #0E7277;
+  --color-up-green: #35BC2B;
+  --color-up-white: #FFFFFF;
+
   --color-up-navy: #08041D;
   --color-up-surface: #0E082C;
   --color-up-card: #140C38;
@@ -120,6 +129,31 @@
 .bg-dots-pattern {
   background-image: radial-gradient(rgba(63, 231, 227, 0.15) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+/* Subtle Engineering Circuit & Technical Node Lines */
+.bg-tech-circuit {
+  background-size: 40px 40px;
+  background-image: 
+    radial-gradient(circle at 10px 10px, rgba(63, 231, 227, 0.10) 1.5px, transparent 1.5px),
+    linear-gradient(to right, rgba(127, 26, 178, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(127, 26, 178, 0.04) 1px, transparent 1px);
+}
+
+.tech-node-badge {
+  position: relative;
+}
+.tech-node-badge::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -6px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #3FE7E3;
+  transform: translateY(-50%);
+  box-shadow: 0 0 6px rgba(63, 231, 227, 0.6);
 }
 
 /* Glassmorphism HUD Panels in UP Dark Navy */
