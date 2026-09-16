@@ -59,7 +59,7 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
               <img src="/brand/emblem.png" alt="UP" className="h-10 w-auto object-contain drop-shadow" />
               <div>
                 <div className="text-xs font-black text-white font-sans">النادي الهندسي</div>
-                <div className="text-[9px] text-gray-400 font-sans">جامعة فلسطين — عمادة شؤون الطلبة</div>
+                <div className="text-[9px] text-gray-400 font-sans">جامعة فلسطين — الكليات الهندسية</div>
               </div>
             </div>
             <div className="text-left">
