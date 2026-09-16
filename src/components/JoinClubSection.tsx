@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { ClubApplication } from '../types';
 import { sound } from '../utils/soundEngine';
 import { checkRateLimit } from '../utils/security';
 
-import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck } from 'lucide-react';
+import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck, Lock, AlertCircle, Ban } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 
 export const JoinClubSection: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const [recruitment, setRecruitment] = useState(() => dataService.getRecruitmentSettings());
+
+  useEffect(() => {
+    const unsub = dataService.subscribe(() => {
+      setRecruitment(dataService.getRecruitmentSettings());
+    });
+    return unsub;
+  }, []);
 
   const [formData, setFormData] = useState<ClubApplication>({
     fullName: '',
@@ -77,6 +86,20 @@ export const JoinClubSection: React.FC = () => {
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Validate committee recruitment status before submitting
+      const selectedCommObj = committees.find((c) => c.name === formData.targetCommittee);
+      const selectedCommId = selectedCommObj?.id || 'general';
+      const isCommClosed = !recruitment.isGlobalRecruitmentOpen || recruitment.committees[selectedCommId]?.isOpen === false;
+
+      if (isCommClosed) {
+        sound.playError();
+        const notice = !recruitment.isGlobalRecruitmentOpen
+          ? (recruitment.globalClosedMessage || 'باب استقطاب اللجان متوقف مؤقتاً')
+          : (recruitment.committees[selectedCommId]?.closedNotice || 'اكتملت المقاعد المتاحة لهذه اللجنة');
+        alert(`عذراً، التقديم لهذه اللجنة مغلق حالياً: ${notice}. يرجى اختيار لجنة مفتوحة للاستقطاب.`);
+        return;
+      }
+
       handleSubmit();
     }
   };
@@ -416,33 +439,83 @@ export const JoinClubSection: React.FC = () => {
                 {/* Step 5: Target Committee & Commitment */}
                 {currentStep === 5 && (
                   <div className="space-y-5 animate-in fade-in duration-200">
+                    {/* Global Recruitment Warning if paused */}
+                    {!recruitment.isGlobalRecruitmentOpen && (
+                      <div className="p-4 rounded-2xl bg-amber-950/70 border border-amber-500/40 text-amber-300 text-xs flex items-start gap-3 shadow-lg">
+                        <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                        <div>
+                          <div className="font-bold text-sm text-white mb-0.5">باب استقطاب اللجان متوقف مؤقتاً</div>
+                          <div className="text-amber-200/90 text-xs leading-relaxed">
+                            {recruitment.globalClosedMessage || 'تقوم إدارة النادي حالياً بفرز وتوزيع المتقدمين، التقديم للجان متوقف مؤقتاً.'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-2">
-                        اختر نوع الانضمام / اللجنة التي تناسبك:
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-mono text-gray-300">
+                          اختر نوع الانضمام / اللجنة التي تناسبك:
+                        </label>
+                        <span className="text-[10px] font-mono text-gray-400">
+                          (يتم تحديث شواغر اللجان بشكل فوري)
+                        </span>
+                      </div>
+
                       <div className="space-y-2.5">
                         {committees.map((comm) => {
                           const isSelected = formData.targetCommittee === comm.name;
+                          const commStatus = recruitment.committees[comm.id];
+                          const isClosed = !recruitment.isGlobalRecruitmentOpen || (commStatus && commStatus.isOpen === false);
+                          const closedNotice = !recruitment.isGlobalRecruitmentOpen
+                            ? (recruitment.globalClosedMessage || 'الاستقطاب متوقف حالياً')
+                            : (commStatus?.closedNotice || 'اكتملت المقاعد المتاحة لهذه اللجنة');
+
                           return (
                             <div
                               key={comm.id}
                               onClick={() => {
+                                if (isClosed) {
+                                  sound.playError();
+                                  alert(`عذراً، الاستقطاب لهذه اللجنة مغلق حالياً: ${closedNotice}. يرجى اختيار لجنة أخرى أو العضوية العامة.`);
+                                  return;
+                                }
                                 sound.playHover();
                                 setFormData({ ...formData, targetCommittee: comm.name });
                               }}
-                              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                                isSelected
-                                  ? 'bg-cyan-950/40 border-cyan-400 text-white shadow-[0_0_15px_rgba(0,240,255,0.15)]'
-                                  : 'bg-black/30 border-white/5 text-gray-400 hover:border-white/20'
+                              className={`p-4 rounded-2xl border transition-all relative ${
+                                isClosed
+                                  ? 'bg-black/20 border-white/5 opacity-60 cursor-not-allowed'
+                                  : isSelected
+                                    ? 'bg-cyan-950/40 border-cyan-400 text-white shadow-[0_0_15px_rgba(0,240,255,0.15)] cursor-pointer'
+                                    : 'bg-black/30 border-white/5 text-gray-400 hover:border-white/20 cursor-pointer'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-2 mb-1">
-                                <span className="text-xs font-bold text-white">{comm.name}</span>
-                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${comm.badgeColor}`}>
-                                  {comm.badge}
+                                <span className={`text-xs font-bold ${isClosed ? 'text-gray-400 line-through' : 'text-white'}`}>
+                                  {comm.name}
                                 </span>
+
+                                {isClosed ? (
+                                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-md border text-amber-400 bg-amber-950/80 border-amber-500/40 flex items-center gap-1 shadow">
+                                    <Lock className="w-3 h-3" />
+                                    <span>مكتمل الاستقطاب</span>
+                                  </span>
+                                ) : (
+                                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${comm.badgeColor}`}>
+                                    {comm.badge}
+                                  </span>
+                                )}
                               </div>
+
                               <p className="text-[11px] text-gray-400 leading-relaxed">{comm.desc}</p>
+
+                              {isClosed && (
+                                <div className="mt-2 pt-2 border-t border-white/5 flex items-center gap-1.5 text-[10px] text-amber-400 font-mono">
+                                  <Ban className="w-3 h-3 text-amber-400 shrink-0" />
+                                  <span>{closedNotice}</span>
+                                </div>
+                              )}
                             </div>
                           );
                         })}

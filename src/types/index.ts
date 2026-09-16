@@ -197,3 +197,16 @@ export interface ComplaintItem {
 }
 
 
+
+export interface CommitteeRecruitmentStatus {
+  isOpen: boolean;
+  closedNotice?: string;
+  maxSeats?: number;
+}
+
+export interface RecruitmentSettings {
+  isGlobalRecruitmentOpen: boolean;
+  globalClosedMessage?: string;
+  committees: Record<string, CommitteeRecruitmentStatus>;
+  lastUpdated?: string;
+}

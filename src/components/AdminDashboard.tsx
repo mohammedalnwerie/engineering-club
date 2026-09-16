@@ -66,6 +66,9 @@ import {
   MessageSquare,
   Send,
   Mail,
+  Sliders,
+  Power,
+  Unlock,
 } from 'lucide-react';
 
 // Client-side image compressor & lightweight base64 converter
@@ -231,6 +234,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [majors, setMajors] = useState<Major[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(dataService.getSettings());
   const [spotlight, setSpotlight] = useState<StudentSpotlightData>(dataService.getSpotlight());
+  const [recruitmentSettings, setRecruitmentSettings] = useState(() => dataService.getRecruitmentSettings());
 
   // Complaints & Suggestions state
   const [complaints, setComplaints] = useState<ComplaintItem[]>([]);
@@ -346,6 +350,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setSettings(dataService.getSettings());
     setSpotlight(dataService.getSpotlight());
     setComplaints(dataService.getComplaints());
+    setRecruitmentSettings(dataService.getRecruitmentSettings());
   };
 
   
@@ -357,6 +362,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     const updated = dataService.updateComplaintStatus(id, newStatus, notes);
     if (updated) {
       setComplaints(dataService.getComplaints());
+    setRecruitmentSettings(dataService.getRecruitmentSettings());
       if (inspectComplaint && inspectComplaint.id === id) {
         setInspectComplaint(updated);
       }
@@ -368,6 +374,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     if (window.confirm(`هل أنت متأكد من حذف البلاغ برقم تذكرة (${ticket}) نهائياً؟`)) {
       dataService.deleteComplaint(id);
       setComplaints(dataService.getComplaints());
+    setRecruitmentSettings(dataService.getRecruitmentSettings());
       if (inspectComplaint && inspectComplaint.id === id) {
         setInspectComplaint(null);
       }
@@ -1084,6 +1091,114 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             {/* Tab 1: Applications */}
             {activeTab === 'applications' && (
               <div className="flex-1 overflow-y-auto p-6">
+                {/* Committee Recruitment & Intake Controls (إدارة استقطاب اللجان) */}
+                <div className="p-5 rounded-2xl bg-black/40 border border-white/10 mb-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2.5 rounded-xl border ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400' : 'bg-red-950/60 border-red-500/30 text-red-400'}`}>
+                        <Sliders className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-bold text-white">إدارة استقطاب اللجان والتسجيل</h4>
+                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-red-500/10 text-red-300 border-red-500/20'}`}>
+                            {recruitmentSettings.isGlobalRecruitmentOpen ? 'الاستقطاب العام: مفتوح' : 'الاستقطاب العام: متوقف'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          التحكم في فتح وإغلاق باب التقديم لكل لجنة بشكل فردي لحماية المقاعد أو إيقاف الاستقطاب بالكامل.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Master Global Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !recruitmentSettings.isGlobalRecruitmentOpen;
+                        const updated = {
+                          ...recruitmentSettings,
+                          isGlobalRecruitmentOpen: next,
+                        };
+                        setRecruitmentSettings(updated);
+                        dataService.saveRecruitmentSettings(updated);
+                        sound.playClick();
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-red-950/50 hover:bg-red-900/60 border border-red-500/40 text-red-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                    >
+                      <Power className="w-4 h-4" />
+                      <span>{recruitmentSettings.isGlobalRecruitmentOpen ? 'إيقاف استقطاب جميع اللجان مؤقتاً' : 'تفعيل استقطاب اللجان العام'}</span>
+                    </button>
+                  </div>
+
+                  {/* Committees Recruitment Status Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {[
+                      { id: 'general', name: 'عضوية عامة (عضو بالنادي)', filterKeyword: 'عامة', defaultNotice: 'الاستقطاب مغلق حالياً' },
+                      { id: 'events', name: 'لجنة الفعاليات والأنشطة', filterKeyword: 'فعاليات', defaultNotice: 'اكتملت المقاعد المتاحة للفعاليات' },
+                      { id: 'training', name: 'لجنة العلاقات والتدريب', filterKeyword: 'تدريب', defaultNotice: 'اكتملت المقاعد المتاحة للتدريب' },
+                      { id: 'media', name: 'اللجنة الإعلامية', filterKeyword: 'إعلام', defaultNotice: 'اكتملت المقاعد المتاحة للإعلام' },
+                    ].map((comm) => {
+                      const commStatus = recruitmentSettings.committees[comm.id] || { isOpen: true };
+                      const isCommOpen = recruitmentSettings.isGlobalRecruitmentOpen && commStatus.isOpen !== false;
+                      const appCount = applications.filter((a) => a.targetCommittee.includes(comm.filterKeyword) || a.targetCommittee.includes(comm.name)).length;
+
+                      return (
+                        <div key={comm.id} className={`p-3.5 rounded-xl border transition-all ${isCommOpen ? 'bg-black/30 border-white/10' : 'bg-red-950/20 border-red-500/30'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-white truncate max-w-[130px]">{comm.name}</span>
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${isCommOpen ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30' : 'bg-red-950/60 text-red-400 border-red-500/30'}`}>
+                              {isCommOpen ? 'مفتوح' : 'مغلق'}
+                            </span>
+                          </div>
+
+                          <div className="text-[11px] text-gray-400 mb-3 font-mono">
+                            المتقدمون: <strong className="text-white">{appCount}</strong> طالب/ة
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextStatus = !commStatus.isOpen;
+                              const updated = {
+                                ...recruitmentSettings,
+                                committees: {
+                                  ...recruitmentSettings.committees,
+                                  [comm.id]: {
+                                    ...commStatus,
+                                    isOpen: nextStatus,
+                                    closedNotice: commStatus.closedNotice || comm.defaultNotice,
+                                  },
+                                },
+                              };
+                              setRecruitmentSettings(updated);
+                              dataService.saveRecruitmentSettings(updated);
+                              sound.playClick();
+                            }}
+                            className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                              isCommOpen
+                                ? 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/30 text-amber-300'
+                                : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/30 text-emerald-300'
+                            }`}
+                          >
+                            {isCommOpen ? (
+                              <>
+                                <Lock className="w-3.5 h-3.5" />
+                                <span>إيقاف استقطاب اللجنة</span>
+                              </>
+                            ) : (
+                              <>
+                                <Unlock className="w-3.5 h-3.5" />
+                                <span>فتح باب الاستقطاب</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Search & Actions Header */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
                   <div className="flex flex-1 items-center gap-2 w-full sm:w-auto">
@@ -1769,6 +1884,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <button
                       onClick={() => {
                         setComplaints(dataService.getComplaints());
+    setRecruitmentSettings(dataService.getRecruitmentSettings());
                         showToast('تم تحديث قائمة الشكاوى والمقترحات');
                       }}
                       className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-white/10"

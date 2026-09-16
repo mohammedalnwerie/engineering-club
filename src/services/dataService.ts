@@ -13,7 +13,8 @@ import type {
   Major,
   SiteSettings,
   StudentSpotlightData,
-  ComplaintItem
+  ComplaintItem,
+  RecruitmentSettings
 } from '../types';
 
 const STORAGE_KEYS = {
@@ -29,6 +30,19 @@ const STORAGE_KEYS = {
   SETTINGS: 'eng_club_settings_v1',
   COMPLAINTS: 'eng_club_complaints_v1',
   SUPABASE_CONFIG: 'eng_club_supabase_config_v1',
+  RECRUITMENT: 'eng_club_recruitment_v1',
+};
+
+
+const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettings = {
+  isGlobalRecruitmentOpen: true,
+  globalClosedMessage: 'باب استقطاب اللجان متوقف مؤقتاً لحين انتهاء تقييم الدفعة الحالية.',
+  committees: {
+    general: { isOpen: true, closedNotice: 'الاستقطاب للعضوية العامة مغلق مؤقتاً' },
+    events: { isOpen: true, closedNotice: 'اكتملت المقاعد المتاحة للجنة الفعاليات والأنشطة' },
+    training: { isOpen: true, closedNotice: 'اكتملت المقاعد المتاحة للجنة العلاقات والتدريب' },
+    media: { isOpen: true, closedNotice: 'اكتملت المقاعد المتاحة للجنة الإعلامية' },
+  },
 };
 
 const DEFAULT_SETTINGS: SiteSettings = {
@@ -683,6 +697,53 @@ class DataService {
     } catch {
       return false;
     }
+  }
+
+
+  // --- RECRUITMENT & COMMITTEE STATUS ---
+  public getRecruitmentSettings(): RecruitmentSettings {
+    const data = safeStorage.get<RecruitmentSettings>(STORAGE_KEYS.RECRUITMENT, DEFAULT_RECRUITMENT_SETTINGS);
+    if (!data || typeof data !== 'object') return DEFAULT_RECRUITMENT_SETTINGS;
+    return {
+      isGlobalRecruitmentOpen: data.isGlobalRecruitmentOpen !== false,
+      globalClosedMessage: data.globalClosedMessage || DEFAULT_RECRUITMENT_SETTINGS.globalClosedMessage,
+      committees: {
+        ...DEFAULT_RECRUITMENT_SETTINGS.committees,
+        ...(data.committees || {})
+      },
+      lastUpdated: data.lastUpdated
+    };
+  }
+
+  public saveRecruitmentSettings(settings: RecruitmentSettings) {
+    const updated = {
+      ...settings,
+      lastUpdated: new Date().toISOString()
+    };
+    safeStorage.set(STORAGE_KEYS.RECRUITMENT, updated);
+    this.notify();
+  }
+
+  public toggleCommitteeRecruitment(committeeId: string, isOpen?: boolean, notice?: string) {
+    const current = this.getRecruitmentSettings();
+    const comm = current.committees[committeeId] || { isOpen: true };
+    const newIsOpen = isOpen !== undefined ? isOpen : !comm.isOpen;
+    
+    current.committees[committeeId] = {
+      ...comm,
+      isOpen: newIsOpen,
+      closedNotice: notice || comm.closedNotice
+    };
+    
+    this.saveRecruitmentSettings(current);
+  }
+
+  public toggleGlobalRecruitment(isOpen?: boolean, message?: string) {
+    const current = this.getRecruitmentSettings();
+    const newIsOpen = isOpen !== undefined ? isOpen : !current.isGlobalRecruitmentOpen;
+    current.isGlobalRecruitmentOpen = newIsOpen;
+    if (message) current.globalClosedMessage = message;
+    this.saveRecruitmentSettings(current);
   }
 
   public resetDefaults() {
