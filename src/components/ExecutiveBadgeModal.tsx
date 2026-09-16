@@ -47,27 +47,37 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
         {/* Printable Executive Card */}
         <div
           id="printable-executive-badge"
-          className="w-full rounded-3xl p-6 bg-gradient-to-b from-[#0c2340] via-[#09182d] to-[#050b14] border-2 border-cyan-400/50 shadow-[0_0_35px_rgba(0,240,255,0.2)] relative overflow-hidden font-mono text-right"
+          className="w-full rounded-3xl p-6 bg-gradient-to-b from-[#140C38] via-[#0E082C] to-[#08041D] border-2 border-[#7F1AB2]/50 shadow-[0_0_40px_rgba(127,26,178,0.25)] relative overflow-hidden font-mono text-right"
         >
           {/* Ambient Glows */}
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
 
-          {/* Badge Top Header */}
+          {/* Badge Top Header: Prominent Enlarged Logo */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
-            <div className="flex items-center gap-2.5">
-              <img src="/brand/emblem.png" alt="شعار النادي الهندسي" className="h-10 w-auto object-contain drop-shadow" />
+            <div className="flex items-center gap-3">
+              <img
+                src="/brand/emblem.png"
+                alt="شعار النادي الهندسي"
+                className="h-12 w-12 sm:h-14 sm:w-14 object-contain drop-shadow-[0_4px_16px_rgba(127,26,178,0.4)] transition-transform hover:scale-105"
+              />
               <div>
-                <div className="text-xs font-black text-white font-sans">النادي الهندسي</div>
-                <div className="text-[9px] text-gray-400 font-sans">جامعة فلسطين — الكليات الهندسية</div>
+                <div className="text-sm sm:text-base font-black text-white font-sans tracking-wide">
+                  النادي الهندسي
+                </div>
+                <div className="text-[10px] font-mono text-[#3FE7E3] tracking-wider uppercase font-bold mt-0.5">
+                  ENGINEERING CLUB
+                </div>
+                <div className="text-[9px] text-gray-400 font-sans">
+                  جامعة فلسطين
+                </div>
               </div>
             </div>
             <div className="text-left">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/40 font-sans">
-                <Sparkles className="w-3 h-3 text-amber-400" />
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#D1B5E3] px-2.5 py-1 rounded-full bg-[#7F1AB2]/25 border border-[#7F1AB2]/40 font-sans shadow-sm">
+                <Sparkles className="w-3 h-3 text-[#3FE7E3]" />
                 <span>تكليف رسمي</span>
               </span>
-              <div className="text-[9px] text-gray-500 mt-0.5">2026 - 2027</div>
             </div>
           </div>
 
@@ -77,9 +87,9 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
               <img
                 src={leader.avatar}
                 alt={leader.name}
-                className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-cyan-400 shadow-md"
+                className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-[#7F1AB2]/60 shadow-md"
               />
-              <div className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-full bg-cyan-400 text-black shadow">
+              <div className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-full bg-[#7F1AB2] text-white shadow">
                 <Award className="w-3.5 h-3.5" />
               </div>
             </div>
@@ -88,10 +98,10 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
               <div className="text-base sm:text-lg font-black text-white font-sans leading-snug">
                 {leader.name}
               </div>
-              <div className="text-xs font-bold text-cyan-300 font-sans mt-0.5 leading-tight">
+              <div className="text-xs sm:text-sm font-bold text-[#3FE7E3] font-sans mt-0.5 leading-tight">
                 {leader.role}
               </div>
-              <div className="text-[11px] text-emerald-400 font-sans mt-0.5 leading-tight">
+              <div className="text-xs text-[#35BC2B] font-sans mt-0.5 leading-tight font-medium">
                 {leader.department}
               </div>
             </div>
@@ -105,10 +115,10 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
           )}
 
           {/* Official Email & Scope */}
-          <div className="space-y-1.5 p-3 rounded-2xl bg-black/30 border border-white/10 mb-4 text-xs font-sans">
+          <div className="space-y-1.5 p-3 rounded-2xl bg-black/40 border border-white/10 mb-4 text-xs font-sans">
             <div className="flex justify-between items-center text-[11px]">
               <span className="text-gray-400">البريد الرسمي:</span>
-              <span className="font-bold text-cyan-300 font-mono">{leader.email}</span>
+              <span className="font-bold text-[#3FE7E3] font-mono">{leader.email}</span>
             </div>
             <div className="flex justify-between items-center text-[11px]">
               <span className="text-gray-400">المستوى القيادي:</span>

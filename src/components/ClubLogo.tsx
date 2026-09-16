@@ -16,10 +16,10 @@ export const ClubLogo: React.FC<ClubLogoProps> = ({
   showSubtitle = true,
 }) => {
   const sizeMap = {
-    sm: { img: 'h-8 sm:h-9', text: 'text-base sm:text-lg', sub: 'text-[9px] sm:text-[10px]' },
-    md: { img: 'h-10 sm:h-12', text: 'text-lg sm:text-xl', sub: 'text-[10px] sm:text-xs' },
-    lg: { img: 'h-16 sm:h-20', text: 'text-2xl sm:text-3xl', sub: 'text-xs sm:text-sm' },
-    xl: { img: 'h-24 sm:h-32', text: 'text-3xl sm:text-4xl', sub: 'text-sm sm:text-base' },
+    sm: { img: 'h-9 sm:h-11', text: 'text-base sm:text-lg', sub: 'text-[9px] sm:text-[10px]' },
+    md: { img: 'h-12 sm:h-14', text: 'text-lg sm:text-xl', sub: 'text-[10px] sm:text-xs' },
+    lg: { img: 'h-20 sm:h-24', text: 'text-2xl sm:text-3xl', sub: 'text-xs sm:text-sm' },
+    xl: { img: 'h-32 sm:h-40', text: 'text-3xl sm:text-4xl', sub: 'text-sm sm:text-base' },
   };
 
   const currentSize = sizeMap[size];

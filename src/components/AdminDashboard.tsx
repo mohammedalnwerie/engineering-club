@@ -3903,27 +3903,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               {/* The Actual Digital Badge Card */}
               <div
                 id="printable-member-badge"
-                className="w-full rounded-3xl p-6 bg-gradient-to-b from-[#0c1e38] via-[#081326] to-[#050b14] border-2 border-emerald-500/50 shadow-[0_0_35px_rgba(22,163,74,0.25)] relative overflow-hidden font-mono text-right"
+                className="w-full rounded-3xl p-6 bg-gradient-to-b from-[#140C38] via-[#0E082C] to-[#08041D] border-2 border-[#7F1AB2]/50 shadow-[0_0_35px_rgba(127,26,178,0.25)] relative overflow-hidden font-mono text-right"
               >
                 {/* Decorative Tech Elements */}
-                <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
 
-                {/* Badge Top Header */}
+                {/* Badge Top Header: Prominent Enlarged Logo */}
                 <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
-                  <div className="flex items-center gap-2.5">
-                    <img src="/brand/emblem.png" alt="شعار النادي الهندسي" className="h-9 w-auto object-contain drop-shadow" />
+                  <div className="flex items-center gap-3">
+                    <img
+                      src="/brand/emblem.png"
+                      alt="شعار النادي الهندسي"
+                      className="h-12 w-12 sm:h-14 sm:w-14 object-contain drop-shadow-[0_4px_16px_rgba(127,26,178,0.4)] transition-transform hover:scale-105"
+                    />
                     <div>
-                      <div className="text-xs font-black text-white font-sans">النادي الهندسي</div>
-                      <div className="text-[9px] text-gray-400">جامعة فلسطين</div>
+                      <div className="text-sm sm:text-base font-black text-white font-sans tracking-wide">
+                        النادي الهندسي
+                      </div>
+                      <div className="text-[10px] font-mono text-[#3FE7E3] tracking-wider uppercase font-bold mt-0.5">
+                        ENGINEERING CLUB
+                      </div>
+                      <div className="text-[9px] text-gray-400 font-sans">
+                        جامعة فلسطين
+                      </div>
                     </div>
                   </div>
                   <div className="text-left">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#35BC2B] px-2.5 py-1 rounded-full bg-[#35BC2B]/10 border border-[#35BC2B]/30 font-sans">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
                       عضو معتمد
                     </span>
-                    <div className="text-[9px] text-gray-500 mt-0.5">2026 - 2027</div>
                   </div>
                 </div>
 
@@ -3933,28 +3943,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <div className="text-lg font-extrabold text-white font-sans mt-0.5 tracking-wide">
                     {viewingBadgeApp.fullName}
                   </div>
-                  <div className="text-xs text-cyan-300 mt-1 font-bold">
+                  <div className="text-xs text-[#3FE7E3] mt-1 font-bold">
                     الرقم الجامعي: {viewingBadgeApp.studentId || 'UP-STUDENT'}
                   </div>
                 </div>
 
-                {/* Academic Fields */}
-                <div className="space-y-2 p-3 rounded-2xl bg-black/40 border border-white/10 mb-4 text-xs font-sans">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400 text-[11px]">الكلية:</span>
-                    <span className="font-bold text-gray-200 text-[11px] text-left truncate max-w-[210px]">{viewingBadgeApp.college}</span>
+                {/* Academic Fields (Cleaned: No College, No Academic Year) */}
+                <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 mb-4 text-xs font-sans">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-400">التخصص الهندسي:</span>
+                    <span className="font-bold text-[#3FE7E3]">{viewingBadgeApp.major}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400 text-[11px]">التخصص:</span>
-                    <span className="font-bold text-cyan-300 text-[11px]">{viewingBadgeApp.major}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400 text-[11px]">السنة الدراسية:</span>
-                    <span className="font-bold text-gray-300 text-[11px]">{viewingBadgeApp.academicYear}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-1 border-t border-white/5">
-                    <span className="text-gray-400 text-[11px]">نوع العضوية / الصفة:</span>
-                    <span className="font-bold text-emerald-400 text-[11px]">{viewingBadgeApp.targetCommittee}</span>
+                  <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
+                    <span className="text-gray-400">نوع العضوية / اللجنة:</span>
+                    <span className="font-bold text-[#35BC2B]">{viewingBadgeApp.targetCommittee}</span>
                   </div>
                 </div>
 

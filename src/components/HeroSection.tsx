@@ -45,13 +45,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
           <span className="hidden sm:inline text-gray-300 font-light text-xs">الكليات الهندسية والتقنية</span>
         </div>
 
-        {/* Main Title */}
+        {/* Main Title: Enhanced Typographical Lockup */}
         <div className="relative mb-6 max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-[1.15] text-balance">
-            {settings.heroTitle.includes(settings.heroHighlight) ? (
+          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.18] text-center">
+            {settings.heroTitle.includes('نبني') ? (
+              <div className="inline-flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-5">
+                <span className="text-white drop-shadow-[0_2px_15px_rgba(0,0,0,0.6)]">
+                  نبني
+                </span>
+                <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#D1B5E3] via-[#3FE7E3] to-[#98F7F1] drop-shadow-[0_0_35px_rgba(63,231,227,0.3)]">
+                  مهندسي المستقبل
+                </span>
+              </div>
+            ) : settings.heroTitle.includes(settings.heroHighlight) ? (
               <>
                 <span>{settings.heroTitle.split(settings.heroHighlight)[0]}</span>
-                <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#B991D4] via-[#3FE7E3] to-[#98F7F1]">
+                <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#D1B5E3] via-[#3FE7E3] to-[#98F7F1] drop-shadow-[0_0_35px_rgba(63,231,227,0.3)]">
                   {settings.heroHighlight}
                 </span>
                 <span>{settings.heroTitle.split(settings.heroHighlight)[1]}</span>

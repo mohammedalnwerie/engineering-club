@@ -101,17 +101,20 @@ export const LeadershipSection: React.FC = () => {
                 <div>
                   {/* Card Header: Prominent Club Logo & University Identity */}
                   <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       <img
                         src="/brand/emblem.png"
                         alt="شعار النادي الهندسي"
-                        className="w-9 h-9 object-contain drop-shadow"
+                        className="w-12 h-12 object-contain drop-shadow-[0_4px_14px_rgba(127,26,178,0.35)] transition-transform group-hover:scale-105"
                       />
                       <div>
-                        <div className="text-xs font-bold text-white tracking-wide">
+                        <div className="text-sm font-black text-white tracking-wide leading-tight">
                           النادي الهندسي
                         </div>
-                        <div className="text-[10px] text-gray-400 font-sans">
+                        <div className="text-[10px] text-[#3FE7E3] font-mono uppercase tracking-wider font-semibold mt-0.5">
+                          ENGINEERING CLUB
+                        </div>
+                        <div className="text-[9px] text-gray-400 font-sans">
                           جامعة فلسطين
                         </div>
                       </div>

@@ -153,31 +153,42 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                 /* Verified Active Member Card */
                 <div className="space-y-4">
                   {/* Status Banner */}
-                  <div className="p-3.5 rounded-2xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-center justify-between shadow-lg">
+                  <div className="p-3.5 rounded-2xl bg-[#7F1AB2]/20 border border-[#7F1AB2]/40 text-[#3FE7E3] flex items-center justify-between shadow-lg">
                     <div className="flex items-center gap-2 text-xs font-bold">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-[#35BC2B] shrink-0" />
                       <span>عضوية رسمية معتمدة ومفعلة // VERIFIED</span>
                     </div>
-                    <span className="font-mono text-[10px] text-emerald-200 px-2 py-0.5 rounded bg-emerald-900/60 border border-emerald-500/30">
-                      2026 - 2027
+                    <span className="font-mono text-[10px] text-[#35BC2B] px-2.5 py-0.5 rounded-full bg-[#35BC2B]/10 border border-[#35BC2B]/30 font-bold">
+                      نشطة
                     </span>
                   </div>
 
                   {/* The Official Card */}
                   <div
                     id="verified-member-card"
-                    className="rounded-3xl p-5 sm:p-6 bg-gradient-to-b from-[#0c1e38] via-[#081326] to-[#050b14] border-2 border-emerald-500/40 shadow-[0_0_35px_rgba(22,163,74,0.2)] font-mono text-right relative overflow-hidden"
+                    className="rounded-3xl p-5 sm:p-6 bg-gradient-to-b from-[#140C38] via-[#0E082C] to-[#08041D] border-2 border-[#7F1AB2]/50 shadow-[0_0_35px_rgba(127,26,178,0.25)] font-mono text-right relative overflow-hidden"
                   >
-                    {/* Header with Emblem */}
-                    <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-                      <div className="flex items-center gap-2.5">
-                        <img src="/brand/emblem.png" alt="شعار النادي الهندسي" className="h-8 w-auto object-contain" />
+                    {/* Header with Prominent Enlarged Logo */}
+                    <div className="flex items-center justify-between pb-3.5 border-b border-white/10 mb-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src="/brand/emblem.png"
+                          alt="شعار النادي الهندسي"
+                          className="h-12 w-12 sm:h-14 sm:w-14 object-contain drop-shadow-[0_4px_16px_rgba(127,26,178,0.4)]"
+                        />
                         <div>
-                          <div className="text-xs font-black text-white font-sans">النادي الهندسي</div>
-                          <div className="text-[9px] text-gray-400">جامعة فلسطين — UNIVERSITY OF PALESTINE</div>
+                          <div className="text-sm sm:text-base font-black text-white font-sans tracking-wide">
+                            النادي الهندسي
+                          </div>
+                          <div className="text-[10px] font-mono text-[#3FE7E3] tracking-wider uppercase font-bold mt-0.5">
+                            ENGINEERING CLUB
+                          </div>
+                          <div className="text-[9px] text-gray-400 font-sans">
+                            جامعة فلسطين
+                          </div>
                         </div>
                       </div>
-                      <div className="text-left text-[9px] font-mono text-cyan-400 font-bold">
+                      <div className="text-left text-[9px] font-mono text-[#3FE7E3] font-bold">
                         <div>{authCode}</div>
                       </div>
                     </div>
@@ -188,28 +199,20 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                       <div className="text-lg font-extrabold text-white font-sans mt-0.5 tracking-wide">
                         {matchedApp.fullName}
                       </div>
-                      <div className="text-xs text-cyan-300 mt-0.5">
+                      <div className="text-xs text-[#3FE7E3] mt-0.5">
                         الرقم الجامعي: <span className="font-bold">{matchedApp.studentId || 'مسجل'}</span>
                       </div>
                     </div>
 
-                    {/* Academic Information */}
-                    <div className="space-y-1.5 p-3 rounded-xl bg-black/40 border border-white/5 text-xs font-sans mb-4">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-[11px]">الكلية:</span>
-                        <span className="font-bold text-gray-200 text-[11px] truncate max-w-[220px]">{matchedApp.college}</span>
+                    {/* Academic Information (Cleaned: No College, No Academic Year) */}
+                    <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 text-xs font-sans mb-4">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-400">التخصص الهندسي:</span>
+                        <span className="font-bold text-[#3FE7E3]">{matchedApp.major}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-[11px]">التخصص:</span>
-                        <span className="font-bold text-cyan-300 text-[11px]">{matchedApp.major}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-[11px]">السنة الدراسية:</span>
-                        <span className="font-bold text-gray-300 text-[11px]">{matchedApp.academicYear}</span>
-                      </div>
-                      <div className="flex justify-between pt-1 border-t border-white/5">
-                        <span className="text-gray-400 text-[11px]">نوع العضوية:</span>
-                        <span className="font-bold text-emerald-400 text-[11px]">{matchedApp.targetCommittee}</span>
+                      <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
+                        <span className="text-gray-400">نوع العضوية / اللجنة:</span>
+                        <span className="font-bold text-[#35BC2B]">{matchedApp.targetCommittee}</span>
                       </div>
                     </div>
 

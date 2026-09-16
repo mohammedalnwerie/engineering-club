@@ -20,39 +20,38 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
   const isTraining = committeeRaw.includes('تدريب') || committeeRaw.includes('علاقات') || committeeRaw.includes('training');
   const isMedia = committeeRaw.includes('إعلام') || committeeRaw.includes('media');
 
-  let committeeName = 'لجنة الفعاليات والأنشطة الهندسية';
+  let committeeName = 'لجنة الفعاليات والأنشطة';
   let committeeCode = 'EVT';
-  let committeeSubtitle = 'EVENTS & HACKATHONS TASKFORCE';
-  let committeeBadge = '⚡ كادر الفعاليات';
-  let committeeThemeGradient = 'from-[#061e33] via-[#082a45] to-[#041220]';
-  let committeeBorder = 'border-cyan-400/60';
-  let committeeShadow = 'shadow-[0_0_40px_rgba(0,240,255,0.25)]';
-  let committeeTextColor = 'text-cyan-300';
-  let committeeRibbonBg = 'bg-cyan-950/90 text-cyan-300 border-cyan-400/50';
+  let committeeSubtitle = 'EVENTS & ACTIVITIES TASKFORCE';
   let committeeDuty = 'تنظيم وإدارة الفعاليات والورش الهندسية، الهاكاثونات وإدارة الحشود الميدانية.';
 
   if (isTraining) {
     committeeName = 'لجنة العلاقات العامة والتدريب';
     committeeCode = 'REL';
     committeeSubtitle = 'PARTNERSHIPS & TRAINING TASKFORCE';
-    committeeBadge = '🤝 كادر العلاقات والتدريب';
-    committeeThemeGradient = 'from-[#0a1b3d] via-[#0d2757] to-[#050f24]';
-    committeeBorder = 'border-blue-400/60';
-    committeeShadow = 'shadow-[0_0_40px_rgba(59,130,246,0.25)]';
-    committeeTextColor = 'text-blue-300';
-    committeeRibbonBg = 'bg-blue-950/90 text-blue-300 border-blue-400/50';
     committeeDuty = 'التنسيق مع المدربين والمؤسسات الهندسية الشريكة وتطوير المسارات التدريبية.';
   } else if (isMedia) {
     committeeName = 'اللجنة الإعلامية والإنتاج المرئي';
     committeeCode = 'MED';
     committeeSubtitle = 'MEDIA & PRODUCTION TASKFORCE';
-    committeeBadge = '🎨 كادر الإعلام';
-    committeeThemeGradient = 'from-[#1e0a38] via-[#2d1252] to-[#100420]';
-    committeeBorder = 'border-purple-400/60';
-    committeeShadow = 'shadow-[0_0_40px_rgba(168,85,247,0.25)]';
-    committeeTextColor = 'text-purple-300';
-    committeeRibbonBg = 'bg-purple-950/90 text-purple-300 border-purple-400/50';
     committeeDuty = 'صناعة المحتوى الرقمي، التصميم والمونتاج، والتغطيات الإعلامية لكافة الأنشطة.';
+  }
+
+  const appAny = app as any;
+  let organizationalRole = appAny.organizationalRole || '';
+  if (!organizationalRole) {
+    const textToCheck = `${app.targetCommittee || ''} ${app.skills?.join(' ') || ''} ${app.personalStatement || ''}`.toLowerCase();
+    if (textToCheck.includes('تصوير') || textToCheck.includes('مصور') || textToCheck.includes('photo')) {
+      organizationalRole = 'مصور وموثق ميداني';
+    } else if (textToCheck.includes('تصميم') || textToCheck.includes('ديزاين') || textToCheck.includes('design')) {
+      organizationalRole = 'مصمم ومبدع محتوى';
+    } else if (textToCheck.includes('تنظيم') || textToCheck.includes('حشود') || textToCheck.includes('لوجست')) {
+      organizationalRole = 'مسؤول تنظيم وميدان';
+    } else if (textToCheck.includes('علاقات') || textToCheck.includes('تواصل')) {
+      organizationalRole = 'مسؤول علاقات وتنسيق';
+    } else {
+      organizationalRole = 'عضو فريق العمل التنفيذي';
+    }
   }
 
   const serialNumber = `UP-COMM-${committeeCode}-2026-${(app.studentId || app.id).slice(-4).toUpperCase()}`;
@@ -61,7 +60,7 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
       <div
-        className="w-full max-w-md rounded-3xl glass-panel border border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_60px_rgba(0,240,255,0.25)] relative text-right animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md rounded-3xl glass-panel border border-[#7F1AB2]/40 p-6 sm:p-8 shadow-[0_0_60px_rgba(127,26,178,0.25)] relative text-right animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -77,8 +76,8 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
 
         {/* Modal Top Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-mono text-xs mb-2">
-            <Users className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#381C4A]/80 border border-[#3FE7E3]/30 text-[#3FE7E3] font-mono text-xs mb-2 shadow-sm">
+            <Users className="w-3.5 h-3.5 text-[#3FE7E3]" />
             <span>بطاقة عضوية لجنة تنفيذية // COMMITTEE MEMBER PASS</span>
           </div>
           <h3 className="text-xl font-black text-white">بطاقة عضو اللجنة الرسمية</h3>
@@ -88,37 +87,56 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
         {/* The Official Printable Committee Member Badge */}
         <div
           id="printable-committee-badge"
-          className={`w-full rounded-3xl p-6 bg-gradient-to-b ${committeeThemeGradient} border-2 ${committeeBorder} ${committeeShadow} relative overflow-hidden font-mono text-right`}
+          className="w-full rounded-3xl p-6 bg-gradient-to-b from-[#140C38] via-[#0E082C] to-[#08041D] border-2 border-[#7F1AB2]/50 shadow-[0_0_40px_rgba(127,26,178,0.25)] relative overflow-hidden font-mono text-right"
         >
           {/* Decorative Glows */}
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
 
-          {/* Top Header: Emblem & UP Brand */}
-          <div className="flex items-center justify-between pb-3.5 border-b border-white/15 mb-4">
-            <div className="flex items-center gap-2.5">
-              <img src="/brand/emblem.png" alt="شعار النادي الهندسي" className="h-10 w-auto object-contain drop-shadow" />
+          {/* Top Header: Prominent Enlarged Emblem & Official Club Identity (No extra years or cadres) */}
+          <div className="flex items-center justify-between pb-4 border-b border-white/15 mb-4">
+            <div className="flex items-center gap-3">
+              <img
+                src="/brand/emblem.png"
+                alt="شعار النادي الهندسي"
+                className="h-12 w-12 sm:h-14 sm:w-14 object-contain drop-shadow-[0_4px_16px_rgba(127,26,178,0.4)] transition-transform hover:scale-105"
+              />
               <div>
-                <div className="text-xs font-black text-white font-sans">النادي الهندسي</div>
-                <div className="text-[9px] text-gray-400 font-sans">جامعة فلسطين — الكليات الهندسية</div>
+                <div className="text-sm sm:text-base font-black text-white font-sans tracking-wide">
+                  النادي الهندسي
+                </div>
+                <div className="text-[10px] font-mono text-[#3FE7E3] tracking-wider uppercase font-bold mt-0.5">
+                  ENGINEERING CLUB
+                </div>
+                <div className="text-[9px] text-gray-400 font-sans">
+                  جامعة فلسطين
+                </div>
               </div>
             </div>
             <div className="text-left">
-              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${committeeRibbonBg} font-sans`}>
-                <Sparkles className="w-3 h-3" />
-                <span>{committeeBadge}</span>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#7F1AB2]/25 text-[#D1B5E3] border border-[#7F1AB2]/40 font-sans shadow-sm">
+                <Sparkles className="w-3 h-3 text-[#3FE7E3]" />
+                <span>اعتماد رسمي</span>
               </span>
-              <div className="text-[9px] text-gray-400 mt-0.5">2026 - 2027</div>
             </div>
           </div>
 
-          {/* Committee Name Ribbon */}
-          <div className="mb-4 p-2.5 rounded-xl bg-black/50 border border-white/10 text-center">
+          {/* Committee Name & Organizational Role Ribbon */}
+          <div className="mb-4 p-3 rounded-2xl bg-black/60 border border-[#7F1AB2]/30 text-center">
             <div className="text-[10px] text-gray-400 uppercase font-sans">اللجنة التنفيذية:</div>
-            <div className={`text-xs sm:text-sm font-black ${committeeTextColor} font-sans mt-0.5`}>
+            <div className="text-sm sm:text-base font-black text-[#3FE7E3] font-sans mt-0.5">
               {committeeName}
             </div>
             <div className="text-[9px] text-gray-400 font-mono mt-0.5">{committeeSubtitle}</div>
+            
+            {/* Organizational Role Under Committee */}
+            <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-center gap-2">
+              <span className="text-[10px] text-gray-400 font-sans">المسمى التنظيمي:</span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#35BC2B] px-2.5 py-0.5 rounded-full bg-[#35BC2B]/10 border border-[#35BC2B]/30 font-sans">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
+                {organizationalRole}
+              </span>
+            </div>
           </div>
 
           {/* Member Identity & Details */}
@@ -127,28 +145,20 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
             <div className="text-lg font-black text-white font-sans leading-snug mt-0.5">
               {app.fullName}
             </div>
-            <div className="text-xs text-cyan-300 font-bold mt-1">
+            <div className="text-xs text-[#3FE7E3] font-bold mt-1">
               الرقم الجامعي: {app.studentId || 'UP-STUDENT'}
             </div>
           </div>
 
-          {/* Academic & Committee Scope */}
-          <div className="space-y-1.5 p-3 rounded-2xl bg-black/40 border border-white/10 mb-4 text-xs font-sans">
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="text-gray-400">الكلية:</span>
-              <span className="font-bold text-gray-200 truncate max-w-[210px]">{app.college}</span>
+          {/* Academic Specialization & Scope (Cleaned: No College, No Academic Year) */}
+          <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 mb-4 text-xs font-sans">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-gray-400">التخصص الهندسي:</span>
+              <span className="font-bold text-[#3FE7E3]">{app.major}</span>
             </div>
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="text-gray-400">التخصص:</span>
-              <span className={`font-bold ${committeeTextColor}`}>{app.major}</span>
-            </div>
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="text-gray-400">السنة الدراسية:</span>
-              <span className="font-bold text-gray-300">{app.academicYear}</span>
-            </div>
-            <div className="flex justify-between items-center text-[11px] pt-1 border-t border-white/5">
-              <span className="text-gray-400">الصفة التنظيمية:</span>
-              <span className="font-bold text-emerald-400">عضو فريق العمل التنفيذي</span>
+            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
+              <span className="text-gray-400">المسمى التنظيمي:</span>
+              <span className="font-bold text-[#35BC2B]">{organizationalRole}</span>
             </div>
           </div>
 
@@ -162,8 +172,8 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
           <div className="pt-3 border-t border-dashed border-white/20 flex items-center justify-between">
             <div className="text-[9px] text-gray-400 leading-tight">
               <div className="text-white font-bold mb-0.5">TASKFORCE PASS ID:</div>
-              <div className="text-cyan-400 font-bold">{serialNumber}</div>
-              <div className="text-[8px] text-gray-500 mt-1">OFFICIALLY ACCREDITED BY UP</div>
+              <div className="text-[#3FE7E3] font-bold">{serialNumber}</div>
+              <div className="text-[8px] text-gray-500 mt-1">OFFICIALLY ACCREDITED BY ENGINEERING CLUB</div>
             </div>
             {/* Scannable Verification QR Code */}
             <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow">
