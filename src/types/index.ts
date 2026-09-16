@@ -163,6 +163,7 @@ export interface SiteSettings {
   vision: string;
   mission: string;
   values: BrandValue[];
+  showEventsSection?: boolean;
 }
 
 export interface StudentSpotlightData {

@@ -52,7 +52,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
     { id: 'v3', name: 'التطوير', description: 'السعي المستمر لصقل المهارات الأكاديمية والتقنية ومواكبة أحدث الأدوات.', iconName: 'Settings' },
     { id: 'v4', name: 'التمكين', description: 'إتاحة الفرص والموارد للطلبة للقيادة وبناء مشاريعهم الخاصة بثقة.', iconName: 'GraduationCap' },
     { id: 'v5', name: 'الأثر', description: 'صناعة فارق ملموس في المجتمع وسوق العمل والبيئة الجامعية.', iconName: 'Target' }
-  ]
+  ],
+  showEventsSection: true
 };
 
 
@@ -283,7 +284,8 @@ class DataService {
       ...data,
       aboutUs: data.aboutUs || DEFAULT_SETTINGS.aboutUs,
       vision,
-      mission
+      mission,
+      showEventsSection: data.showEventsSection !== false
     };
   }
 

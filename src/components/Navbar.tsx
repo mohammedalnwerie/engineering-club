@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Menu, X, Terminal, ArrowUpRight, ShieldAlert, ShieldCheck, MessageSquare, FileText } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
+import { dataService } from '../services/dataService';
 
 
 interface NavbarProps {
@@ -16,6 +17,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showEvents, setShowEvents] = useState<boolean>(() => dataService.getSettings().showEventsSection !== false);
+
+  useEffect(() => {
+    const unsub = dataService.subscribe(() => {
+      setShowEvents(dataService.getSettings().showEventsSection !== false);
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,7 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
     { label: 'الكليات', href: '#colleges' },
     { label: 'التخصصات', href: '#majors' },
     { label: 'المشاريع', href: '#projects' },
-    { label: 'الفعاليات', href: '#events' },
+    ...(showEvents ? [{ label: 'الفعاليات', href: '#events' }] : []),
     { label: 'القيادة', href: '#leadership' },
     { label: 'الأسئلة الشائعة', href: '#faq' },
   ];

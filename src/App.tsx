@@ -204,7 +204,7 @@ export function App() {
             <JoinClubSection />
 
             {/* 10: Real-time Live Activity Stream & Student Spotlight */}
-            <LiveFeedSection />
+            <LiveFeedSection onOpenJoin={handleJoinClick} />
           </main>
 
           {/* 11: Technical Blueprint Footer */}

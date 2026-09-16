@@ -1,33 +1,80 @@
 import React, { useState } from 'react';
 import { LIVE_ACTIVITY_STREAM } from '../data/clubData';
 import { dataService } from '../services/dataService';
-import { Award, Sparkles, Send, Check, X, Lightbulb, Users, Trophy } from 'lucide-react';
+import { Award, Send, Check, X, Lightbulb, Users, Trophy, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export const LiveFeedSection: React.FC = () => {
+interface LiveFeedSectionProps {
+  onOpenJoin?: () => void;
+}
+
+export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) => {
   const [showNominateModal, setShowNominateModal] = useState(false);
+  const [nomineeStudentId, setNomineeStudentId] = useState('');
   const [nomineeName, setNomineeName] = useState('');
   const [nomineeMajor, setNomineeMajor] = useState('هندسة برمجيات');
   const [projectTitle, setProjectTitle] = useState('');
   const [projectDetails, setProjectDetails] = useState('');
   const [contactInfo, setContactInfo] = useState('');
+  const [membershipStatus, setMembershipStatus] = useState<'idle' | 'verified' | 'pending' | 'manual' | 'rejected'>('idle');
+  const [isMemberConfirmed, setIsMemberConfirmed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const handleStudentIdChange = (idVal: string) => {
+    setNomineeStudentId(idVal);
+    const q = idVal.trim().toLowerCase();
+    if (!q || q.length < 4) {
+      setMembershipStatus('idle');
+      return;
+    }
+
+    const apps = dataService.getApplications();
+    const cleanQ = q.replace(/^up-eng-/i, '');
+    const found = apps.find((a) => {
+      const sId = (a.studentId || '').toLowerCase();
+      const aId = (a.id || '').toLowerCase();
+      const auth = `up-eng-${(a.id || '').slice(-8).toLowerCase()}`;
+      return sId === q || aId === q || aId.includes(cleanQ) || auth === q;
+    });
+
+    if (found) {
+      if (found.status === 'تم القبول') {
+        setMembershipStatus('verified');
+        if (!nomineeName || nomineeName === '') setNomineeName(found.fullName);
+        if (found.major) setNomineeMajor(found.major);
+        if (!contactInfo && (found.phone || found.email)) setContactInfo(found.phone || found.email);
+        setIsMemberConfirmed(true);
+      } else if (found.status === 'قيد المراجعة') {
+        setMembershipStatus('pending');
+        if (!nomineeName || nomineeName === '') setNomineeName(found.fullName);
+        if (found.major) setNomineeMajor(found.major);
+        setIsMemberConfirmed(true);
+      } else if (found.status === 'مرفوض') {
+        setMembershipStatus('rejected');
+      } else {
+        setMembershipStatus('manual');
+      }
+    } else {
+      setMembershipStatus('manual');
+    }
+  };
 
   const handleNominateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nomineeName.trim() || !projectTitle.trim()) return;
+    if (!nomineeName.trim() || !projectTitle.trim() || !nomineeStudentId.trim()) return;
+    if (membershipStatus === 'rejected') return;
+    if (!isMemberConfirmed && membershipStatus !== 'verified') return;
 
-    // Save as a complaint/suggestion item of type proposal
     try {
       dataService.submitComplaint({
         studentName: nomineeName.trim(),
-        studentId: 'NOMINATION',
+        studentId: nomineeStudentId.trim(),
         email: contactInfo.trim() || 'nomination@engclub.up',
         phone: contactInfo.trim() || undefined,
         college: nomineeMajor || 'كلية الهندسة وتكنولوجيا المعلومات',
         category: 'suggestion',
-        subject: '[ترشيح لمهندس الشهر] ' + projectTitle.trim(),
-        message: 'التخصص: ' + nomineeMajor + ' | تفاصيل الإنجاز: ' + projectDetails.trim(),
+        subject: '[ترشيح عضو لمهندس الشهر] ' + projectTitle.trim(),
+        message: 'الرقم الجامعي: ' + nomineeStudentId.trim() + ' | التخصص: ' + nomineeMajor + ' | حالة العضوية: ' + membershipStatus + ' | تفاصيل الإنجاز: ' + projectDetails.trim(),
         isAnonymous: false,
       });
     } catch {
@@ -45,10 +92,13 @@ export const LiveFeedSection: React.FC = () => {
     setTimeout(() => {
       setShowNominateModal(false);
       setSubmitted(false);
+      setNomineeStudentId('');
       setNomineeName('');
       setProjectTitle('');
       setProjectDetails('');
       setContactInfo('');
+      setMembershipStatus('idle');
+      setIsMemberConfirmed(false);
     }, 2800);
   };
 
@@ -57,16 +107,16 @@ export const LiveFeedSection: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
-          {/* Left: Inspiring Student Spotlight & Call to Nomination */}
+          {/* Left: Inspiring Student Spotlight & Call to Nomination (Members Only) */}
           <div className="lg:col-span-7 rounded-3xl glass-panel p-6 sm:p-10 border border-emerald-500/20 flex flex-col justify-between relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>مساحة التميز والإبداع الطلابي</span>
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-xs font-mono">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>خاص وحصري بأعضاء النادي الهندسي</span>
                 </div>
                 <span className="text-xs text-gray-400 font-mono">جامعة فلسطين</span>
               </div>
@@ -76,7 +126,7 @@ export const LiveFeedSection: React.FC = () => {
               </h3>
 
               <p className="text-sm sm:text-base text-gray-300 leading-relaxed font-light mb-8 text-balance">
-                يفتح النادي الهندسي أبوابه للاحتفاء بنماذج الطلبة المتميزة وأفكارهم ومشاريعهم النوعية في كليات هندسة البرمجيات والذكاء الاصطناعي، والهندسة التطبيقية، وتكنولوجيا المعلومات. إذا أنجزت مشروعاً مبتكراً أو حصدت جائزة أو بنيت حلاً هندسياً يخدم مجتمعك، فهذه مساحتك لتتألق.
+                يفتح النادي الهندسي باب التكريم والمنافسة <strong className="text-emerald-400 font-semibold">حصرياً لأعضائه المنتسبين المعتمدين</strong> للاحتفاء بنماذج التميز والمشاريع النوعية في كليات هندسة البرمجيات والذكاء الاصطناعي، والهندسة التطبيقية والتخطيط العمراني، وتكنولوجيا المعلومات. إذا كنت عضواً في النادي وقدمت إنجازاً أو مشروعاً مميزاً، بادر بترشيح نفسك أو ترشيح زميلك العضو لتسليط الضوء على إبداعه وتكريمه رسمياً.
               </p>
 
               {/* 3 Pillars of Recognition */}
@@ -121,12 +171,23 @@ export const LiveFeedSection: React.FC = () => {
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs sm:text-sm font-bold shadow-[0_0_20px_rgba(22,163,74,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <Award className="w-4 h-4" />
-                <span>رشّح نفسك أو زميلاً للمهندس المتميز</span>
+                <span>رشّح عضواً / رشّح نفسك (خاص بأعضاء النادي)</span>
               </button>
 
-              <span className="text-[11px] text-gray-400 font-mono text-center sm:text-right">
-                يتم الإعلان وتكريم مهندس الشهر دورياً
-              </span>
+              {onOpenJoin ? (
+                <button
+                  type="button"
+                  onClick={onOpenJoin}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer underline underline-offset-4 transition-colors"
+                >
+                  <span>لست عضواً بعد؟ قدّم طلب انتساب للنادي</span>
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <span className="text-[11px] text-gray-400 font-mono text-center sm:text-right">
+                  الترشيح متاح لأعضاء النادي المسجلين فقط
+                </span>
+              )}
             </div>
           </div>
 
@@ -174,10 +235,10 @@ export const LiveFeedSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Nomination Modal */}
+      {/* Member-Exclusive Nomination Modal */}
       {showNominateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right my-8">
             
             <button
               onClick={() => setShowNominateModal(false)}
@@ -188,27 +249,94 @@ export const LiveFeedSection: React.FC = () => {
 
             {!submitted ? (
               <form onSubmit={handleNominateSubmit} className="space-y-4">
-                <div className="flex items-center gap-2 mb-2 text-emerald-400">
+                <div className="flex items-center gap-2 mb-1 text-emerald-400">
                   <Award className="w-6 h-6" />
-                  <h3 className="text-xl font-bold text-white">ترشيح للمهندس المتميز</h3>
+                  <h3 className="text-xl font-bold text-white">ترشيح مهندس الشهر (خاص بالأعضاء)</h3>
                 </div>
-                <p className="text-xs text-gray-300 font-light mb-4">
-                  أدخل بياناتك أو بيانات زميلك مع نبذة عن المشروع أو الإنجاز لمراجعته من قِبل إدارة النادي.
-                </p>
+                
+                {/* Exclusive Member Banner */}
+                <div className="p-3 rounded-2xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>الترشيح مخصص حصرياً لأعضاء النادي الهندسي المعتمدين بجامعة فلسطين.</span>
+                </div>
 
+                {/* 1. Student ID & Verification */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-200 mb-1">اسم الطالب المُرشّح:</label>
+                  <label className="block text-xs font-medium text-gray-200 mb-1">
+                    الرقم الجامعي للمرشّح (أو كود العضوية UP-ENG-XXXX):
+                  </label>
                   <input
                     type="text"
                     required
-                    placeholder="مثال: أحمد محمد النجار"
-                    value={nomineeName}
-                    onChange={(e) => setNomineeName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                    placeholder="أدخل الرقم الجامعي للتحقق من العضوية..."
+                    value={nomineeStudentId}
+                    onChange={(e) => handleStudentIdChange(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none font-mono"
+                    dir="ltr"
                   />
+
+                  {/* Verification Status Card */}
+                  {membershipStatus === 'verified' && (
+                    <div className="mt-2 p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-xs flex items-start gap-2 animate-in fade-in">
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">عضو معتمد رسمياً:</span> تم التحقق بنجاح من بيانات العضوية في النادي الهندسي.
+                      </div>
+                    </div>
+                  )}
+
+                  {membershipStatus === 'pending' && (
+                    <div className="mt-2 p-3 rounded-xl bg-amber-950/80 border border-amber-500/40 text-amber-300 text-xs flex items-start gap-2 animate-in fade-in">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">طلب العضوية قيد المراجعة:</span> سيتم توثيق الترشيح واعتماده تزامناً مع تفعيل العضوية من الإدارة.
+                      </div>
+                    </div>
+                  )}
+
+                  {membershipStatus === 'rejected' && (
+                    <div className="mt-2 p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-300 text-xs flex items-start gap-2 animate-in fade-in">
+                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                      <span>عذراً، طلب العضوية غير مفعل حالياً. الترشيح مقتصر على أعضاء النادي.</span>
+                    </div>
+                  )}
+
+                  {membershipStatus === 'manual' && nomineeStudentId.length >= 4 && (
+                    <div className="mt-2 p-3 rounded-xl bg-blue-950/60 border border-blue-500/30 text-blue-200 text-xs space-y-2 animate-in fade-in">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                        <span>لم يُعثر على بطاقة إلكترونية مسجلة بهذا الرقم في المتصفح الحالي. إذا كان عضواً مسجلاً رسمياً بالجامعة، يرجى ملء البيانات وإقرار العضوية أدناه.</span>
+                      </div>
+                      {onOpenJoin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNominateModal(false);
+                            onOpenJoin();
+                          }}
+                          className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+                        >
+                          لست عضواً بعد؟ انقر هنا للانتساب إلى النادي الآن
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
+                {/* 2. Nominee Name & Major */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">اسم العضو المُرشّح:</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="مثال: أحمد محمد النجار"
+                      value={nomineeName}
+                      onChange={(e) => setNomineeName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-xs font-medium text-gray-200 mb-1">الكلية / التخصص:</label>
                     <input
@@ -220,42 +348,61 @@ export const LiveFeedSection: React.FC = () => {
                       className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-200 mb-1">وسيلة التواصل (واتساب أو إيميل):</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="059XXXXXXX أو إيميل"
-                      value={contactInfo}
-                      onChange={(e) => setContactInfo(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
-                    />
-                  </div>
                 </div>
 
+                {/* 3. Contact Info */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-200 mb-1">عنوان الإنجاز أو المشروع:</label>
+                  <label className="block text-xs font-medium text-gray-200 mb-1">وسيلة التواصل مع العضو (واتساب أو إيميل):</label>
                   <input
                     type="text"
                     required
-                    placeholder="مثال: تطبيق ذكاء اصطناعي للرعاية الصحية أو مشروع تخرج معماري"
+                    placeholder="059XXXXXXX أو إيميل جامعي"
+                    value={contactInfo}
+                    onChange={(e) => setContactInfo(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                  />
+                </div>
+
+                {/* 4. Achievement / Project */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-200 mb-1">عنوان الإنجاز أو المشروع المبتكر:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثال: منصة إدارة عيادات بالذكاء الاصطناعي / مشروع تخرج معماري"
                     value={projectTitle}
                     onChange={(e) => setProjectTitle(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
                   />
                 </div>
 
+                {/* 5. Details */}
                 <div>
                   <label className="block text-xs font-medium text-gray-200 mb-1">نبذة عن المشروع أو رابط العمل (GitHub / Drive / Portfolio):</label>
                   <textarea
                     rows={3}
-                    placeholder="اكتب نبذة مختصرة عن أهمية وفكرة المشروع، أو ضع رابطاً للمعاينة..."
+                    placeholder="اكتب نبذة مختصرة عن فكرة المشروع، أو ضع رابطاً للمعاينة..."
                     value={projectDetails}
                     onChange={(e) => setProjectDetails(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none resize-none"
                   />
                 </div>
+
+                {/* 6. Membership Pledge (Mandatory for non-auto-verified) */}
+                {membershipStatus !== 'verified' && (
+                  <label className="flex items-start gap-2.5 text-xs text-gray-300 cursor-pointer pt-1 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={isMemberConfirmed}
+                      onChange={(e) => setIsMemberConfirmed(e.target.checked)}
+                      className="mt-0.5 rounded border-white/20 bg-black/40 text-emerald-500 focus:ring-emerald-400 cursor-pointer"
+                    />
+                    <span className="leading-snug">
+                      أقر وأتعهد بأن المرشّح هو <strong className="text-emerald-400">عضو منتسب للنادي الهندسي</strong> بجامعة فلسطين وأتحمل مسؤولية صحة البيانات.
+                    </span>
+                  </label>
+                )}
 
                 <div className="pt-3 flex items-center justify-end gap-3">
                   <button
@@ -267,10 +414,11 @@ export const LiveFeedSection: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+                    disabled={membershipStatus === 'rejected' || (!isMemberConfirmed && membershipStatus !== 'verified')}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>إرسال الترشيح</span>
+                    <span>إرسال ترشيح العضو</span>
                   </button>
                 </div>
               </form>
@@ -279,9 +427,9 @@ export const LiveFeedSection: React.FC = () => {
                 <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto mb-4">
                   <Check className="w-7 h-7" />
                 </div>
-                <h4 className="text-xl font-bold text-white mb-2">تم استلام الترشيح بنجاح!</h4>
-                <p className="text-xs sm:text-sm text-gray-300 font-light">
-                  شكراً لمشاركتك. سيقوم فريق النادي الهندسي بمراجعة الإنجاز والتواصل معك تمهيداً للإضاءة والتكريم.
+                <h4 className="text-xl font-bold text-white mb-2">تم استلام ترشيح العضو بنجاح!</h4>
+                <p className="text-xs sm:text-sm text-gray-300 font-light leading-relaxed">
+                  شكراً لحرصك. سيقوم فريق إدارة النادي الهندسي بمراجعة عضوية وإنجاز الزميل والتواصل معه تمهيداً للإضاءة والتكريم كمهندس الشهر.
                 </p>
               </div>
             )}

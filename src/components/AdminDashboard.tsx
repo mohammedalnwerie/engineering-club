@@ -47,6 +47,7 @@ import {
   Database,
   RefreshCw,
   Eye,
+  EyeOff,
   Award,
   Sparkles,
   Building2,
@@ -1472,6 +1473,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             {/* Tab 3: Events & Attendance Manager */}
             {activeTab === 'events' && (
               <div className="flex-1 overflow-y-auto p-6">
+                {/* Public Website Events Section Visibility Toggle */}
+                <div className="mb-6 p-4 rounded-2xl bg-black/40 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl border ${settings.showEventsSection !== false ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400' : 'bg-amber-950/60 border-amber-500/30 text-amber-400'}`}>
+                      {settings.showEventsSection !== false ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white flex items-center gap-2">
+                        <span>ظهور قسم الفعاليات في الموقع الرئيسي:</span>
+                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono ${settings.showEventsSection !== false ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'}`}>
+                          {settings.showEventsSection !== false ? 'معروض للزوار' : 'مخفي عن الزوار'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {settings.showEventsSection !== false
+                          ? 'قسم الفعاليات معروض حالياً في الصفحة الرئيسية للموقع.'
+                          : 'قسم الفعاليات مخفي حالياً عن زوار الموقع إلى حين جدولة فعاليات جديدة.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = {
+                        ...settings,
+                        showEventsSection: settings.showEventsSection === false ? true : false,
+                      };
+                      setSettings(updated);
+                      dataService.saveSettings(updated);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow ${settings.showEventsSection !== false ? 'bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                  >
+                    {settings.showEventsSection !== false ? (
+                      <>
+                        <EyeOff className="w-4 h-4" />
+                        <span>إخفاء قسم الفعاليات من الموقع</span>
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-4 h-4" />
+                        <span>إظهار قسم الفعاليات في الموقع</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-base font-bold text-white">إدارة الفعاليات وكشوف الحضور</h3>
