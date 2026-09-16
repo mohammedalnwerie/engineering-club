@@ -195,7 +195,7 @@ export const JoinClubSection: React.FC = () => {
                         <label className="block text-xs font-mono text-gray-300 mb-1.5">الرقم الجامعي (Student ID):</label>
                         <input
                           type="text"
-                          placeholder="441029381"
+                          placeholder="مثال: 120220145 (أو الرقم السابق للخريجين)"
                           value={formData.studentId}
                           onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
                           className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
@@ -203,7 +203,7 @@ export const JoinClubSection: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-mono text-gray-300 mb-1.5">السنة الدراسية:</label>
-                        <select
+<select
                           value={formData.academicYear}
                           onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
                           className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
@@ -212,31 +212,45 @@ export const JoinClubSection: React.FC = () => {
                           <option value="السنة الثانية">السنة الثانية</option>
                           <option value="السنة الثالثة">السنة الثالثة</option>
                           <option value="السنة الرابعة">السنة الرابعة</option>
-                          <option value="سنة التخرج">سنة التخرج (مشاريع التخرج)</option>
+                          <option value="السنة الخامسة">السنة الخامسة (سنة التخرج الهندسية)</option>
+                          <option value="خريج من الجامعة">خريج / خريجة من جامعة فلسطين 🎓</option>
                         </select>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-mono text-gray-300 mb-1.5">البريد الإلكتروني الجامعي:</label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-mono text-gray-300">البريد الإلكتروني:</label>
+                          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                            يفضل الجامعي (@std.up.edu.ps)
+                          </span>
+                        </div>
                         <input
                           type="email"
-                          placeholder="khalid@student.edu.sa"
+                          placeholder="120220000@std.up.edu.ps أو بريدك الشخصي"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
+                          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm font-mono text-left"
+                          dir="ltr"
                         />
+                        <p className="text-[11px] text-gray-400 mt-1">
+                          يمكنك استخدام إيميل الجامعة الرسمي (@std.up.edu.ps) أو بريدك الشخصي (Gmail وغيره).
+                        </p>
                       </div>
                       <div>
-                        <label className="block text-xs font-mono text-gray-300 mb-1.5">رقم الهاتف الجوال:</label>
+                        <label className="block text-xs font-mono text-gray-300 mb-1.5">رقم الهاتف الجوال (واتساب):</label>
                         <input
                           type="tel"
-                          placeholder="05XXXXXXXX"
+                          placeholder="059XXXXXXX أو 056XXXXXXX"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
+                          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm font-mono text-left"
+                          dir="ltr"
                         />
+                        <p className="text-[11px] text-gray-400 mt-1">
+                          سيتم إرسال بطاقة العضوية وإشعار القبول عبر هذا الرقم مباشرة.
+                        </p>
                       </div>
                     </div>
                   </div>

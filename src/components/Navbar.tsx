@@ -88,60 +88,49 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
           ))}
         </nav>
 
-        {/* Action Controls: Admin + Sound Toggle + Join Button */}
-        <div className="flex items-center gap-2 lg:gap-2.5 shrink-0">
-          {/* Charter Full Page trigger */}
-          <button
-            onClick={() => {
-              sound.playClick();
-              if (onOpenAbout) onOpenAbout();
-              else window.location.hash = '#/about';
-            }}
-            title="الميثاق التأسيسي والهوية الرسمية للنادي"
-            className="hidden xl:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-emerald-400 text-xs font-mono text-emerald-300 hover:text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
-          >
-            <FileText className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="whitespace-nowrap">الميثاق</span>
-          </button>
+        {/* Action Controls: Compact Services Bar + Sound + Join CTA */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Unified Compact Quick-Tools Pill */}
+          <div className="hidden md:flex items-center p-1 bg-white/[0.03] border border-white/10 rounded-xl gap-0.5">
+            {/* Membership Verification Modal trigger */}
+            <button
+              onClick={() => {
+                sound.playClick();
+                if (onOpenVerify) onOpenVerify();
+              }}
+              title="التحقق من صحة بطاقات العضوية الرسمية"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-emerald-500/10 text-xs font-mono text-gray-300 hover:text-emerald-300 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span className="hidden xl:inline">التحقق</span>
+            </button>
 
-          {/* Membership Verification Modal trigger */}
-          <button
-            onClick={() => {
-              sound.playClick();
-              if (onOpenVerify) onOpenVerify();
-            }}
-            title="التحقق من صحة بطاقات العضوية الرسمية"
-            className="hidden md:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-emerald-400 text-xs font-mono text-emerald-300 hover:text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="whitespace-nowrap">التحقق</span>
-          </button>
+            {/* Complaints & Suggestions trigger */}
+            <button
+              onClick={() => {
+                sound.playClick();
+                if (onOpenComplaints) onOpenComplaints();
+              }}
+              title="صندوق الشكاوى والمقترحات"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-amber-500/10 text-xs font-mono text-gray-300 hover:text-amber-300 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="hidden xl:inline">الشكاوى</span>
+            </button>
 
-          {/* Complaints & Suggestions trigger */}
-          <button
-            onClick={() => {
-              sound.playClick();
-              if (onOpenComplaints) onOpenComplaints();
-            }}
-            title="صندوق الشكاوى والمقترحات والتحسين"
-            className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-amber-400 text-xs font-mono text-amber-300 hover:text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span className="whitespace-nowrap">الشكاوى</span>
-          </button>
-
-          {/* Admin Control Center HUD trigger */}
-          <button
-            onClick={() => {
-              sound.playClick();
-              if (onOpenAdmin) onOpenAdmin();
-            }}
-            title="لوحة الإدارة الهندسية والتحكم في البيانات"
-            className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-cyan-400 text-xs font-mono text-cyan-300 hover:text-white transition-all cursor-pointer whitespace-nowrap shrink-0"
-          >
-            <ShieldAlert className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-            <span className="whitespace-nowrap">لوحة الإدارة</span>
-          </button>
+            {/* Admin Dashboard trigger */}
+            <button
+              onClick={() => {
+                sound.playClick();
+                if (onOpenAdmin) onOpenAdmin();
+              }}
+              title="لوحة الإدارة الهندسية"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-cyan-500/10 text-xs font-mono text-gray-300 hover:text-cyan-300 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span className="hidden xl:inline">الإدارة</span>
+            </button>
+          </div>
 
           {/* Sound FX Synthesizer Toggle */}
           <button

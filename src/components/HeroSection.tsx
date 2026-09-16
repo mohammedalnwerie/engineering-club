@@ -53,17 +53,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
       </div>
 
       <div className="relative max-w-5xl mx-auto text-center flex flex-col items-center z-10">
-        {/* Tech Badge / Telemetry bar */}
-        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#0B2D5B]/70 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-mono mb-8 backdrop-blur-md shadow-[0_0_20px_rgba(22,163,74,0.2)]">
+        {/* Sleek Official Engineering Badge */}
+        <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-gradient-to-r from-[#0B2D5B]/80 via-emerald-950/40 to-[#0B2D5B]/80 border border-emerald-500/30 text-xs sm:text-sm mb-8 backdrop-blur-md shadow-[0_0_25px_rgba(22,163,74,0.2)]">
           <span className="flex h-2 w-2 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="font-bold tracking-wide text-white">{settings.universityNameAr || "جامعة فلسطين"}</span>
-          <span className="text-emerald-500/50">|</span>
-          <span className="font-semibold text-emerald-400">{settings.clubNameAr || "النادي الهندسي"}</span>
-          <span className="text-emerald-500/50 hidden sm:inline">|</span>
-          <span className="text-gray-300 hidden sm:inline font-sans">{settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}</span>
+          <span className="font-bold text-white tracking-wide">المنصة الهندسية الرسمية</span>
+          <span className="text-emerald-400/40">•</span>
+          <span className="font-semibold text-emerald-300">{settings.universityNameAr || "جامعة فلسطين"}</span>
+          <span className="hidden sm:inline text-emerald-400/40">•</span>
+          <span className="hidden sm:inline text-gray-300 font-light text-xs">الكليات الهندسية وتكنولوجيا المعلومات</span>
         </div>
 
         {/* Main Epic Headline */}
