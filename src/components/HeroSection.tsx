@@ -46,15 +46,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
         </div>
 
         {/* Main Title */}
-        <div className="relative mb-6">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-[1.15]">
+        <div className="relative mb-6 max-w-4xl mx-auto">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-[1.15] text-balance">
             {settings.heroTitle.includes(settings.heroHighlight) ? (
               <>
-                {settings.heroTitle.split(settings.heroHighlight)[0]}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#B991D4] via-[#3FE7E3] to-[#98F7F1]">
+                <span>{settings.heroTitle.split(settings.heroHighlight)[0]}</span>
+                <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#B991D4] via-[#3FE7E3] to-[#98F7F1]">
                   {settings.heroHighlight}
-                </span>{' '}
-                {settings.heroTitle.split(settings.heroHighlight)[1]}
+                </span>
+                <span>{settings.heroTitle.split(settings.heroHighlight)[1]}</span>
               </>
             ) : (
               settings.heroTitle

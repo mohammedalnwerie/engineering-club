@@ -46,10 +46,10 @@ const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettings = {
 };
 
 const DEFAULT_SETTINGS: SiteSettings = {
-  heroTitle: 'هندسة اليوم .. تصنع أثر الغد',
-  heroHighlight: 'أثر الغد',
-  heroSubheadline1: 'منصة طلابية رائدة لتمكين الطلبة وتطوير قدراتهم الأكاديمية والمهنية والشخصية، وربطهم بالابتكار وسوق العمل والمجتمع.',
-  heroSubheadline2: 'بيئة هندسية متكاملة تدعم طلبة الكليات والتخصصات المختلفة.',
+  heroTitle: 'نبني مهندسي المستقبل',
+  heroHighlight: 'مهندسي المستقبل',
+  heroSubheadline1: 'من المعرفة إلى المهارة .. ومن الفكرة إلى أثر المشروع.',
+  heroSubheadline2: 'بيئة طلابية متكاملة تصنع الريادة من قلب التحدي في جامعة فلسطين.',
   operatingSystemVersion: 'نظام التشغيل الهندسي v2.6',
   clubNameAr: 'النادي الهندسي',
   clubNameEn: 'UP Engineering Club',
@@ -293,9 +293,19 @@ class DataService {
     const oldMissionPrefix = 'نسعى إلى توفير بيئة هندسية متكاملة تدعم';
     const vision = (data.vision && !data.vision.startsWith(oldVisionPrefix)) ? data.vision : DEFAULT_SETTINGS.vision;
     const mission = (data.mission && !data.mission.startsWith(oldMissionPrefix)) ? data.mission : DEFAULT_SETTINGS.mission;
+    
+    let heroTitle = data.heroTitle || DEFAULT_SETTINGS.heroTitle;
+    let heroHighlight = data.heroHighlight || DEFAULT_SETTINGS.heroHighlight;
+    if (heroTitle.includes('نبنى') || heroTitle.includes('نبني مهندس') || heroTitle === 'نبنى مهندس المستقبل' || heroTitle === 'نبني مهندس المستقبل') {
+      heroTitle = 'نبني مهندسي المستقبل';
+      heroHighlight = 'مهندسي المستقبل';
+    }
+
     return {
       ...DEFAULT_SETTINGS,
       ...data,
+      heroTitle,
+      heroHighlight,
       aboutUs: data.aboutUs || DEFAULT_SETTINGS.aboutUs,
       vision,
       mission,
