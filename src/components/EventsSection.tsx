@@ -1,479 +1,338 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { dataService } from '../services/dataService';
-import type { EventItem, EventTicket } from '../types';
-import { sound } from '../utils/soundEngine';
-import { checkRateLimit } from '../utils/security';
-import { Calendar, Clock, MapPin, Users, Ticket, CheckCircle, X, QrCode, Sparkles, ShieldCheck, AlertCircle, ArrowLeft, Download, Printer } from 'lucide-react';
-import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
+import { 
+  X, 
+  Sparkles, 
+  EyeOff, 
+  Eye, 
+  Lightbulb, 
+  Send, 
+  Check, 
+  BookOpen, 
+  Laptop, 
+  Trophy 
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const EventsSection: React.FC = () => {
-  const [eventsList, setEventsList] = useState<EventItem[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
-  const [studentIdInput, setStudentIdInput] = useState('');
-  const [attendeeName, setAttendeeName] = useState('');
-  const [issuedTicket, setIssuedTicket] = useState<EventTicket | null>(null);
-  const [registeredSuccess, setRegisteredSuccess] = useState(false);
-
-  // Membership validation state
-  const [membershipStatus, setMembershipStatus] = useState<{
-    status: 'idle' | 'approved' | 'pending' | 'rejected' | 'not_found';
-    name?: string;
-    major?: string;
-  }>({ status: 'idle' });
-
-  useEffect(() => {
-    setEventsList(dataService.getEvents());
-    const unsub = dataService.subscribe(() => {
-      setEventsList(dataService.getEvents());
-    });
-    return () => unsub();
-  }, []);
-
-  const handleRegisterClick = (event: EventItem) => {
-    sound.playModalOpen();
-    setSelectedEvent(event);
-    setRegisteredSuccess(false);
-    setAttendeeName('');
-    setStudentIdInput('');
-    setIssuedTicket(null);
-    setMembershipStatus({ status: 'idle' });
-  };
-
-  const handleStudentIdChange = (val: string) => {
-    setStudentIdInput(val);
-    const clean = val.trim();
-    if (clean.length >= 3) {
-      const check = dataService.isStudentMember(clean);
-      if (check.isMember && check.app) {
-        setMembershipStatus({
-          status: 'approved',
-          name: check.app.fullName,
-          major: check.app.major,
-        });
-        setAttendeeName(check.app.fullName);
-      } else if (check.status === 'pending') {
-        setMembershipStatus({ status: 'pending' });
-      } else {
-        setMembershipStatus({ status: 'not_found' });
-      }
-    } else {
-      setMembershipStatus({ status: 'idle' });
+  // Hide/Show Section Toggle
+  const [isHidden, setIsHidden] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('eng_club_hide_events') === 'true';
     }
+    return false;
+  });
+
+  // Suggest Event Modal
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
+  const [suggestName, setSuggestName] = useState('');
+  const [suggestMajor, setSuggestMajor] = useState('');
+  const [suggestTopic, setSuggestTopic] = useState('');
+  const [suggestDetails, setSuggestDetails] = useState('');
+  const [suggestContact, setSuggestContact] = useState('');
+  const [suggestSubmitted, setSuggestSubmitted] = useState(false);
+
+  const handleToggleHide = () => {
+    const next = !isHidden;
+    setIsHidden(next);
+    localStorage.setItem('eng_club_hide_events', String(next));
   };
 
-  const handleConfirmRegistration = (e: React.FormEvent) => {
+  const handleSuggestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEvent) return;
-
-    // Strict validation: Must have an approved membership
-    const check = dataService.isStudentMember(studentIdInput.trim());
-    if (!check.isMember) {
-      sound.playError();
-      return;
-    }
-
-    const rateCheck = checkRateLimit('event_booking', 3000);
-    if (!rateCheck.allowed) {
-      sound.playError();
-      alert(`يرجى الانتظار ${rateCheck.waitSeconds} ثوانٍ قبل إرسال طلب حجز آخر.`);
-      return;
-    }
+    if (!suggestTopic.trim()) return;
 
     try {
-      const finalName = attendeeName.trim() || check.app?.fullName || 'عضو النادي الهندسي';
-      const ticket = dataService.bookTicket(selectedEvent.id, finalName, studentIdInput.trim());
-      sound.playSuccess();
-      setIssuedTicket(ticket);
-      setRegisteredSuccess(true);
-    } catch (err: unknown) {
-      sound.playError();
-      alert(err instanceof Error ? err.message : 'تعذر حجز المقعد.');
-      return;
+      dataService.submitComplaint({
+        studentName: suggestName.trim() || 'طالب مقترح',
+        studentId: 'EVENT_PROPOSAL',
+        email: suggestContact.trim() || 'proposal@engclub.up',
+        phone: suggestContact.trim() || undefined,
+        college: suggestMajor || 'كلية الهندسة وتكنولوجيا المعلومات',
+        category: 'suggestion',
+        subject: '[اقتراح ورشة / فعالية] ' + suggestTopic.trim(),
+        message: 'التخصص: ' + suggestMajor + ' | تفاصيل المقترح: ' + suggestDetails.trim(),
+        isAnonymous: false,
+      });
+    } catch {
+      // safe fallback
     }
 
+    setSuggestSubmitted(true);
     confetti({
       particleCount: 70,
       spread: 60,
-      origin: { y: 0.7 },
-      colors: ['#00F0FF', '#3877FF', '#10B981'],
+      origin: { y: 0.6 },
+      colors: ['#10B981', '#06B6D4', '#F59E0B'],
     });
+
+    setTimeout(() => {
+      setShowSuggestModal(false);
+      setSuggestSubmitted(false);
+      setSuggestName('');
+      setSuggestMajor('');
+      setSuggestTopic('');
+      setSuggestDetails('');
+      setSuggestContact('');
+    }, 2800);
   };
 
-  const closeModal = () => {
-    sound.playClick();
-    setSelectedEvent(null);
-  };
+  const upcomingTracks = [
+    {
+      title: 'مسار الورش والمهارات الهندسية التطبيقية',
+      icon: Laptop,
+      desc: 'دورات وورش مكثفة في نمذجة المباني (BIM / Revit)، وهندسة البرمجيات والذكاء الاصطناعي، والأمن الرقمي، وإدارة المشاريع.',
+      badge: 'قيد التنسيق',
+      color: 'from-emerald-500/10 to-teal-500/5',
+      borderColor: 'border-emerald-500/20'
+    },
+    {
+      title: 'مسار اللقاءات الحوارية والربط بسوق العمل',
+      icon: BookOpen,
+      desc: 'جلسات إرشاد مهني واستشارات تفاعلية مع نخبة من المهندسين الخبراء والخريجين للتعرف على متطلبات وفرص العمل الحقيقية.',
+      badge: 'قيد التحضير',
+      color: 'from-blue-500/10 to-indigo-500/5',
+      borderColor: 'border-blue-500/20'
+    },
+    {
+      title: 'مسار الهاكاثونات وحلول الإعمار والتطوير',
+      icon: Trophy,
+      desc: 'تحديات ومسابقات فرق عمل متكاملة تجمع مهندسي العمارة والمدني والبرمجيات لابتكار حلول عملية تدعم مجتمعنا في فلسطين.',
+      badge: 'قيد الإعداد',
+      color: 'from-amber-500/10 to-orange-500/5',
+      borderColor: 'border-amber-500/20'
+    }
+  ];
 
-  const handleGoToJoin = () => {
-    closeModal();
-    const target = document.querySelector('#join');
-    target?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const renderSuggestModal = () => {
+    if (!showSuggestModal) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right">
+          <button
+            onClick={() => setShowSuggestModal(false)}
+            className="absolute top-5 left-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
 
-  return (
-    <section id="events" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#07090e]/70">
-      <div className="max-w-7xl mx-auto">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/40 border border-amber-500/30 text-amber-400 text-xs font-mono mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              <span>UPCOMING SCHEDULE // HACKATHONS & FORUMS</span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              الفعاليات والهاكاثونات القادمة
-            </h2>
-          </div>
-          <p className="max-w-md text-sm sm:text-base text-gray-400 font-light">
-            محطات عملية وتجمعات هندسية مكثفة تبني شبكة علاقاتك وتضع مهاراتك تحت اختبار التحدي الحقيقي.
-          </p>
-        </div>
+          {!suggestSubmitted ? (
+            <form onSubmit={handleSuggestSubmit} className="space-y-4">
+              <div className="flex items-center gap-2 mb-2 text-emerald-400">
+                <Lightbulb className="w-6 h-6" />
+                <h3 className="text-xl font-bold text-white">اقترح ورشة عمل أو فعالية</h3>
+              </div>
+              <p className="text-xs text-gray-300 font-light mb-4">
+                ما هي المهارة أو الدورة التي ترغب بأن ينظمها النادي الهندسي؟ أخبرنا لنضعها ضمن أولويات خطتنا القادمة.
+              </p>
 
-        {/* Events Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {eventsList.map((event: EventItem) => {
-            const seatsRemaining = event.capacity - event.registeredCount;
-            const progressPercent = Math.round((event.registeredCount / event.capacity) * 100);
-
-            return (
-              <div
-                key={event.id}
-                className="rounded-3xl glass-panel border border-white/10 hover:border-cyan-400/50 p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 relative group overflow-hidden"
-              >
-                {/* Visual Ambient line */}
-                <div
-                  className="absolute top-0 inset-x-0 h-1 transition-all duration-500"
-                  style={{ backgroundColor: event.badgeColor }}
+              <div>
+                <label className="block text-xs font-medium text-gray-200 mb-1">عنوان أو موضوع الورشة المقترحة:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: ورشة نمذجة معمارية BIM، أو دورة تعلم Flutter، أو إدارة المشاريع"
+                  value={suggestTopic}
+                  onChange={(e) => setSuggestTopic(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
                 />
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  {/* Category & Capacity badge */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span
-                      className="font-mono text-xs px-2.5 py-1 rounded border font-semibold"
-                      style={{
-                        borderColor: `${event.badgeColor}40`,
-                        color: event.badgeColor,
-                        backgroundColor: `${event.badgeColor}10`,
-                      }}
-                    >
-                      {event.category}
-                    </span>
-
-                    <span className="font-mono text-xs text-gray-400 flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5" />
-                      <span>
-                        المتبقي: {seatsRemaining > 0 ? seatsRemaining : 'مكتمل'} مقعد
-                      </span>
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-4 group-hover:text-cyan-300 transition-colors leading-snug">
-                    {event.title}
-                  </h3>
-
-                  {/* Schedule Details */}
-                  <div className="space-y-2 mb-6 text-xs text-gray-300 font-mono">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-cyan-400 shrink-0" />
-                      <span>{event.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>{event.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>{event.location}</span>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-xs text-gray-400 leading-relaxed mb-6 line-clamp-3">
-                    {event.description}
-                  </p>
-
-                  {/* Capacity Bar */}
-                  <div className="mb-6">
-                    <div className="flex justify-between text-[11px] font-mono text-gray-400 mb-1.5">
-                      <span>نسبة الحجز:</span>
-                      <span className="text-white font-bold">{progressPercent}%</span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${Math.min(progressPercent, 100)}%`,
-                          backgroundColor: event.badgeColor,
-                        }}
-                      />
-                    </div>
-                  </div>
+                  <label className="block text-xs font-medium text-gray-200 mb-1">اسمك (اختياري):</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: م. أحمد"
+                    value={suggestName}
+                    onChange={(e) => setSuggestName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                  />
                 </div>
-
-                {/* Registration Action */}
-                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                  <div className="text-xs text-gray-400">
-                    {event.speakers?.[0]?.name || 'الهيئة الإدارية'}
-                  </div>
-
-                  <button
-                    onClick={() => handleRegisterClick(event)}
-                    onMouseEnter={() => sound.playHover()}
-                    className="px-5 py-2.5 rounded-xl font-bold text-xs text-[#07090e] bg-gradient-to-r from-cyan-400 to-cyan-300 hover:from-cyan-300 hover:to-cyan-200 shadow-[0_0_15px_rgba(0,240,255,0.25)] flex items-center gap-2 cursor-pointer transition-all"
-                  >
-                    <Ticket className="w-4 h-4" />
-                    <span>حجز مقعد (أعضاء النادي)</span>
-                  </button>
+                <div>
+                  <label className="block text-xs font-medium text-gray-200 mb-1">تخصصك / كليتك:</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: عمارة / برمجيات"
+                    value={suggestMajor}
+                    onChange={(e) => setSuggestMajor(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                  />
                 </div>
               </div>
-            );
-          })}
+
+              <div>
+                <label className="block text-xs font-medium text-gray-200 mb-1">رقم الهاتف / الواتساب للتواصل (اختياري):</label>
+                <input
+                  type="text"
+                  placeholder="059XXXXXXX أو إيميلك"
+                  value={suggestContact}
+                  onChange={(e) => setSuggestContact(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-200 mb-1">تفاصيل إضافية أو مدرب مقترح (اختياري):</label>
+                <textarea
+                  rows={3}
+                  placeholder="هل تقترح مدرباً معيناً، أو نقاطاً محددة ترغب بتغطيتها في الورشة؟"
+                  value={suggestDetails}
+                  onChange={(e) => setSuggestDetails(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSuggestModal(false)}
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition-colors cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>إرسال الاقتراح</span>
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto mb-4">
+                <Check className="w-7 h-7" />
+              </div>
+              <h4 className="text-xl font-bold text-white mb-2">شكراً لاقتراحك القيّم!</h4>
+              <p className="text-xs sm:text-sm text-gray-300 font-light">
+                تم استلام مقترحك وستقوم لجان الأنشطة والتدريب بدراسته وإدراجه ضمن خطة الورش القادمة.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // If section is toggled hidden: render a compact, clean banner
+  if (isHidden) {
+    return (
+      <section id="events" className="py-6 px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-5xl mx-auto p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span>قسم الفعاليات والورش مخفي مؤقتاً (قيد تجهيز وتنسيق الأجندة الأولى)</span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowSuggestModal(true)}
+              className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Lightbulb className="w-3.5 h-3.5" />
+              <span>اقترح فعالية تهمك</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleHide}
+              className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Eye className="w-3.5 h-3.5 text-gray-400" />
+              <span>إظهار القسم</span>
+            </button>
+          </div>
         </div>
 
-        {/* Interactive Event Registration & Digital Pass Modal */}
-        {selectedEvent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-xl">
-            <div
-              className="relative w-full max-w-lg rounded-3xl glass-panel border border-cyan-500/30 p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-right"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close Button */}
-              <button
-                onClick={closeModal}
-                className="absolute top-5 left-5 p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        {renderSuggestModal()}
+      </section>
+    );
+  }
 
-              {!registeredSuccess ? (
-                <div>
-                  <div className="flex items-center gap-2 font-mono text-xs text-cyan-400 mb-2">
-                    <Sparkles className="w-4 h-4" />
-                    <span>بوابة حجز مقاعد الفعاليات // MEMBERS ONLY</span>
-                  </div>
-
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                    {selectedEvent.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-300 mb-6">
-                    {selectedEvent.date} — {selectedEvent.location}
-                  </p>
-
-                  <form onSubmit={handleConfirmRegistration} className="space-y-4">
-                    {/* Student ID / Member Verification */}
-                    <div>
-                      <label className="block text-xs font-mono uppercase text-gray-300 mb-1.5">
-                        الرقم الجامعي / رقم العضوية المعتمد:
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="أدخل رقمك الجامعي (مثال: 120230XXX)..."
-                        value={studentIdInput}
-                        onChange={(e) => handleStudentIdChange(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm font-mono"
-                      />
-                      <div className="flex items-center gap-2 mt-1.5 text-[11px] font-mono text-gray-400">
-                        <span>💡 أرقام تجريبية معتمدة:</span>
-                        <button
-                          type="button"
-                          onClick={() => handleStudentIdChange('21222')}
-                          className="text-cyan-400 hover:text-cyan-300 underline font-bold cursor-pointer"
-                        >
-                          21222
-                        </button>
-                        <span>أو</span>
-                        <button
-                          type="button"
-                          onClick={() => handleStudentIdChange('442019882')}
-                          className="text-cyan-400 hover:text-cyan-300 underline font-bold cursor-pointer"
-                        >
-                          442019882
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Live Membership Verification Alert Box */}
-                    {membershipStatus.status === 'approved' && (
-                      <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-300 flex items-start gap-2.5 animate-in fade-in">
-                        <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="font-bold text-white">عضو معتمد بالنادي: {membershipStatus.name}</div>
-                          <div className="text-[11px] text-emerald-300/90 mt-0.5">التخصص: {membershipStatus.major} — العضوية سارية ومعتمدة</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {membershipStatus.status === 'pending' && (
-                      <div className="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-xs text-amber-300 flex items-start gap-2.5 animate-in fade-in">
-                        <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="font-bold text-white">طلب العضوية قيد المراجعة</div>
-                          <div className="text-[11px] text-amber-300/90 mt-0.5">
-                            طلب عضويتك مسجل ولكن ما زال قيد الاعتماد من إدارة النادي. ستتمكن من حجز المقاعد فور الموافقة عليه.
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {membershipStatus.status === 'not_found' && (
-                      <div className="p-4 rounded-xl bg-red-950/30 border border-red-500/30 text-xs text-gray-300 space-y-2 animate-in fade-in">
-                        <div className="flex items-center gap-2 font-bold text-red-300">
-                          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                          <span>حجز المقاعد مخصص فقط للأعضاء المسجلين في النادي</span>
-                        </div>
-                        <p className="text-[11px] text-gray-300 leading-relaxed">
-                          لم نعثر على عضوية معتمدة مسجلة بالرقم الجامعي ({studentIdInput}). حجز مقاعد ورش العمل والهاكاثونات متاح حصرياً للطلبة المعتمدين في النادي.
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={handleGoToJoin}
-                            className="w-full sm:flex-1 py-2 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-500/40 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          >
-                            <span>قدّم طلب انضمام للنادي</span>
-                            <ArrowLeft className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleStudentIdChange('21222')}
-                            className="w-full sm:w-auto px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-gray-200 border border-white/10 text-xs font-mono transition-colors cursor-pointer"
-                          >
-                            تجربة الرقم التجريبي: 21222
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Member Full Name */}
-                    <div>
-                      <label className="block text-xs font-mono uppercase text-gray-300 mb-1.5">
-                        اسم المهندس/ـة:
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="اسمك الكامل المسجل في النادي"
-                        value={attendeeName}
-                        onChange={(e) => setAttendeeName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
-                      />
-                    </div>
-
-                    {/* Prerequisites */}
-                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-gray-400 space-y-1">
-                      <div className="font-semibold text-gray-300 mb-1">متطلبات الحضور:</div>
-                      {selectedEvent.prerequisites.map((req, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                          <span>{req}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Action Button */}
-                    <button
-                      type="submit"
-                      disabled={membershipStatus.status !== 'approved'}
-                      className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                        membershipStatus.status === 'approved'
-                          ? 'bg-cyan-400 hover:bg-cyan-300 text-black shadow-[0_0_20px_rgba(0,240,255,0.3)]'
-                          : 'bg-white/10 text-gray-500 cursor-not-allowed border border-white/5'
-                      }`}
-                    >
-                      <Ticket className="w-4 h-4" />
-                      <span>
-                        {membershipStatus.status === 'approved'
-                          ? 'تأكيد حجز المقعد وإصدار التذكرة'
-                          : 'مطلوب إدخال رقم عضوية معتمد للحجز'}
-                      </span>
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                /* Holographic Digital Pass Ticket */
-                <div className="text-center py-2">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle className="w-6 h-6" />
-                  </div>
-
-                  <h3 className="text-xl font-bold text-white mb-1">
-                    تم تأكيد مقعدك بنجاح!
-                  </h3>
-                  <p className="text-xs text-gray-400 mb-5">
-                    تم إصدار التذكرة الرسمية لحضور الفعالية وتوثيقها باسمك ورقم عضويتك
-                  </p>
-
-                  {/* Digital Boarding Pass */}
-                  <div className="p-5 sm:p-6 rounded-2xl bg-black/60 border border-emerald-500/40 text-right font-mono relative overflow-hidden shadow-inner">
-                    <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4 text-xs text-cyan-400">
-                      <span>ENG-PASS // NO. {issuedTicket?.ticketNumber || 'TKT-2026-REG'}</span>
-                      <span className="text-emerald-400 font-bold flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>عضو معتمد</span>
-                      </span>
-                    </div>
-
-                    <div className="text-base font-bold text-white mb-1">{attendeeName}</div>
-                    <div className="text-xs text-cyan-300 mb-1">الرقم الجامعي: {studentIdInput}</div>
-                    <div className="text-xs text-gray-400 mb-4">{selectedEvent.title}</div>
-
-                    <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-300 mb-4 p-2.5 rounded-xl bg-white/[0.03] border border-white/5 font-sans">
-                      <div>الموعد: {selectedEvent.date}</div>
-                      <div>المكان: {selectedEvent.location}</div>
-                    </div>
-
-                    <div className="pt-3 border-t border-dashed border-white/20 flex items-center justify-between">
-                      <div className="text-left text-[9px] text-gray-500">
-                        UNIVERSITY OF PALESTINE
-                        <br />
-                        SCAN AT ENTRANCE GATE
-                      </div>
-                      <QrCode className="w-10 h-10 text-emerald-400" />
-                    </div>
-                  </div>
-
-                  {/* Ticket Export & Action Buttons */}
-                  <div className="flex flex-col gap-2 mt-5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const tktNum = issuedTicket?.ticketNumber || 'TKT';
-                        exportCardAsImage('event-confirmed-ticket', `UP-Event-Ticket-${tktNum}.png`);
-                      }}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs cursor-pointer shadow flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>تحميل التذكرة كصورة رسمية (PNG) 🖼️</span>
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => printCardAsPdf()}
-                        className="flex-1 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                      >
-                        <Printer className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>طباعة / حفظ PDF 📄</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={closeModal}
-                        className="px-5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-400 hover:text-white transition-colors cursor-pointer"
-                      >
-                        إغلاق
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+  return (
+    <section id="events" className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#07090e]/80 border-t border-white/5">
+      <div className="max-w-6xl mx-auto">
+        
+        {/* Section Header with Hide button */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-12">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0B2D5B]/60 border border-emerald-500/30 text-emerald-400 text-xs font-mono mb-3">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>البرامج والأنشطة القادمة // قيد التنسيق والتحضير</span>
             </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              أجندة الفعاليات والورش الهندسية
+            </h2>
           </div>
-        )}
+
+          {/* Controls: Suggest button + Hide toggle */}
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setShowSuggestModal(true)}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <Lightbulb className="w-4 h-4" />
+              <span>اقترح ورشة عمل</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleHide}
+              title="إخفاء قسم الفعاليات مؤقتاً"
+              className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-400 hover:text-white text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">إخفاء مؤقت</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Informative Preparation Card */}
+        <div className="p-6 sm:p-8 rounded-3xl glass-panel border border-emerald-500/20 mb-10 text-right">
+          <p className="text-sm sm:text-base text-gray-200 font-light leading-relaxed mb-6">
+            تعمل لجان النادي الهندسي حالياً على إعداد وتنسيق حزمة نوعية من الورش التدريبية التخصصية، والمحاضرات الهندسية، والهاكاثونات بالشراكة مع الكليات الهندسية ونخبة من الخبراء والمؤسسات الشريكة. نرحب بمقترحاتكم لتضمينها في الخطة الأولى.
+          </p>
+
+          {/* 3 Strategic Upcoming Tracks */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {upcomingTracks.map((track, idx) => {
+              const Icon = track.icon;
+              return (
+                <div
+                  key={idx}
+                  className={`p-5 rounded-2xl bg-gradient-to-b ${track.color} border ${track.borderColor} flex flex-col justify-between`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="w-9 h-9 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-emerald-400">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-emerald-300">
+                        {track.badge}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-bold text-white mb-2">{track.title}</h4>
+                    <p className="text-xs text-gray-300 font-light leading-relaxed">
+                      {track.desc}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-gray-400 font-mono">
+                    <span>TRACK 0{idx + 1}</span>
+                    <span className="text-emerald-400">قريباً</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {renderSuggestModal()}
+
       </div>
     </section>
   );

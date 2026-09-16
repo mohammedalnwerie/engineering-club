@@ -11,6 +11,7 @@ import { MajorsSection } from './components/MajorsSection';
 import { ProjectsSection } from './components/ProjectsSection';
 import { EventsSection } from './components/EventsSection';
 import { LeadershipSection } from './components/LeadershipSection';
+import { FaqSection } from './components/FaqSection';
 import { JoinClubSection } from './components/JoinClubSection';
 import { LiveFeedSection } from './components/LiveFeedSection';
 import { Footer } from './components/Footer';
@@ -193,7 +194,13 @@ export function App() {
             {/* 08: Visual Leadership Hierarchy */}
             <LeadershipSection />
 
-            {/* 09: 5-Step Join The Club Journey & Live ID Badge Generator */}
+            {/* 09: Interactive FAQ & Student Guidance */}
+            <FaqSection
+              onOpenComplaints={() => setShowComplaintsModal(true)}
+              onOpenJoin={handleJoinClick}
+            />
+
+            {/* 10: 5-Step Join The Club Journey & Live ID Badge Generator */}
             <JoinClubSection />
 
             {/* 10: Real-time Live Activity Stream & Student Spotlight */}
