@@ -265,8 +265,12 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
 
         {/* Bottom Bar: Copyright & Back to Top */}
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 font-mono gap-4">
-          <div>
-            © 2026 النادي الهندسي — جامعة فلسطين (غزة). جميع الحقوق محفوظة.
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center sm:text-right">
+            <span>© 2026 النادي الهندسي — جامعة فلسطين (غزة). جميع الحقوق محفوظة.</span>
+            {/* Discreet entrance for the team; the dashboard itself still asks for a login. */}
+            <a href="#/admin" className="text-gray-600 hover:text-cyan-400 transition-colors">
+              دخول الإدارة
+            </a>
           </div>
 
           <button
