@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { getSupabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from '../services/supabaseClient';
 import { ClubLogo } from './ClubLogo';
@@ -15,7 +15,6 @@ import { downloadCardPng, printCard } from '../utils/cardRenderer';
 import { memberCardFor } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
 import { AcceptanceDispatchModal } from './AcceptanceDispatchModal';
-import { emailService, type EmailConfig } from '../services/emailService';
 import type {
   ProjectCaseStudy,
   EventItem,
@@ -61,7 +60,6 @@ import {
   Copy,
   MessageSquare,
   Send,
-  Mail,
   Sliders,
   Power,
   Unlock,
@@ -204,8 +202,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [changePassStatus, setChangePassStatus] = useState<{ message: string; isError: boolean } | null>(null);
   const [appCommitteeFilter, setAppCommitteeFilter] = useState<string>('الكل');
   const [dispatchModalApp, setDispatchModalApp] = useState<StoredApplication | null>(null);
-  const [emailConfig, setEmailConfig] = useState<EmailConfig>(emailService.getConfig());
-  const lastEmailConfig = useRef<EmailConfig | null>(null);
 
   const [activeTab, setActiveTab] = useState<'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud' | 'security'>('applications');
 
@@ -342,11 +338,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setComplaints(dataService.getComplaints());
     setRecruitmentSettings(dataService.getRecruitmentSettings());
     setSubscribers(dataService.getSubscribers());
-    const savedEmailConfig = dataService.getEmailConfig();
-    if (savedEmailConfig && savedEmailConfig !== lastEmailConfig.current) {
-      lastEmailConfig.current = savedEmailConfig;
-      setEmailConfig(savedEmailConfig);
-    }
   };
 
   
@@ -2922,82 +2913,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Card: Email & WhatsApp Dispatch Configuration */}
-                  <div className="p-6 rounded-2xl bg-black/40 border border-cyan-500/30 space-y-4 lg:col-span-2">
-                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-cyan-400" />
-                        <div>
-                          <h4 className="text-sm font-bold text-white">إعدادات الإرسال التلقائي لإيميلات القبول (EmailJS Integration)</h4>
-                          <p className="text-[11px] text-gray-400">ربط المنصة بحساب إيميل النادي لإرسال رسائل القبول وبطاقات العضوية تلقائياً للطلبة</p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30">
-                        EMAIL DISPATCH
-                      </span>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-gray-300 leading-relaxed">
-                      💡 <strong>ملاحظة للمشرف:</strong> خيار الإرسال المباشر عبر <strong>Gmail</strong> وخيار <strong>واتساب</strong> يعملان فورياً وبنقرة واحدة لجميع الطلبة دون الحاجة لأي إعدادات. إذا رغبت بإرسال الإيميلات تلقائياً في الخلفية، يمكنك ربط حسابك المجاني في EmailJS وإدخال المفاتيح أدناه.
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                      <div>
-                        <label className="block text-gray-300 mb-1 font-mono">Service ID:</label>
-                        <input
-                          type="text"
-                          placeholder="service_xxxxxxx"
-                          value={emailConfig.serviceId}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, serviceId: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-1 font-mono">Template ID:</label>
-                        <input
-                          type="text"
-                          placeholder="template_xxxxxxx"
-                          value={emailConfig.templateId}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, templateId: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-1 font-mono">Public Key (User ID):</label>
-                        <input
-                          type="text"
-                          placeholder="user_xxxxxxx / xxxxx"
-                          value={emailConfig.publicKey}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, publicKey: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-1 font-mono">إيميل مرسل النادي:</label>
-                        <input
-                          type="email"
-                          placeholder="eng.club@up.edu.ps"
-                          value={emailConfig.senderEmail}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          emailService.saveConfig(emailConfig);
-                          showToast('تم حفظ إعدادات إرسال الإيميلات بنجاح!');
-                        }}
-                        className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                        <span>حفظ إعدادات الإيميل</span>
-                      </button>
-                    </div>
-                  </div>
                   {/* Card 1: Official Brand Identity & Vision/Mission Form */}
                   <form
                     onSubmit={handleSaveSettings}

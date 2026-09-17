@@ -19,7 +19,6 @@ import type {
   ComplaintItem,
   RecruitmentSettings
 } from '../types';
-import type { EmailConfig } from './emailService';
 
 
 
@@ -78,12 +77,11 @@ const CONTENT_KEYS = {
   spotlight: 'spotlight',
   recruitment: 'recruitment',
   tickets: 'tickets',
-  emailConfig: 'emailConfig',
 } as const;
 
 type ContentKey = (typeof CONTENT_KEYS)[keyof typeof CONTENT_KEYS];
 
-const PRIVATE_CONTENT_KEYS: ContentKey[] = ['tickets', 'emailConfig'];
+const PRIVATE_CONTENT_KEYS: ContentKey[] = ['tickets'];
 
 // Local copy of public content only, so the first paint uses the latest published content.
 const PUBLIC_CACHE_KEY = 'eng_club_public_cache_v1';
@@ -99,7 +97,6 @@ interface ContentCache {
   spotlight: StudentSpotlightData;
   recruitment: RecruitmentSettings;
   tickets: EventTicket[];
-  emailConfig: EmailConfig | null;
 }
 
 const defaultContent = (): ContentCache => ({
@@ -113,7 +110,6 @@ const defaultContent = (): ContentCache => ({
   spotlight: STUDENT_SPOTLIGHT,
   recruitment: DEFAULT_RECRUITMENT_SETTINGS,
   tickets: [],
-  emailConfig: null,
 });
 
 interface ApplicationRow {
@@ -222,7 +218,7 @@ class DataService {
   private readPublicCache() {
     const cached = safeStorage.get<Partial<ContentCache> | null>(PUBLIC_CACHE_KEY, null);
     if (cached && typeof cached === 'object') {
-      this.content = { ...this.content, ...cached, tickets: [], emailConfig: null };
+      this.content = { ...this.content, ...cached, tickets: [] };
     }
   }
 
@@ -290,7 +286,6 @@ class DataService {
     this.complaints = [];
     this.subscribers = [];
     this.content.tickets = [];
-    this.content.emailConfig = null;
     this.notify();
   }
 
@@ -502,13 +497,10 @@ class DataService {
     }
   }
 
-  // --- EMAIL SETTINGS (admin only) ---
-  public getEmailConfig(): EmailConfig | null {
-    return this.content.emailConfig;
-  }
-
-  public saveEmailConfig(config: EmailConfig) {
-    this.setContent('emailConfig', config);
+  /** Called after the acceptance email function succeeds (it already saved the timestamp). */
+  public markAcceptanceEmailSent(id: string, sentAt: string) {
+    this.applications = this.applications.map((a) => (a.id === id ? { ...a, acceptanceEmailSentAt: sentAt } : a));
+    this.notify();
   }
 
   // --- TRAINING COURSES ---
@@ -652,7 +644,7 @@ class DataService {
 
   /** Restores the built-in site content. Applications and complaints are untouched. */
   public resetDefaults() {
-    this.content = { ...defaultContent(), tickets: this.content.tickets, emailConfig: this.content.emailConfig };
+    this.content = { ...defaultContent(), tickets: this.content.tickets };
     this.writePublicCache();
     this.notify();
     void (async () => {

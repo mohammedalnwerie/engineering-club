@@ -1,37 +1,9 @@
-import { safeStorage } from './safeStorage';
 import { dataService } from './dataService';
+import { getSupabase } from './supabaseClient';
 import { effectiveCommittee } from '../data/committees';
 import type { StoredApplication } from '../types';
 
-export interface EmailConfig {
-  serviceId: string;
-  templateId: string;
-  publicKey: string;
-  senderEmail: string;
-  customMessageTemplate?: string;
-}
-
-const EMAIL_CONFIG_KEY = 'eng_club_email_config_v1';
-
 export const emailService = {
-  // Shared between admins via the database; the old per-browser copy is only a fallback.
-  getConfig(): EmailConfig {
-    return (
-      dataService.getEmailConfig() ||
-      safeStorage.get<EmailConfig>(EMAIL_CONFIG_KEY, {
-        serviceId: '',
-        templateId: '',
-        publicKey: '',
-        senderEmail: '',
-        customMessageTemplate: '',
-      })
-    );
-  },
-
-  saveConfig(config: EmailConfig) {
-    dataService.saveEmailConfig(config);
-  },
-
   formatAcceptanceEmail(app: StoredApplication) {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://engineering-club-phi.vercel.app';
     const verifyUrl = `${origin}/?verify=${encodeURIComponent(app.studentId || app.id)}`;
@@ -115,49 +87,29 @@ ${verifyUrl}
     window.open(waUrl, '_blank', 'noopener,noreferrer');
   },
 
-  async sendAutomatedEmail(app: StoredApplication): Promise<{ success: boolean; message: string }> {
-    const config = this.getConfig();
-    if (!config.serviceId || !config.templateId || !config.publicKey) {
-      return {
-        success: false,
-        message: 'إعدادات الإرسال التلقائي عبر EmailJS غير مكتملة بعد. يرجى إدخال (Service ID, Template ID, Public Key) في تبويب الإعدادات أو استخدام خيار "إرسال عبر Gmail" الفوري.'
-      };
-    }
-
-    const { verifyUrl, authCode, subject } = this.formatAcceptanceEmail(app);
-
+  /** Sends the acceptance email from the club's Gmail via the send-acceptance-email Edge Function. */
+  async sendAcceptanceEmail(app: StoredApplication): Promise<{ success: boolean; message: string; sentAt?: string }> {
     try {
-      const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          service_id: config.serviceId,
-          template_id: config.templateId,
-          user_id: config.publicKey,
-          template_params: {
-            to_name: app.fullName,
-            to_email: app.email,
-            student_id: app.studentId,
-            college: app.college,
-            major: app.major,
-            committee: effectiveCommittee(app),
-            role: app.organizationalRole || '',
-            auth_code: authCode,
-            verify_url: verifyUrl,
-            subject: subject,
-            club_email: config.senderEmail,
-          }
-        })
+      const supabase = await getSupabase();
+      const { data, error } = await supabase.functions.invoke('send-acceptance-email', {
+        body: { applicationId: app.id },
       });
-
-      if (res.ok) {
-        return { success: true, message: `تم إرسال إيميل القبول والبطاقة بنجاح إلى (${app.email})!` };
-      } else {
-        const errText = await res.text();
-        return { success: false, message: `فشل الإرسال التلقائي: ${errText}` };
+      if (error) {
+        let message = error.message;
+        const response = (error as { context?: Response }).context;
+        if (response && typeof response.json === 'function') {
+          const body = await response.json().catch(() => null);
+          if (body?.error) message = body.error;
+        }
+        if (/Failed to send a request|Function not found|404/i.test(message)) {
+          message = 'خدمة إرسال الإيميل غير مفعّلة بعد في Supabase (send-acceptance-email).';
+        }
+        return { success: false, message };
       }
-    } catch (err: unknown) {
-      return { success: false, message: `تعذر الاتصال بخدمة الإيميل: ${err instanceof Error ? err.message : 'خطأ غير معروف'}` };
+      dataService.markAcceptanceEmailSent(app.id, data.sentAt);
+      return { success: true, message: `تم إرسال إيميل القبول إلى ${data.to}`, sentAt: data.sentAt };
+    } catch (err) {
+      return { success: false, message: `تعذر الإرسال: ${err instanceof Error ? err.message : 'خطأ غير معروف'}` };
     }
-  }
+  },
 };

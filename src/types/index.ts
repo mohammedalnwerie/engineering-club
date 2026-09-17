@@ -128,6 +128,8 @@ export interface StoredApplication extends ClubApplication {
   assignedCommittee?: string;
   /** Set by an admin: title printed on the committee card */
   organizationalRole?: string;
+  /** Set by the send-acceptance-email function */
+  acceptanceEmailSentAt?: string;
   status: 'قيد المراجعة' | 'مقابلة مجدولة' | 'تم القبول' | 'مرفوض';
   submittedAt: string;
 }
