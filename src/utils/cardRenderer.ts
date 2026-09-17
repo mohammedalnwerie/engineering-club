@@ -120,7 +120,7 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
     textRight = right - PHOTO - 16;
   }
   const nameRight = textRight - 4 - 12;
-  const nameSize = cardNameFontSize(card.name);
+  const nameSize = cardNameFontSize(card.name, Boolean(card.photoUrl && assets.photo));
   const nameFont = `900 ${nameSize}px ${SANS}`;
   const nameLine = nameSize + 6;
   ctx.font = nameFont;

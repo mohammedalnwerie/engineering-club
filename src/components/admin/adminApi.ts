@@ -75,6 +75,8 @@ export interface MemberRow {
   member_code: string | null;
   membership_type: 'temporary' | 'semester' | null;
   valid_until: string | null;
+  suspended_at: string | null;
+  suspend_reason: string | null;
   accepted_at: string | null;
   data: { assignedCommittee?: string; targetCommittee?: string; organizationalRole?: string; major?: string } | null;
 }
@@ -83,7 +85,9 @@ export const listMembers = () =>
   run<MemberRow[]>((c) =>
     c
       .from('club_applications')
-      .select('id, full_name, student_id, email, phone, member_code, membership_type, valid_until, accepted_at, data')
+      .select(
+        'id, full_name, student_id, email, phone, member_code, membership_type, valid_until, suspended_at, suspend_reason, accepted_at, data'
+      )
       .eq('status', 'تم القبول')
       .order('valid_until', { ascending: true, nullsFirst: true })
   );
@@ -129,6 +133,18 @@ export const activateSemesterManually = (applicationId: string, semesterEndsAt: 
 export const applyTrialEndToMembers = () =>
   run<number>((c) => c.rpc('apply_trial_end_to_members'));
 
+/** Freezes a membership without deleting the member; they cannot register for events. */
+export const setMembershipSuspended = (applicationId: string, suspended: boolean, reason?: string) =>
+  run((c) =>
+    c
+      .from('club_applications')
+      .update({
+        suspended_at: suspended ? new Date().toISOString() : null,
+        suspend_reason: suspended ? reason?.trim() || null : null,
+      })
+      .eq('id', applicationId)
+  );
+
 export const extendMembership = (applicationId: string, validUntil: string) =>
   run((c) => c.from('club_applications').update({ valid_until: validUntil }).eq('id', applicationId));
 
@@ -142,7 +158,8 @@ export interface EventRow {
   event_type: EventType;
   description: string | null;
   location: string | null;
-  starts_at: string;
+  starts_at: string | null;
+  time_tbd: boolean;
   ends_at: string | null;
   registration_deadline: string | null;
   capacity: number | null;
@@ -155,7 +172,9 @@ export interface EventRow {
 export type EventInput = Omit<EventRow, 'id' | 'created_at'> & { id?: string };
 
 export const listAdminEvents = () =>
-  run<EventRow[]>((c) => c.from('club_events').select('*').order('starts_at', { ascending: false }));
+  run<EventRow[]>((c) =>
+    c.from('club_events').select('*').order('starts_at', { ascending: false, nullsFirst: true })
+  );
 
 export const saveAdminEvent = (event: EventInput) =>
   run<EventRow>((c) => {

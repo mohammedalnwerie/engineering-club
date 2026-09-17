@@ -5,7 +5,7 @@ import { safeStorage } from './safeStorage';
 // Members sign in with their student ID + private member code (issued on acceptance).
 // There is no server session: every call sends the credentials, and the database checks them.
 
-export type MembershipState = 'temporary' | 'semester' | 'expired' | 'not_member';
+export type MembershipState = 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member';
 export type EventType = 'workshop' | 'course' | 'hackathon' | 'lecture' | 'visit' | 'other';
 
 export interface MemberRegistration {
@@ -54,7 +54,9 @@ export interface PublicEvent {
   eventType: EventType;
   description: string | null;
   location: string | null;
-  startsAt: string;
+  startsAt: string | null;
+  /** اليوم محدد بدون ساعة */
+  timeTbd?: boolean;
   endsAt: string | null;
   registrationDeadline: string | null;
   capacity: number | null;
@@ -239,8 +241,15 @@ export function membershipLabel(state: MembershipState | undefined, validUntil: 
   const date = validUntil ? new Date(validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long' }) : '';
   if (state === 'semester') return date ? `فصلية حتى ${date}` : 'عضوية فصلية';
   if (state === 'temporary') return date ? `صالحة حتى ${date}` : 'عضوية سارية';
+  if (state === 'suspended') return 'معلّقة';
   if (state === 'expired') return 'منتهية';
   return '';
+}
+
+/** نص موعد الفعالية: تاريخ وساعة، أو يوم فقط، أو «يُعلن لاحقاً». */
+export function eventWhenLabel(event: { startsAt: string | null; timeTbd?: boolean }): string {
+  if (!event.startsAt) return 'الموعد يُعلن لاحقاً';
+  return formatArabicDate(event.startsAt, !event.timeTbd);
 }
 
 export function daysLeft(validUntil: string | null | undefined): number | null {

@@ -21,6 +21,7 @@ import {
   memberService,
   daysLeft,
   formatArabicDate,
+  eventWhenLabel,
   EVENT_TYPE_LABELS,
   type MemberProfile,
 } from '../../services/memberService';
@@ -236,12 +237,13 @@ const MembershipPanel: React.FC<{ profile: MemberProfile }> = ({ profile }) => {
   const state = profile.membershipState;
   const pending = profile.paymentRequest?.status === 'pending';
   const rejected = profile.paymentRequest?.status === 'rejected';
-  const canRequest = !pending && (state !== 'semester' || (remaining !== null && remaining <= 14));
+  // A suspended member settles it with the admins first; no renewal form for them.
+  const canRequest = state !== 'suspended' && !pending && (state !== 'semester' || (remaining !== null && remaining <= 14));
 
   const tone =
     state === 'semester'
       ? 'border-emerald-500/40 bg-emerald-500/[0.06]'
-      : state === 'expired'
+      : state === 'expired' || state === 'suspended'
         ? 'border-red-500/40 bg-red-500/[0.06]'
         : 'border-amber-500/40 bg-amber-500/[0.06]';
 
@@ -272,11 +274,14 @@ const MembershipPanel: React.FC<{ profile: MemberProfile }> = ({ profile }) => {
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-lg font-bold text-white">العضوية</h3>
         <span className="text-sm font-bold text-white">
-          {state === 'semester' ? 'فصلية' : state === 'expired' ? 'منتهية' : 'سارية'}
+          {state === 'semester' ? 'فصلية' : state === 'expired' ? 'منتهية' : state === 'suspended' ? 'معلّقة' : 'سارية'}
         </span>
       </div>
 
       <p className="text-sm text-gray-200 leading-relaxed">
+        {state === 'suspended' && (
+          <>عضويتك معلّقة حالياً من إدارة النادي، فما بتقدر تسجّل في الفعاليات. تواصل مع الإدارة لمعرفة السبب وإعادة تفعيلها.</>
+        )}
         {state === 'expired' && <>انتهت عضويتك بتاريخ {formatArabicDate(profile.validUntil)}. جدّدها لتتمكن من التسجيل في الفعاليات.</>}
         {state === 'temporary' && (
           <>
@@ -458,7 +463,7 @@ const RegistrationsPanel: React.FC<{ profile: MemberProfile; onBrowseEvents: () 
       ) : (
         <ul className="space-y-2">
           {profile.registrations.map((r) => {
-            const upcoming = new Date(r.startsAt).getTime() > Date.now();
+            const upcoming = !r.startsAt || new Date(r.startsAt).getTime() > Date.now();
             return (
               <li key={r.id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
@@ -467,7 +472,7 @@ const RegistrationsPanel: React.FC<{ profile: MemberProfile; onBrowseEvents: () 
                   <div className="text-sm text-gray-300 flex flex-wrap gap-x-4 gap-y-1">
                     <span className="flex items-center gap-1.5">
                       <CalendarDays className="w-4 h-4 shrink-0" />
-                      {formatArabicDate(r.startsAt, true)}
+                      {eventWhenLabel(r)}
                     </span>
                     {r.location && (
                       <span className="flex items-center gap-1.5">

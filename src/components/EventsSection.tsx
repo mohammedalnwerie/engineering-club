@@ -21,6 +21,7 @@ import { dataService } from '../services/dataService';
 import {
   memberService,
   formatArabicDate,
+  eventWhenLabel,
   EVENT_TYPE_LABELS,
   type MemberProfile,
   type PublicEvent,
@@ -240,8 +241,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
               const reg = registrationFor(event.id);
               const full = event.capacity !== null && event.registeredCount >= event.capacity;
               const seatsLeft = event.capacity !== null ? Math.max(0, event.capacity - event.registeredCount) : null;
+              // No date yet means registration stays open until one is announced.
               const deadline = event.registrationDeadline || event.startsAt;
-              const closed = event.status !== 'published' || new Date(deadline).getTime() < Date.now();
+              const closed =
+                event.status !== 'published' || (Boolean(deadline) && new Date(deadline as string).getTime() < Date.now());
               const fb = feedback?.eventId === event.id ? feedback : null;
 
               return (
@@ -272,7 +275,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
                   <ul className="mt-4 space-y-2 text-sm text-gray-300">
                     <li className="flex items-start gap-2">
                       <CalendarDays className="w-4 h-4 shrink-0 mt-0.5 text-[#3FE7E3]" />
-                      <span>{formatArabicDate(event.startsAt, true)}</span>
+                      <span>{eventWhenLabel(event)}</span>
                     </li>
                     {event.location && (
                       <li className="flex items-start gap-2">

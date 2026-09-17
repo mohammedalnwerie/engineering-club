@@ -75,7 +75,10 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
             <div className="min-w-0 flex-1">
               <div
                 className="font-black text-white break-words"
-                style={{ fontSize: cardNameFontSize(name), lineHeight: `${cardNameFontSize(name) + 6}px` }}
+                style={{
+                  fontSize: cardNameFontSize(name, Boolean(photoUrl)),
+                  lineHeight: `${cardNameFontSize(name, Boolean(photoUrl)) + 6}px`,
+                }}
               >
                 {name}
               </div>

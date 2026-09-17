@@ -23,6 +23,7 @@ import {
   LoadingRows,
   PageHeader,
   Panel,
+  formatDate,
   formatDateTime,
   fromLocalInput,
   inputClass,
@@ -39,12 +40,19 @@ const STATUS_LABELS: Record<EventRow['status'], { label: string; tone: 'gray' | 
   completed: { label: 'منتهية', tone: 'purple' },
 };
 
+/** "الموعد يُعلن لاحقاً" when there is no date, day only when the hour is not set. */
+const whenLabel = (event: { starts_at: string | null; time_tbd?: boolean }) => {
+  if (!event.starts_at) return 'الموعد يُعلن لاحقاً';
+  return event.time_tbd ? formatDate(event.starts_at) : formatDateTime(event.starts_at);
+};
+
 const emptyEvent = (role: AdminRole | null): EventInput => ({
   title: '',
   event_type: 'workshop',
   description: '',
   location: '',
-  starts_at: '',
+  starts_at: null,
+  time_tbd: false,
   ends_at: null,
   registration_deadline: null,
   capacity: 30,
@@ -109,8 +117,13 @@ export const EventsPanel: React.FC<{ role: AdminRole | null; showToast: (msg: st
     );
   }
 
-  const upcoming = events.filter((e) => new Date(e.ends_at || e.starts_at).getTime() >= Date.now());
-  const past = events.filter((e) => new Date(e.ends_at || e.starts_at).getTime() < Date.now());
+  // A date-less event is still upcoming: its date has not been announced yet.
+  const isPast = (e: EventRow) => {
+    const when = e.ends_at || e.starts_at;
+    return Boolean(when) && new Date(when as string).getTime() < Date.now();
+  };
+  const upcoming = events.filter((e) => !isPast(e));
+  const past = events.filter(isPast);
 
   const renderList = (list: EventRow[]) => (
     <ul className="divide-y divide-white/5">
@@ -129,7 +142,7 @@ export const EventsPanel: React.FC<{ role: AdminRole | null; showToast: (msg: st
               <div className="text-sm text-gray-400 flex flex-wrap gap-x-4 gap-y-1">
                 <span className="flex items-center gap-1.5">
                   <CalendarDays className="w-4 h-4" />
-                  {formatDateTime(event.starts_at)}
+                  {whenLabel(event)}
                 </span>
                 {event.location && (
                   <span className="flex items-center gap-1.5">
@@ -225,9 +238,10 @@ const EventForm: React.FC<{
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return setError('اكتب عنوان الفعالية');
-    if (!form.starts_at) return setError('حدد موعد بداية الفعالية');
-    if (form.ends_at && new Date(form.ends_at) < new Date(form.starts_at)) return setError('موعد النهاية قبل موعد البداية');
-    if (form.registration_deadline && new Date(form.registration_deadline) > new Date(form.starts_at)) {
+    if (form.ends_at && form.starts_at && new Date(form.ends_at) < new Date(form.starts_at)) {
+      return setError('موعد النهاية قبل موعد البداية');
+    }
+    if (form.registration_deadline && form.starts_at && new Date(form.registration_deadline) > new Date(form.starts_at)) {
       return setError('آخر موعد للتسجيل يجب أن يكون قبل بداية الفعالية');
     }
     if (form.committee_only && !form.committee) return setError('اختر اللجنة لقصر التسجيل على أعضائها');
@@ -274,13 +288,34 @@ const EventForm: React.FC<{
             <textarea rows={4} value={form.description || ''} onChange={(e) => set('description', e.target.value)} className={inputClass} />
           </Field>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Field label="البداية">
+            <Field
+              label="البداية (اختياري)"
+              hint={form.starts_at ? undefined : 'اتركه فارغاً وسيظهر «الموعد يُعلن لاحقاً»'}
+            >
               <input
-                type="datetime-local"
-                value={toLocalInput(form.starts_at)}
-                onChange={(e) => set('starts_at', fromLocalInput(e.target.value) || '')}
+                type={form.time_tbd ? 'date' : 'datetime-local'}
+                value={form.time_tbd ? (form.starts_at || '').slice(0, 10) : toLocalInput(form.starts_at)}
+                onChange={(e) =>
+                  set(
+                    'starts_at',
+                    form.time_tbd
+                      ? e.target.value
+                        ? new Date(`${e.target.value}T09:00`).toISOString()
+                        : null
+                      : fromLocalInput(e.target.value)
+                  )
+                }
                 className={inputClass}
               />
+              <label className="flex items-center gap-2 text-xs text-gray-300 mt-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.time_tbd}
+                  onChange={(e) => set('time_tbd', e.target.checked)}
+                  className="w-4 h-4 accent-cyan-400"
+                />
+                <span>اليوم فقط — الساعة تُحدد لاحقاً</span>
+              </label>
             </Field>
             <Field label="النهاية (اختياري)">
               <input
@@ -452,7 +487,7 @@ const RegistrationsView: React.FC<{ event: EventRow; onBack: () => void; showToa
       </button>
       <PageHeader
         title={event.title}
-        description={`${formatDateTime(event.starts_at)}${event.location ? ` — ${event.location}` : ''}`}
+        description={`${whenLabel(event)}${event.location ? ` — ${event.location}` : ''}`}
         actions={
           <>
             <Button icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />} onClick={() => void load()}>

@@ -23,6 +23,7 @@ import { LeadershipPanel } from './admin/LeadershipPanel';
 import { CollegesPanel } from './admin/CollegesPanel';
 import { ContactPanel } from './admin/ContactPanel';
 import { TodoPanel } from './admin/TodoPanel';
+import { InterviewModal } from './admin/InterviewModal';
 import { complaintCategoryLabel, COMPLAINT_CATEGORIES, PRIORITY_LABELS } from '../data/complaints';
 import {
   fetchMyRole,
@@ -330,6 +331,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [appSearch, setAppSearch] = useState('');
   const [appStatusFilter, setAppStatusFilter] = useState<string>('all');
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
+  const [interviewApp, setInterviewApp] = useState<StoredApplication | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [quickNavOpen, setQuickNavOpen] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
@@ -1065,6 +1067,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         </div>
 
         {confirmDialog}
+
+        {interviewApp && (
+          <InterviewModal
+            app={interviewApp}
+            onClose={() => setInterviewApp(null)}
+            onSave={(interviewAt, timeTbd) => {
+              dataService.scheduleInterview(interviewApp.id, interviewAt, timeTbd);
+              showToast(
+                interviewAt ? `تم حفظ موعد مقابلة ${interviewApp.fullName}` : `تم مسح موعد مقابلة ${interviewApp.fullName}`
+              );
+            }}
+          />
+        )}
 
         <QuickNav
           open={quickNavOpen}
@@ -2178,6 +2193,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   onBadge={setViewingBadgeApp}
                   onCommitteeBadge={setViewingCommitteeApp}
                   onStatus={(app, status) => handleUpdateAppStatus(app.id, status)}
+                  onSchedule={(app) => setInterviewApp(app)}
                   onDelete={(app) => void handleDeleteApplication(app.id, app.fullName)}
                 />
               </div>

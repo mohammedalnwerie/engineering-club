@@ -562,6 +562,25 @@ class DataService {
     );
   }
 
+  /** Admin: set (or clear) the interview appointment kept inside the application's data. */
+  public scheduleInterview(id: string, interviewAt: string | null, timeTbd = false) {
+    const app = this.applications.find((a) => a.id === id);
+    if (!app) return;
+    const updated: StoredApplication = {
+      ...app,
+      status: interviewAt ? 'مقابلة مجدولة' : app.status,
+      interviewAt: interviewAt || undefined,
+      interviewTimeTbd: interviewAt ? timeTbd : undefined,
+    };
+    this.applications = this.applications.map((a) => (a.id === id ? updated : a));
+    this.notify();
+
+    const { id: _id, studentId: _sid, fullName: _name, email: _email, phone: _phone, status, submittedAt: _at, ...data } = updated;
+    void this.runAdminWrite('فشل حفظ موعد المقابلة', (client) =>
+      client.from('club_applications').update({ data, status }).eq('id', id)
+    );
+  }
+
   /** Admin: fix a student's email/phone. Awaited so a following email send reads the new address. */
   public async updateApplicationContact(id: string, contact: { email: string; phone: string }): Promise<void> {
     const app = this.applications.find((a) => a.id === id);

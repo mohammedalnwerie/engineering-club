@@ -132,6 +132,10 @@ export interface StoredApplication extends ClubApplication {
   organizationalRole?: string;
   /** Set by the send-acceptance-email function */
   acceptanceEmailSentAt?: string;
+  /** موعد المقابلة إن حُدد (ISO). قد يكون اليوم فقط بدون ساعة */
+  interviewAt?: string;
+  /** اليوم محدد والساعة لاحقاً */
+  interviewTimeTbd?: boolean;
   /** Private code issued on acceptance (database update-005) */
   memberCode?: string;
   acceptedAt?: string;

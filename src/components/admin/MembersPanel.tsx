@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, X, Download, RefreshCw, Save, Search, Image as ImageIcon, CalendarPlus } from 'lucide-react';
+import { Check, X, Download, RefreshCw, Save, Search, Image as ImageIcon, CalendarPlus, PauseCircle, PlayCircle } from 'lucide-react';
 import {
   listMembers,
   listPaymentRequests,
   reviewPaymentRequest,
   activateSemesterManually,
   applyTrialEndToMembers,
+  setMembershipSuspended,
   extendMembership,
   type MemberRow,
   type PaymentRequestRow,
@@ -17,7 +18,8 @@ import type { MembershipSettings } from '../../types';
 
 type View = 'payments' | 'members' | 'settings';
 
-const stateOf = (m: MemberRow): 'temporary' | 'semester' | 'expired' => {
+const stateOf = (m: MemberRow): 'temporary' | 'semester' | 'expired' | 'suspended' => {
+  if (m.suspended_at) return 'suspended';
   if (!m.valid_until || new Date(m.valid_until).getTime() < Date.now()) return 'expired';
   return m.membership_type === 'semester' ? 'semester' : 'temporary';
 };
@@ -51,7 +53,7 @@ export const MembersPanel: React.FC<{ showToast: (msg: string) => void }> = ({ s
 
   const pendingCount = payments.filter((p) => p.status === 'pending').length;
   const stats = useMemo(() => {
-    const s = { temporary: 0, semester: 0, expired: 0, expiringSoon: 0 };
+    const s = { temporary: 0, semester: 0, expired: 0, suspended: 0, expiringSoon: 0 };
     for (const m of members) {
       const state = stateOf(m);
       s[state]++;
@@ -78,7 +80,12 @@ export const MembersPanel: React.FC<{ showToast: (msg: string) => void }> = ({ s
           { label: 'طلبات دفع بانتظارك', value: pendingCount, tone: 'text-amber-300' },
           { label: 'عضوية فصلية', value: stats.semester, tone: 'text-emerald-300' },
           { label: 'بطاقة أولى', value: stats.temporary, tone: 'text-cyan-200', sub: stats.expiringSoon ? `${stats.expiringSoon} تنتهي خلال 3 أيام` : undefined },
-          { label: 'منتهية', value: stats.expired, tone: 'text-red-300' },
+          {
+            label: 'منتهية',
+            value: stats.expired,
+            tone: 'text-red-300',
+            sub: stats.suspended ? `${stats.suspended} عضوية معلّقة` : undefined,
+          },
         ].map((s) => (
           <Panel key={s.label} className="p-4">
             <div className="text-sm text-gray-400">{s.label}</div>
@@ -276,7 +283,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
         m.email || '',
         m.phone || '',
         m.data?.assignedCommittee || m.data?.targetCommittee || '',
-        { temporary: 'أولى', semester: 'فصلية', expired: 'منتهية' }[stateOf(m)],
+        { temporary: 'أولى', semester: 'فصلية', expired: 'منتهية', suspended: 'معلّقة' }[stateOf(m)],
         formatDate(m.valid_until),
         m.member_code || '',
       ])
@@ -300,6 +307,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
           <option value="semester">فصلية</option>
           <option value="temporary">بطاقة أولى</option>
           <option value="expired">منتهية</option>
+          <option value="suspended">معلّقة</option>
         </select>
         <Button icon={<Download className="w-4 h-4" />} onClick={exportCsv} disabled={shown.length === 0}>
           تصدير
@@ -323,6 +331,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                       {state === 'semester' && <Badge tone="green">فصلية</Badge>}
                       {state === 'temporary' && <Badge tone="cyan">سارية</Badge>}
                       {state === 'expired' && <Badge tone="red">منتهية</Badge>}
+                      {state === 'suspended' && <Badge tone="amber">معلّقة</Badge>}
                     </div>
                     <div className="text-sm text-gray-400 mt-1 flex flex-wrap gap-x-4 gap-y-1">
                       <span dir="ltr">{m.student_id}</span>
@@ -339,7 +348,23 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
-                    {state !== 'semester' && (
+                    <Button
+                      size="sm"
+                      icon={state === 'suspended' ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
+                      disabled={busy === m.id}
+                      onClick={() => {
+                        if (state === 'suspended') {
+                          void act(m.id, () => setMembershipSuspended(m.id, false), `تم رفع التعليق عن ${m.full_name}`);
+                          return;
+                        }
+                        const reason = window.prompt(`سبب تعليق عضوية ${m.full_name}؟ (اختياري)`);
+                        if (reason === null) return;
+                        void act(m.id, () => setMembershipSuspended(m.id, true, reason), `تم تعليق عضوية ${m.full_name}`);
+                      }}
+                    >
+                      {state === 'suspended' ? 'رفع التعليق' : 'تعليق'}
+                    </Button>
+                    {state !== 'semester' && state !== 'suspended' && (
                       <Button
                         size="sm"
                         variant="success"

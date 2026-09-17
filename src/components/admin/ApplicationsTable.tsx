@@ -18,6 +18,7 @@ export interface ApplicationsTableProps {
   onBadge: (app: StoredApplication) => void;
   onCommitteeBadge: (app: StoredApplication) => void;
   onStatus: (app: StoredApplication, status: StoredApplication['status']) => void;
+  onSchedule: (app: StoredApplication) => void;
   onDelete: (app: StoredApplication) => void;
 }
 
@@ -25,6 +26,15 @@ const STATUS_STYLES: Record<string, string> = {
   'تم القبول': 'bg-emerald-950 text-emerald-300 border-emerald-500/30',
   'مقابلة مجدولة': 'bg-blue-950 text-blue-300 border-blue-500/30',
   مرفوض: 'bg-red-950 text-red-300 border-red-500/30',
+};
+
+/** "الأحد 5 أكتوبر" or with the hour when it is known. */
+const interviewLabel = (app: StoredApplication) => {
+  if (!app.interviewAt) return 'الموعد لم يُحدد بعد';
+  const date = new Date(app.interviewAt);
+  return app.interviewTimeTbd
+    ? date.toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' })
+    : date.toLocaleString('ar', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
 };
 
 const StatusPill: React.FC<{ status: string }> = ({ status }) => (
@@ -47,6 +57,7 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   onBadge,
   onCommitteeBadge,
   onStatus,
+  onSchedule,
   onDelete,
 }) => {
   const selectedSet = React.useMemo(() => new Set(selected), [selected]);
@@ -81,10 +92,10 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
         hidden: accepted,
       },
       {
-        label: 'تحديد موعد مقابلة',
+        label: app.status === 'مقابلة مجدولة' ? 'تعديل موعد المقابلة' : 'تحديد موعد مقابلة',
         icon: <Clock className="w-4 h-4 text-blue-300" />,
-        onClick: () => onStatus(app, 'مقابلة مجدولة'),
-        hidden: app.status === 'مقابلة مجدولة',
+        onClick: () => onSchedule(app),
+        hidden: accepted,
       },
       {
         label: 'رفض الطلب',
@@ -142,7 +153,12 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                       {app.studentId}
                     </div>
                   </div>
-                  <StatusPill status={app.status} />
+                  <div className="text-left">
+                    <StatusPill status={app.status} />
+                    {app.status === 'مقابلة مجدولة' && (
+                      <div className="text-xs text-blue-200 mt-1.5">{interviewLabel(app)}</div>
+                    )}
+                  </div>
                 </div>
                 <div className="text-xs text-gray-300 mt-2 leading-relaxed">
                   {app.major} — {effectiveCommittee(app)}
@@ -216,6 +232,9 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                   </td>
                   <td className="p-3 text-center">
                     <StatusPill status={app.status} />
+                    {app.status === 'مقابلة مجدولة' && (
+                      <div className="text-xs text-blue-200 mt-1.5">{interviewLabel(app)}</div>
+                    )}
                   </td>
                   <td className="p-3">
                     <div className="flex items-center justify-center gap-2">

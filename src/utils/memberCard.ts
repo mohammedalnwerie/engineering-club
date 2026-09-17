@@ -9,8 +9,12 @@ export interface CardField {
   small?: boolean;
 }
 
-/** Long names drop a size instead of wrapping into three lines. */
-export const cardNameFontSize = (name: string) => (name.trim().length > 24 ? 18 : name.trim().length > 18 ? 20 : 22);
+/** Long names drop a size instead of wrapping; a photo leaves less room for them. */
+export const cardNameFontSize = (name: string, hasPhoto = false) => {
+  const length = name.trim().length;
+  if (hasPhoto) return length > 20 ? 15 : length > 16 ? 17 : length > 12 ? 19 : 21;
+  return length > 26 ? 17 : length > 20 ? 19 : 22;
+};
 
 /** Everything a club ID card shows. Rendered on screen by <MemberCard> and to PNG by renderCardPng(). */
 export interface CardData {
