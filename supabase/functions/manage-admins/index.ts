@@ -98,10 +98,22 @@ Deno.serve(async (req) => {
   const { data: caller } = await admin.auth.getUser(token);
   if (!caller?.user) return json({ error: 'يجب تسجيل الدخول' }, 401);
 
-  const { data: callerRow } = await admin.from('club_admins').select('role, email').eq('user_id', caller.user.id).maybeSingle();
+  // Look the caller up by id, then by email (older rows may predate the email column).
+  let { data: callerRow, error: callerError } = await admin
+    .from('club_admins').select('role, email').eq('user_id', caller.user.id).maybeSingle();
+  if (!callerRow && caller.user.email) {
+    const byEmail = await admin.from('club_admins').select('role, email').ilike('email', caller.user.email).maybeSingle();
+    if (byEmail.data) callerRow = byEmail.data;
+    callerError = callerError || byEmail.error;
+  }
   const callerRole = callerRow?.role as Role | undefined;
   if (!callerRole || !FULL_ACCESS.includes(callerRole)) {
-    return json({ error: 'إدارة الحسابات متاحة للمالك ونائب الشؤون الإدارية ولجنة الدعم الفني فقط' }, 403);
+    return json({
+      error: 'إدارة الحسابات متاحة للمالك ونائب الشؤون الإدارية ولجنة الدعم الفني فقط',
+      // Diagnostics so a blocked owner can see why (no secrets here).
+      detail: callerError?.message || (callerRow ? `الصلاحية المسجلة: ${callerRole}` : 'لا يوجد سجل لهذا الحساب في جدول المشرفين'),
+      email: caller.user.email || null,
+    }, 403);
   }
   const callerEmail = callerRow?.email || caller.user.email || '';
 

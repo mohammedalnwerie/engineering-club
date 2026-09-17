@@ -227,7 +227,7 @@ async function manageAdmins<T>(body: Record<string, unknown>): Promise<T> {
     const response = (error as { context?: Response }).context;
     if (response && typeof response.json === 'function') {
       const parsed = await response.json().catch(() => null);
-      if (parsed?.error) message = parsed.error;
+      if (parsed?.error) message = parsed.detail ? `${parsed.error} — ${parsed.detail}` : parsed.error;
     }
     if (/Failed to send a request|Function not found|404/i.test(message)) {
       message = 'دالة إدارة الفريق (manage-admins) غير منشورة بعد على Supabase.';
