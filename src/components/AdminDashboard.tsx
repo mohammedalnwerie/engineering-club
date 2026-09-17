@@ -493,7 +493,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       email: leaderForm.email || '',
       linkedin: leaderForm.linkedin,
       github: leaderForm.github,
-      skills: skillsArray.length > 0 ? skillsArray : ['مهندس مبتكر']
+      skills: skillsArray.length > 0 ? skillsArray : ['مهندس مبتكر'],
+      hidden: editingLeader?.hidden,
     };
 
     dataService.saveLeader(saved);
@@ -511,6 +512,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       setLeadership(dataService.getLeadership());
       showToast(`تم حذف عضو الكادر (${name})`);
     }
+  };
+
+  /** Hides a vacant position from the public page without deleting its card. */
+  const handleToggleLeaderVisibility = (leader: LeaderMember) => {
+    const updated = { ...leader, hidden: !leader.hidden };
+    dataService.saveLeader(updated);
+    setLeadership(dataService.getLeadership());
+    showToast(updated.hidden ? `تم إخفاء (${leader.role}) عن الموقع` : `تم إظهار (${leader.role}) في الموقع`);
   };
 
   const handleSaveCollege = (e: React.FormEvent) => {
@@ -2837,7 +2846,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-white text-sm truncate">{leader.name}</h4>
+                                <h4 className="font-bold text-white text-sm truncate">
+                                  {leader.name || <span className="text-gray-500">بدون اسم</span>}
+                                </h4>
+                                {leader.hidden && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-950/50 border border-amber-500/40 rounded-md px-1.5 py-0.5 mt-1">
+                                    <EyeOff className="w-3 h-3" /> مخفي عن الموقع
+                                  </span>
+                                )}
                                 <div className="text-xs text-cyan-400 font-medium truncate mt-0.5">
                                   {leader.role}
                                 </div>
@@ -2901,6 +2917,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                               <span>تعديل البطاقة والصورة</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleLeaderVisibility(leader)}
+                              className={`p-2 rounded-xl text-xs transition-colors cursor-pointer border ${
+                                leader.hidden
+                                  ? 'bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border-amber-500/40'
+                                  : 'bg-white/[0.05] hover:bg-white/10 text-gray-300 border-white/10'
+                              }`}
+                              title={leader.hidden ? 'إظهار البطاقة في الموقع' : 'إخفاء البطاقة عن الموقع'}
+                            >
+                              {leader.hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                             </button>
                             <button
                               onClick={() => handleDeleteLeader(leader.id, leader.name)}

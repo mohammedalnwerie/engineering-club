@@ -22,6 +22,7 @@ export const LeadershipSection: React.FC = () => {
   ];
 
   const filteredMembers = leadershipList.filter((m) => {
+    if (m.hidden) return false;
     if (activeTier === 'all') return true;
     return m.tier === activeTier;
   });

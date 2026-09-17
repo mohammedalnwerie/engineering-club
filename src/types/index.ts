@@ -104,6 +104,8 @@ export interface LeaderMember {
   github?: string;
   email: string;
   skills: string[];
+  /** true = البطاقة مخفية عن الموقع (منصب شاغر مثلاً) */
+  hidden?: boolean;
 }
 
 export interface ClubApplication {
