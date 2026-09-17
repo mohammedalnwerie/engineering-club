@@ -35,8 +35,15 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) return json({ error: 'يجب تسجيل الدخول كمشرف' }, 401);
 
+  // Projects on the new API-key system may expose the publishable key instead of the legacy anon key.
+  const publicKey =
+    Deno.env.get('SUPABASE_ANON_KEY') ||
+    Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ||
+    req.headers.get('apikey') ||
+    '';
+
   // Acts as the calling admin, so row-level security still applies.
-  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, publicKey, {
     global: { headers: { Authorization: authHeader } },
   });
 
