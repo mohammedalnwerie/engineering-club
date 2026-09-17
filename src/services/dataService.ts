@@ -1,4 +1,5 @@
 import { safeStorage } from './safeStorage';
+import { supabase, requireSupabase } from './supabaseClient';
 import { sanitizeText, sanitizeUrl } from '../utils/security';
 import { FLAGSHIP_PROJECTS, CLUB_EVENTS, TRAINING_COURSES, LEADERSHIP_MEMBERS, COLLEGES, MAJORS, STUDENT_SPOTLIGHT } from '../data/clubData';
 import type {
@@ -17,21 +18,7 @@ import type {
   RecruitmentSettings
 } from '../types';
 
-const STORAGE_KEYS = {
-  PROJECTS: 'eng_club_projects_v2',
-  EVENTS: 'eng_club_events_v2',
-  COURSES: 'eng_club_courses_v2',
-  APPLICATIONS: 'eng_club_applications_v2',
-  TICKETS: 'eng_club_tickets_v1',
-  LEADERSHIP: 'eng_club_leadership_v4',
-  COLLEGES: 'eng_club_colleges_v3',
-  MAJORS: 'eng_club_majors_v4',
-  SPOTLIGHT: 'eng_club_spotlight_v2',
-  SETTINGS: 'eng_club_settings_v1',
-  COMPLAINTS: 'eng_club_complaints_v1',
-  SUPABASE_CONFIG: 'eng_club_supabase_config_v1',
-  RECRUITMENT: 'eng_club_recruitment_v1',
-};
+
 
 
 const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettings = {
@@ -74,12 +61,128 @@ const DEFAULT_SETTINGS: SiteSettings = {
 
 
 type Listener = () => void;
+type ErrorListener = (message: string) => void;
+
+// Public content lives in club_content (one JSON value per key).
+const CONTENT_KEYS = {
+  settings: 'settings',
+  projects: 'projects',
+  events: 'events',
+  courses: 'courses',
+  leadership: 'leadership',
+  colleges: 'colleges',
+  majors: 'majors',
+  spotlight: 'spotlight',
+  recruitment: 'recruitment',
+  tickets: 'tickets',
+} as const;
+
+type ContentKey = (typeof CONTENT_KEYS)[keyof typeof CONTENT_KEYS];
+
+const PRIVATE_CONTENT_KEYS: ContentKey[] = ['tickets'];
+
+// Local copy of public content only, so the first paint uses the latest published content.
+const PUBLIC_CACHE_KEY = 'eng_club_public_cache_v1';
+
+interface ContentCache {
+  settings: SiteSettings;
+  projects: ProjectCaseStudy[];
+  events: EventItem[];
+  courses: TrainingCourse[];
+  leadership: LeaderMember[];
+  colleges: College[];
+  majors: Major[];
+  spotlight: StudentSpotlightData;
+  recruitment: RecruitmentSettings;
+  tickets: EventTicket[];
+}
+
+const defaultContent = (): ContentCache => ({
+  settings: DEFAULT_SETTINGS,
+  projects: FLAGSHIP_PROJECTS,
+  events: CLUB_EVENTS,
+  courses: TRAINING_COURSES,
+  leadership: LEADERSHIP_MEMBERS,
+  colleges: COLLEGES,
+  majors: MAJORS,
+  spotlight: STUDENT_SPOTLIGHT,
+  recruitment: DEFAULT_RECRUITMENT_SETTINGS,
+  tickets: [],
+});
+
+interface ApplicationRow {
+  id: string;
+  student_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  status: StoredApplication['status'];
+  data: Partial<ClubApplication> | null;
+  submitted_at: string;
+}
+
+interface ComplaintRow {
+  id: string;
+  ticket_number: string;
+  status: ComplaintItem['status'];
+  admin_notes: string | null;
+  data: Partial<ComplaintItem> | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export type NewComplaint = Omit<ComplaintItem, 'id' | 'ticketNumber' | 'status' | 'createdAt'>;
+
+export interface MemberLookup {
+  id: string;
+  fullName: string;
+  studentId: string;
+  status: StoredApplication['status'];
+  submittedAt?: string;
+  college?: string;
+  major?: string;
+  academicYear?: string;
+  targetCommittee?: string;
+  skills?: string[];
+}
+
+const rowToApplication = (row: ApplicationRow): StoredApplication => ({
+  ...(row.data as ClubApplication),
+  id: row.id,
+  studentId: row.student_id,
+  fullName: row.full_name,
+  email: row.email || '',
+  phone: row.phone || '',
+  skills: row.data?.skills || [],
+  status: row.status,
+  submittedAt: row.submitted_at,
+});
+
+const rowToComplaint = (row: ComplaintRow): ComplaintItem => ({
+  ...(row.data as ComplaintItem),
+  id: row.id,
+  ticketNumber: row.ticket_number,
+  status: row.status,
+  adminNotes: row.admin_notes || undefined,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at || undefined,
+});
+
+const errorMessage = (err: unknown): string => {
+  if (err && typeof err === 'object' && 'message' in err) return String((err as { message: unknown }).message);
+  return 'خطأ غير معروف';
+};
 
 class DataService {
   private listeners: Set<Listener> = new Set();
+  private errorListeners: Set<ErrorListener> = new Set();
+  private content: ContentCache = defaultContent();
+  private applications: StoredApplication[] = [];
+  private complaints: ComplaintItem[] = [];
 
   constructor() {
-    this.initDefaults();
+    this.readPublicCache();
+    void this.loadPublicContent();
   }
 
   public subscribe(listener: Listener): () => void {
@@ -89,475 +192,290 @@ class DataService {
     };
   }
 
+  public subscribeErrors(listener: ErrorListener): () => void {
+    this.errorListeners.add(listener);
+    return () => {
+      this.errorListeners.delete(listener);
+    };
+  }
+
   private notify() {
     this.listeners.forEach((l) => l());
   }
 
-  private initDefaults() {
-    if (typeof window === 'undefined') return;
+  private reportError(context: string, err: unknown) {
+    const message = `${context}: ${errorMessage(err)}`;
+    console.error('[DataService]', message, err);
+    this.errorListeners.forEach((l) => l(message));
+  }
 
-    // Self-healing migration: unwrap any legacy double-stringified entries in localStorage
-    for (const key of Object.values(STORAGE_KEYS)) {
-      const raw = localStorage.getItem(key);
-      if (raw && (raw.startsWith('"[{') || raw.startsWith('"{') || raw.startsWith('\"'))) {
-        try {
-          let unwrapped = JSON.parse(raw);
-          while (typeof unwrapped === 'string') {
-            unwrapped = JSON.parse(unwrapped);
-          }
-          localStorage.setItem(key, JSON.stringify(unwrapped));
-        } catch {}
+  // --- LOADING ---
+  private readPublicCache() {
+    const cached = safeStorage.get<Partial<ContentCache> | null>(PUBLIC_CACHE_KEY, null);
+    if (cached && typeof cached === 'object') {
+      this.content = { ...this.content, ...cached, tickets: [] };
+    }
+  }
+
+  private writePublicCache() {
+    const { tickets: _private, ...publicContent } = this.content;
+    safeStorage.set(PUBLIC_CACHE_KEY, publicContent);
+  }
+
+  public async loadPublicContent(): Promise<void> {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('club_content').select('key, value');
+    if (error) {
+      this.reportError('تعذر تحميل محتوى الموقع', error);
+      return;
+    }
+    // Keys never saved by an admin fall back to the built-in defaults.
+    const fresh = defaultContent();
+    for (const row of data || []) {
+      if (row.key in fresh) {
+        (fresh as unknown as Record<string, unknown>)[row.key] = row.value;
       }
     }
+    fresh.tickets = this.content.tickets;
+    this.content = fresh;
+    this.writePublicCache();
+    this.notify();
+  }
 
-    if (!localStorage.getItem(STORAGE_KEYS.PROJECTS)) {
-      safeStorage.set(STORAGE_KEYS.PROJECTS, FLAGSHIP_PROJECTS);
+  /** Loads private data (applications, complaints, tickets). Requires an admin session. */
+  public async loadAdminData(): Promise<void> {
+    const client = requireSupabase();
+    const [apps, complaints] = await Promise.all([
+      client.from('club_applications').select('*').order('submitted_at', { ascending: false }),
+      client.from('club_complaints').select('*').order('created_at', { ascending: false }),
+    ]);
+    if (apps.error) this.reportError('تعذر تحميل طلبات الانضمام', apps.error);
+    if (complaints.error) this.reportError('تعذر تحميل الشكاوى', complaints.error);
+    this.applications = ((apps.data || []) as ApplicationRow[]).map(rowToApplication);
+    this.complaints = ((complaints.data || []) as ComplaintRow[]).map(rowToComplaint);
+    await this.loadPublicContent();
+
+    const tickets = await client.from('club_content').select('value').eq('key', CONTENT_KEYS.tickets).maybeSingle();
+    if (tickets.error) this.reportError('تعذر تحميل التذاكر', tickets.error);
+    this.content.tickets = Array.isArray(tickets.data?.value) ? (tickets.data!.value as EventTicket[]) : [];
+    this.notify();
+  }
+
+  public clearAdminData() {
+    this.applications = [];
+    this.complaints = [];
+    this.content.tickets = [];
+    this.notify();
+  }
+
+  // --- CONTENT PERSISTENCE ---
+  private setContent<K extends ContentKey>(key: K, value: ContentCache[K]) {
+    this.content[key] = value;
+    if (!PRIVATE_CONTENT_KEYS.includes(key)) this.writePublicCache();
+    this.notify();
+    void this.persistContent(key, value);
+  }
+
+  private async persistContent(key: ContentKey, value: unknown) {
+    try {
+      const { error } = await requireSupabase()
+        .from('club_content')
+        .upsert({
+          key,
+          value,
+          is_public: !PRIVATE_CONTENT_KEYS.includes(key),
+          updated_at: new Date().toISOString(),
+        });
+      if (error) throw error;
+    } catch (err) {
+      this.reportError('فشل حفظ التعديلات في قاعدة البيانات', err);
     }
-    if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
-      safeStorage.set(STORAGE_KEYS.EVENTS, CLUB_EVENTS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.COURSES)) {
-      safeStorage.set(STORAGE_KEYS.COURSES, TRAINING_COURSES);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.APPLICATIONS)) {
-      const sampleApplications: StoredApplication[] = [
-        {
-          id: 'app-sample-demo',
-          fullName: 'مهندس تجريبي (عضو معتمد)',
-          studentId: '21222',
-          email: 'demo.engineer@up.edu.ps',
-          phone: '0599000000',
-          academicYear: 'السنة الثالثة',
-          college: 'كلية هندسة برمجيات وذكاء اصطناعي',
-          major: 'هندسة برمجيات ونظم ذكية',
-          skills: ['Python / AI', 'Fullstack Web (React / Node)', 'Git & DevOps'],
-          personalStatement: 'عضوية تجريبية معتمدة لاختبار منصة وفعاليات النادي الهندسي.',
-          targetCommittee: 'لجنة الفعاليات والأنشطة',
-          weeklyCommitmentHours: 8,
-          status: 'تم القبول',
-          submittedAt: '2026-10-01T12:00:00Z',
-        },
-        {
-          id: 'app-sample-1',
-          fullName: 'فيصل بن خالد القحطاني',
-          studentId: '442019882',
-          email: 'faisal.q@student.edu.sa',
-          phone: '0551234567',
-          academicYear: 'السنة الثالثة',
-          college: 'كلية هندسة برمجيات وذكاء اصطناعي',
-          major: 'هندسة برمجيات',
-          skills: ['Python / AI', 'Fullstack Web (React / Node)', 'Project Management (Agile / PMP)'],
-          personalStatement: 'أرغب بالمساهمة في تنظيم الهاكاثونات والفعاليات التقنية الكبرى للنادي الهندسي.',
-          targetCommittee: 'لجنة الفعاليات والأنشطة',
-          weeklyCommitmentHours: 8,
-          status: 'تم القبول',
-          submittedAt: '2026-10-01T14:30:00Z',
-        },
-        {
-          id: 'app-sample-2',
-          fullName: 'نوف بنت عبدالرحمن الشهري',
-          studentId: '443028119',
-          email: 'nouf.sh@student.edu.sa',
-          phone: '0509876543',
-          academicYear: 'السنة الثانية',
-          college: 'كلية الهندسة التطبيقية و التخطيط العمراني',
-          major: 'تخصص هندسة معمارية',
-          skills: ['Revit BIM & Grasshopper', 'UI/UX & Graphic Design', 'CAD & SolidWorks'],
-          personalStatement: 'أريد المساهمة في تنظيم الورش والمعسكرات الهندسية وبناء الشراكات مع المكاتب الهندسية.',
-          targetCommittee: 'لجنة العلاقات والتدريب',
-          weeklyCommitmentHours: 6,
-          status: 'مقابلة مجدولة',
-          submittedAt: '2026-10-03T10:15:00Z',
-        }
-      ];
-      safeStorage.set(STORAGE_KEYS.APPLICATIONS, sampleApplications);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.TICKETS)) {
-      const sampleTickets: EventTicket[] = [
-        {
-          id: 't-101',
-          eventId: 'hackathon-2026',
-          eventTitle: 'هاكاثون الابتكار الهندسي 2026: نبني مدن الغد',
-          attendeeName: 'أحمد بن طارق المنصور',
-          studentId: '441009221',
-          ticketNumber: 'TKT-884912',
-          qrHash: 'HASH_884912_ENG',
-          registeredAt: '2026-10-02 16:40',
-          checkedIn: true,
-        },
-        {
-          id: 't-102',
-          eventId: 'hackathon-2026',
-          eventTitle: 'هاكاثون الابتكار الهندسي 2026: نبني مدن الغد',
-          attendeeName: 'سارة بنت عبدالله الدوسري',
-          studentId: '442088192',
-          ticketNumber: 'TKT-391024',
-          qrHash: 'HASH_391024_ENG',
-          registeredAt: '2026-10-02 18:22',
-          checkedIn: false,
-        }
-      ];
-      safeStorage.set(STORAGE_KEYS.TICKETS, sampleTickets);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.LEADERSHIP)) {
-      safeStorage.set(STORAGE_KEYS.LEADERSHIP, LEADERSHIP_MEMBERS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.COLLEGES)) {
-      safeStorage.set(STORAGE_KEYS.COLLEGES, COLLEGES);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.MAJORS)) {
-      safeStorage.set(STORAGE_KEYS.MAJORS, MAJORS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.SPOTLIGHT)) {
-      safeStorage.set(STORAGE_KEYS.SPOTLIGHT, STUDENT_SPOTLIGHT);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
-      safeStorage.set(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-    }
+  }
+
+  private upsertById<T extends { id: string }>(list: T[], item: T, prepend = false): T[] {
+    const next = [...list];
+    const idx = next.findIndex((x) => x.id === item.id);
+    if (idx >= 0) next[idx] = item;
+    else if (prepend) next.unshift(item);
+    else next.push(item);
+    return next;
   }
 
   // --- LEADERSHIP MEMBERS ---
   public getLeadership(): LeaderMember[] {
-    const list = safeStorage.get<LeaderMember[]>(STORAGE_KEYS.LEADERSHIP, LEADERSHIP_MEMBERS);
-    return Array.isArray(list) ? list : LEADERSHIP_MEMBERS;
+    return Array.isArray(this.content.leadership) ? this.content.leadership : LEADERSHIP_MEMBERS;
   }
 
   public saveLeader(member: LeaderMember) {
-    const list = this.getLeadership();
-    const existingIdx = list.findIndex((m) => m.id === member.id);
-    if (existingIdx >= 0) {
-      list[existingIdx] = member;
-    } else {
-      list.push(member);
-    }
-    safeStorage.set(STORAGE_KEYS.LEADERSHIP, list);
-    this.notify();
+    this.setContent('leadership', this.upsertById(this.getLeadership(), member));
   }
 
   public deleteLeader(id: string) {
-    const list = this.getLeadership().filter((m) => m.id !== id);
-    safeStorage.set(STORAGE_KEYS.LEADERSHIP, list);
-    this.notify();
+    this.setContent('leadership', this.getLeadership().filter((m) => m.id !== id));
   }
 
   // --- COLLEGES ---
   public getColleges(): College[] {
-    const list = safeStorage.get<College[]>(STORAGE_KEYS.COLLEGES, COLLEGES);
-    return Array.isArray(list) ? list : COLLEGES;
+    return Array.isArray(this.content.colleges) ? this.content.colleges : COLLEGES;
   }
 
   public saveCollege(college: College) {
-    const list = this.getColleges();
-    const existingIdx = list.findIndex((c) => c.id === college.id);
-    if (existingIdx >= 0) {
-      list[existingIdx] = college;
-    } else {
-      list.push(college);
-    }
-    safeStorage.set(STORAGE_KEYS.COLLEGES, list);
-    this.notify();
+    this.setContent('colleges', this.upsertById(this.getColleges(), college));
   }
 
   // --- MAJORS ---
   public getMajors(): Major[] {
-    const list = safeStorage.get<Major[]>(STORAGE_KEYS.MAJORS, MAJORS);
-    return Array.isArray(list) ? list : MAJORS;
+    return Array.isArray(this.content.majors) ? this.content.majors : MAJORS;
   }
 
   public saveMajor(major: Major) {
-    const list = this.getMajors();
-    const existingIdx = list.findIndex((m) => m.id === major.id);
-    if (existingIdx >= 0) {
-      list[existingIdx] = major;
-    } else {
-      list.push(major);
-    }
-    safeStorage.set(STORAGE_KEYS.MAJORS, list);
-    this.notify();
+    this.setContent('majors', this.upsertById(this.getMajors(), major));
   }
 
   // --- SPOTLIGHT ---
   public getSpotlight(): StudentSpotlightData {
-    const data = safeStorage.get<StudentSpotlightData>(STORAGE_KEYS.SPOTLIGHT, STUDENT_SPOTLIGHT);
-    return data && typeof data === "object" ? data : STUDENT_SPOTLIGHT;
+    const data = this.content.spotlight;
+    return data && typeof data === 'object' ? data : STUDENT_SPOTLIGHT;
   }
 
   public saveSpotlight(data: StudentSpotlightData) {
-    safeStorage.set(STORAGE_KEYS.SPOTLIGHT, data);
-    this.notify();
+    this.setContent('spotlight', data);
   }
 
   // --- SITE SETTINGS ---
   public getSettings(): SiteSettings {
-    const data = safeStorage.get<SiteSettings>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+    const data = this.content.settings;
     if (!data || typeof data !== 'object') return DEFAULT_SETTINGS;
-    const oldVisionPrefix = 'أن يكون النادي الهندسي منصة طلابية رائدة';
-    const oldMissionPrefix = 'نسعى إلى توفير بيئة هندسية متكاملة تدعم';
-    const vision = (data.vision && !data.vision.startsWith(oldVisionPrefix)) ? data.vision : DEFAULT_SETTINGS.vision;
-    const mission = (data.mission && !data.mission.startsWith(oldMissionPrefix)) ? data.mission : DEFAULT_SETTINGS.mission;
-    
-    let heroTitle = data.heroTitle || DEFAULT_SETTINGS.heroTitle;
-    let heroHighlight = data.heroHighlight || DEFAULT_SETTINGS.heroHighlight;
-    if (heroTitle.includes('نبنى') || heroTitle.includes('نبني مهندس') || heroTitle === 'نبنى مهندس المستقبل' || heroTitle === 'نبني مهندس المستقبل') {
-      heroTitle = 'نبني مهندسي المستقبل';
-      heroHighlight = 'مهندسي المستقبل';
-    }
-
     return {
       ...DEFAULT_SETTINGS,
       ...data,
-      heroTitle,
-      heroHighlight,
+      heroTitle: data.heroTitle || DEFAULT_SETTINGS.heroTitle,
+      heroHighlight: data.heroHighlight || DEFAULT_SETTINGS.heroHighlight,
       aboutUs: data.aboutUs || DEFAULT_SETTINGS.aboutUs,
-      vision,
-      mission,
-      showEventsSection: data.showEventsSection !== false
+      vision: data.vision || DEFAULT_SETTINGS.vision,
+      mission: data.mission || DEFAULT_SETTINGS.mission,
+      showEventsSection: data.showEventsSection !== false,
     };
   }
 
   public saveSettings(data: SiteSettings) {
-    safeStorage.set(STORAGE_KEYS.SETTINGS, data);
-    this.notify();
+    this.setContent('settings', data);
   }
-
 
   // --- PROJECTS ---
   public getProjects(): ProjectCaseStudy[] {
-    const list = safeStorage.get<ProjectCaseStudy[]>(STORAGE_KEYS.PROJECTS, FLAGSHIP_PROJECTS);
-    return Array.isArray(list) ? list : FLAGSHIP_PROJECTS;
+    return Array.isArray(this.content.projects) ? this.content.projects : FLAGSHIP_PROJECTS;
   }
 
   public saveProject(project: ProjectCaseStudy) {
-    const list = this.getProjects();
-    const existingIdx = list.findIndex((p) => p.id === project.id);
-    if (existingIdx >= 0) {
-      list[existingIdx] = project;
-    } else {
-      list.unshift(project);
-    }
-    safeStorage.set(STORAGE_KEYS.PROJECTS, list);
-    this.notify();
+    this.setContent('projects', this.upsertById(this.getProjects(), project, true));
   }
 
   public deleteProject(id: string) {
-    const list = this.getProjects().filter((p) => p.id !== id);
-    safeStorage.set(STORAGE_KEYS.PROJECTS, list);
-    this.notify();
+    this.setContent('projects', this.getProjects().filter((p) => p.id !== id));
   }
 
   // --- EVENTS ---
   public getEvents(): EventItem[] {
-    const list = safeStorage.get<EventItem[]>(STORAGE_KEYS.EVENTS, CLUB_EVENTS);
-    return Array.isArray(list) ? list : CLUB_EVENTS;
+    return Array.isArray(this.content.events) ? this.content.events : CLUB_EVENTS;
   }
 
   public saveEvent(event: EventItem) {
-    const list = this.getEvents();
-    const existingIdx = list.findIndex((e) => e.id === event.id);
-    if (existingIdx >= 0) {
-      list[existingIdx] = event;
-    } else {
-      list.unshift(event);
-    }
-    safeStorage.set(STORAGE_KEYS.EVENTS, list);
-    this.notify();
+    this.setContent('events', this.upsertById(this.getEvents(), event, true));
   }
 
   public deleteEvent(id: string) {
-    const list = this.getEvents().filter((e) => e.id !== id);
-    safeStorage.set(STORAGE_KEYS.EVENTS, list);
-    this.notify();
+    this.setContent('events', this.getEvents().filter((e) => e.id !== id));
   }
 
-  // --- TICKETS & ATTENDEES ---
+  // --- TICKETS & ATTENDEES (admin only) ---
   public getTickets(eventId?: string): EventTicket[] {
-    const list = safeStorage.get<EventTicket[]>(STORAGE_KEYS.TICKETS, []);
-    const all = Array.isArray(list) ? list : [];
-    if (eventId) {
-      return all.filter((t) => t.eventId === eventId);
-    }
-    return all;
-  }
-
-  public bookTicket(eventId: string, attendeeName: string, studentId?: string): EventTicket {
-    const cleanStudentId = (studentId || '').trim();
-    const tickets = this.getTickets();
-
-    // Check if student already booked a ticket for this event (prevent duplicate booking / spam)
-    if (cleanStudentId && cleanStudentId !== 'N/A') {
-      const existing = tickets.find(
-        (t) => t.eventId === eventId && t.studentId?.trim().toLowerCase() === cleanStudentId.toLowerCase()
-      );
-      if (existing) {
-        return existing;
-      }
-    }
-
-    const events = this.getEvents();
-    const ev = events.find((e) => e.id === eventId);
-    const eventTitle = ev ? ev.title : 'فعالية النادي الهندسي';
-
-    // Strictly enforce capacity
-    if (ev) {
-      if (ev.registeredCount >= ev.capacity) {
-        throw new Error('عذراً، اكتملت جميع المقاعد المتاحة لهذه الفعالية.');
-      }
-      ev.registeredCount = Math.min(ev.capacity, (ev.registeredCount || 0) + 1);
-      this.saveEvent(ev);
-    }
-
-    const ticketNum = `TKT-${Math.floor(100000 + Math.random() * 900000)}`;
-    const newTicket: EventTicket = {
-      id: `ticket-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      eventId,
-      eventTitle,
-      attendeeName: sanitizeText(attendeeName),
-      studentId: cleanStudentId || 'N/A',
-      ticketNumber: ticketNum,
-      qrHash: `QR_${ticketNum}_ENG_VERIFIED`,
-      registeredAt: new Date().toLocaleString('ar-SA'),
-      checkedIn: false,
-    };
-
-    tickets.unshift(newTicket);
-    safeStorage.set(STORAGE_KEYS.TICKETS, tickets);
-    this.notify();
-    return newTicket;
+    const all = Array.isArray(this.content.tickets) ? this.content.tickets : [];
+    return eventId ? all.filter((t) => t.eventId === eventId) : all;
   }
 
   public toggleCheckIn(ticketId: string): boolean {
-    const tickets = this.getTickets();
+    const tickets = this.getTickets().map((t) => (t.id === ticketId ? { ...t, checkedIn: !t.checkedIn } : t));
     const target = tickets.find((t) => t.id === ticketId);
     if (!target) return false;
-    target.checkedIn = !target.checkedIn;
-    safeStorage.set(STORAGE_KEYS.TICKETS, tickets);
-    this.notify();
+    this.setContent('tickets', tickets);
     return target.checkedIn;
   }
 
   // --- APPLICATIONS ---
+  /** Admin only — populated by loadAdminData(). */
   public getApplications(): StoredApplication[] {
-    const list = safeStorage.get<StoredApplication[]>(STORAGE_KEYS.APPLICATIONS, []);
-    return Array.isArray(list) ? list : [];
+    return this.applications;
   }
 
-  public submitApplication(app: ClubApplication): StoredApplication {
-    const list = this.getApplications();
-    const cleanStudentId = (app.studentId || '').trim();
-
-    // Check if application already exists for this studentId
-    const existingIndex = list.findIndex(
-      (a) => cleanStudentId && a.studentId && a.studentId.trim().toLowerCase() === cleanStudentId.toLowerCase()
-    );
-
-    const sanitizedApp = {
+  public async submitApplication(app: ClubApplication): Promise<{ id: string; status: StoredApplication['status'] }> {
+    const payload: ClubApplication = {
       ...app,
       fullName: sanitizeText(app.fullName),
+      studentId: sanitizeText(app.studentId),
+      email: sanitizeText(app.email),
+      phone: sanitizeText(app.phone),
       personalStatement: sanitizeText(app.personalStatement || ''),
       portfolioUrl: sanitizeUrl(app.portfolioUrl),
     };
-
-    if (existingIndex !== -1) {
-      // Update existing application rather than creating duplicates
-      const existing = list[existingIndex];
-      const updated: StoredApplication = {
-        ...existing,
-        ...sanitizedApp,
-        // Keep existing status if accepted
-        status: existing.status === 'تم القبول' ? 'تم القبول' : 'قيد المراجعة',
-        submittedAt: new Date().toISOString(),
-      };
-      list[existingIndex] = updated;
-      safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
-      this.notify();
-      return updated;
-    }
-
-    const newApp: StoredApplication = {
-      ...sanitizedApp,
-      id: `app-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      status: 'قيد المراجعة',
-      submittedAt: new Date().toISOString(),
-    };
-
-    list.unshift(newApp);
-    safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
-    this.notify();
-    return newApp;
+    const { data, error } = await requireSupabase().rpc('submit_application', { payload });
+    if (error) throw new Error(error.message);
+    return data as { id: string; status: StoredApplication['status'] };
   }
 
   public updateApplicationStatus(id: string, status: StoredApplication['status']) {
-    const list = this.getApplications();
-    const app = list.find((a) => a.id === id);
-    if (app) {
-      app.status = status;
-      safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
-      this.notify();
-    }
+    this.applications = this.applications.map((a) => (a.id === id ? { ...a, status } : a));
+    this.notify();
+    void this.runAdminWrite('فشل تحديث حالة الطلب', () =>
+      requireSupabase().from('club_applications').update({ status }).eq('id', id)
+    );
   }
 
   public deleteApplication(id: string) {
-    const list = this.getApplications().filter((a) => a.id !== id);
-    safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
+    this.applications = this.applications.filter((a) => a.id !== id);
     this.notify();
+    void this.runAdminWrite('فشل حذف الطلب', () => requireSupabase().from('club_applications').delete().eq('id', id));
   }
 
   public deleteRejectedApplications(): number {
-    const original = this.getApplications();
-    const list = original.filter((a) => a.status !== 'مرفوض');
-    const removedCount = original.length - list.length;
-    safeStorage.set(STORAGE_KEYS.APPLICATIONS, list);
+    const removedCount = this.applications.filter((a) => a.status === 'مرفوض').length;
+    this.applications = this.applications.filter((a) => a.status !== 'مرفوض');
     this.notify();
+    void this.runAdminWrite('فشل حذف الطلبات المرفوضة', () =>
+      requireSupabase().from('club_applications').delete().eq('status', 'مرفوض')
+    );
     return removedCount;
+  }
+
+  /** Public, exact-match lookup by student ID or UP-ENG code. Never returns email/phone. */
+  public async verifyMember(code: string): Promise<MemberLookup | null> {
+    const clean = code.trim();
+    if (!clean) return null;
+    const { data, error } = await requireSupabase().rpc('verify_member', { code: clean });
+    if (error) throw new Error(error.message);
+    return (data as MemberLookup | null) || null;
+  }
+
+  private async runAdminWrite(context: string, op: () => PromiseLike<{ error: unknown }>) {
+    try {
+      const { error } = await op();
+      if (error) throw error;
+    } catch (err) {
+      this.reportError(context, err);
+      await this.loadAdminData().catch(() => undefined);
+    }
   }
 
   // --- TRAINING COURSES ---
   public getCourses(): TrainingCourse[] {
-    const list = safeStorage.get<TrainingCourse[]>(STORAGE_KEYS.COURSES, TRAINING_COURSES);
-    return Array.isArray(list) ? list : TRAINING_COURSES;
+    return Array.isArray(this.content.courses) ? this.content.courses : TRAINING_COURSES;
   }
 
   public saveCourse(course: TrainingCourse) {
-    const list = this.getCourses();
-    const existingIdx = list.findIndex((c) => c.id === course.id);
-    if (existingIdx >= 0) {
-      list[existingIdx] = course;
-    } else {
-      list.unshift(course);
-    }
-    safeStorage.set(STORAGE_KEYS.COURSES, list);
-    this.notify();
+    this.setContent('courses', this.upsertById(this.getCourses(), course, true));
   }
 
   // --- EXPORTS & UTILITIES ---
-  public exportToCSV(data: any[], filename: string) {
-    if (!data.length) return;
-
-    const headers = Object.keys(data[0]);
-    const csvContent = [
-      headers.join(','),
-      ...data.map((row) =>
-        headers
-          .map((h) => {
-            const val = (row as Record<string, any>)[h];
-            const escaped = typeof val === 'object' ? JSON.stringify(val) : String(val ?? '');
-            return `"${escaped.replace(/"/g, '""')}"`;
-          })
-          .join(',')
-      ),
-    ].join('\r\n');
-
-
-    // Add UTF-8 BOM so Excel displays Arabic correctly
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', `${filename}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
   public exportFullDatabaseJSON(): string {
     const payload = {
       exportDate: new Date().toISOString(),
@@ -571,43 +489,20 @@ class DataService {
       majors: this.getMajors(),
       spotlight: this.getSpotlight(),
       settings: this.getSettings(),
+      recruitment: this.getRecruitmentSettings(),
       complaints: this.getComplaints(),
     };
     return JSON.stringify(payload, null, 2);
   }
 
+  // --- COMPLAINTS ---
+  /** Admin only — populated by loadAdminData(). */
   public getComplaints(): ComplaintItem[] {
-    const list = safeStorage.get<ComplaintItem[]>(STORAGE_KEYS.COMPLAINTS, []);
-    if (Array.isArray(list) && list.length > 0) {
-      return list;
-    }
-    const initial: ComplaintItem[] = [
-      {
-        id: 'cmp-sample-1',
-        ticketNumber: 'UP-CMP-2026-1042',
-        studentName: 'محمد أحمد خليل',
-        studentId: '120230554',
-        email: 'mohammed.k@up.edu.ps',
-        phone: '0599000001',
-        college: 'كلية هندسة برمجيات وذكاء اصطناعي',
-        category: 'club_activities',
-        subject: 'اقتراح تنظيم ورشة عمل في أدوات الذكاء الاصطناعي التوليدي',
-        message: 'نرجو من لجنة العلاقات والتدريب تنظيم ورشة تدريبية عملية حول توظيف تقنيات الـ Prompt Engineering وأدوات الذكاء الاصطناعي في تسريع البرمجة للطلبة المبتدئين.',
-        isAnonymous: false,
-        status: 'resolved',
-        adminNotes: 'تمت إحالة المقترح للجنة التدريب وإدراجه ضمن خطة الورش القادمة للفصل الحالي.',
-        createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000).toISOString()
-      }
-    ];
-    safeStorage.set(STORAGE_KEYS.COMPLAINTS, initial);
-    return initial;
+    return this.complaints;
   }
 
-  public submitComplaint(data: Omit<ComplaintItem, 'id' | 'ticketNumber' | 'status' | 'createdAt'>): ComplaintItem {
-    const complaints = this.getComplaints();
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const newComplaint: ComplaintItem = {
+  public async submitComplaint(data: NewComplaint): Promise<ComplaintItem> {
+    const payload: NewComplaint = {
       ...data,
       studentName: sanitizeText(data.studentName),
       studentId: sanitizeText(data.studentId || ''),
@@ -615,164 +510,112 @@ class DataService {
       phone: data.phone ? sanitizeText(data.phone) : undefined,
       subject: sanitizeText(data.subject),
       message: sanitizeText(data.message),
-      id: 'cmp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-      ticketNumber: `UP-CMP-2026-${randomSuffix}`,
-      status: 'pending',
-      createdAt: new Date().toISOString()
     };
-    complaints.unshift(newComplaint);
-    safeStorage.set(STORAGE_KEYS.COMPLAINTS, complaints);
-    this.notify();
-    return newComplaint;
+    const { data: result, error } = await requireSupabase().rpc('submit_complaint', { payload });
+    if (error) throw new Error(error.message);
+    return result as ComplaintItem;
   }
 
   public updateComplaintStatus(id: string, status: ComplaintItem['status'], adminNotes?: string): ComplaintItem | undefined {
-    const complaints = this.getComplaints();
-    const idx = complaints.findIndex(c => c.id === id);
-    if (idx !== -1) {
-      complaints[idx].status = status;
-      if (adminNotes !== undefined) {
-        complaints[idx].adminNotes = adminNotes;
-      }
-      complaints[idx].updatedAt = new Date().toISOString();
-      safeStorage.set(STORAGE_KEYS.COMPLAINTS, complaints);
-      this.notify();
-      return complaints[idx];
-    }
-    return undefined;
+    const updatedAt = new Date().toISOString();
+    let updated: ComplaintItem | undefined;
+    this.complaints = this.complaints.map((c) => {
+      if (c.id !== id) return c;
+      updated = { ...c, status, updatedAt, ...(adminNotes !== undefined ? { adminNotes } : {}) };
+      return updated;
+    });
+    if (!updated) return undefined;
+    this.notify();
+    const patch: Record<string, unknown> = { status, updated_at: updatedAt };
+    if (adminNotes !== undefined) patch.admin_notes = adminNotes;
+    void this.runAdminWrite('فشل تحديث الشكوى', () =>
+      requireSupabase().from('club_complaints').update(patch).eq('id', id)
+    );
+    return updated;
   }
 
   public deleteComplaint(id: string): void {
-    let complaints = this.getComplaints();
-    complaints = complaints.filter(c => c.id !== id);
-    safeStorage.set(STORAGE_KEYS.COMPLAINTS, complaints);
+    this.complaints = this.complaints.filter((c) => c.id !== id);
     this.notify();
+    void this.runAdminWrite('فشل حذف الشكوى', () => requireSupabase().from('club_complaints').delete().eq('id', id));
   }
 
-  public getComplaintByTicket(ticketNumber: string): ComplaintItem | undefined {
-    const complaints = this.getComplaints();
-    const cleanNum = ticketNumber.trim().toUpperCase();
-    // For privacy, tracking is strictly permitted via the unique secret Ticket Number
-    return complaints.find(c => c.ticketNumber.toUpperCase() === cleanNum);
-  }
-
-  public isStudentMember(studentId: string): { isMember: boolean; status: 'approved' | 'pending' | 'rejected' | 'not_found'; app?: StoredApplication } {
-    const cleanId = studentId.trim().toLowerCase();
-    if (!cleanId) return { isMember: false, status: 'not_found' };
-    const applications = this.getApplications();
-    let app = Array.isArray(applications) ? applications.find(a => (a.studentId && a.studentId.trim().toLowerCase() === cleanId) || a.id.toLowerCase() === cleanId) : undefined;
-    
-    // Fallback demo account for instant validation testing (e.g. ID: 21222)
-    if (!app && cleanId === '21222') {
-      app = {
-        id: 'app-sample-demo',
-        fullName: 'مهندس تجريبي (عضو معتمد)',
-        studentId: '21222',
-        email: 'demo.engineer@up.edu.ps',
-        phone: '0599000000',
-        academicYear: 'السنة الثالثة',
-        college: 'كلية هندسة برمجيات وذكاء اصطناعي',
-        major: 'هندسة برمجيات ونظم ذكية',
-        skills: ['Python / AI', 'Fullstack Web (React / Node)', 'Git & DevOps'],
-        personalStatement: 'عضوية تجريبية معتمدة لاختبار منصة وفعاليات النادي الهندسي.',
-        targetCommittee: 'لجنة الفعاليات والأنشطة',
-        weeklyCommitmentHours: 8,
-        status: 'تم القبول',
-        submittedAt: '2026-10-01T12:00:00Z',
-      };
-    }
-
-    if (!app) {
-      return { isMember: false, status: 'not_found' };
-    }
-    if (app.status === 'تم القبول') {
-      return { isMember: true, status: 'approved', app };
-    }
-    return { isMember: false, status: app.status as any, app };
+  /** Public tracking by the secret ticket number only. */
+  public async trackComplaint(ticketNumber: string): Promise<ComplaintItem | null> {
+    const clean = ticketNumber.trim();
+    if (!clean) return null;
+    const { data, error } = await requireSupabase().rpc('track_complaint', { ticket: clean });
+    if (error) throw new Error(error.message);
+    return (data as ComplaintItem | null) || null;
   }
 
   public importDatabaseJSON(jsonStr: string): boolean {
     try {
       const data = JSON.parse(jsonStr);
-      if (data.projects) safeStorage.set(STORAGE_KEYS.PROJECTS, data.projects);
-      if (data.events) safeStorage.set(STORAGE_KEYS.EVENTS, data.events);
-      if (data.courses) safeStorage.set(STORAGE_KEYS.COURSES, data.courses);
-      if (data.applications) safeStorage.set(STORAGE_KEYS.APPLICATIONS, data.applications);
-      if (data.tickets) safeStorage.set(STORAGE_KEYS.TICKETS, data.tickets);
-      if (data.leadership) safeStorage.set(STORAGE_KEYS.LEADERSHIP, data.leadership);
-      if (data.colleges) safeStorage.set(STORAGE_KEYS.COLLEGES, data.colleges);
-      if (data.majors) safeStorage.set(STORAGE_KEYS.MAJORS, data.majors);
-      if (data.spotlight) safeStorage.set(STORAGE_KEYS.SPOTLIGHT, data.spotlight);
-      if (data.settings) safeStorage.set(STORAGE_KEYS.SETTINGS, data.settings);
-      this.notify();
+      const keys: ContentKey[] = ['projects', 'events', 'courses', 'leadership', 'colleges', 'majors', 'spotlight', 'settings', 'recruitment', 'tickets'];
+      for (const key of keys) {
+        if (data[key]) this.setContent(key, data[key]);
+      }
       return true;
     } catch {
       return false;
     }
   }
 
-
   // --- RECRUITMENT & COMMITTEE STATUS ---
   public getRecruitmentSettings(): RecruitmentSettings {
-    const data = safeStorage.get<RecruitmentSettings>(STORAGE_KEYS.RECRUITMENT, DEFAULT_RECRUITMENT_SETTINGS);
+    const data = this.content.recruitment;
     if (!data || typeof data !== 'object') return DEFAULT_RECRUITMENT_SETTINGS;
     return {
       isGlobalRecruitmentOpen: data.isGlobalRecruitmentOpen !== false,
       globalClosedMessage: data.globalClosedMessage || DEFAULT_RECRUITMENT_SETTINGS.globalClosedMessage,
       committees: {
         ...DEFAULT_RECRUITMENT_SETTINGS.committees,
-        ...(data.committees || {})
+        ...(data.committees || {}),
       },
-      lastUpdated: data.lastUpdated
+      lastUpdated: data.lastUpdated,
     };
   }
 
   public saveRecruitmentSettings(settings: RecruitmentSettings) {
-    const updated = {
-      ...settings,
-      lastUpdated: new Date().toISOString()
-    };
-    safeStorage.set(STORAGE_KEYS.RECRUITMENT, updated);
-    this.notify();
+    this.setContent('recruitment', { ...settings, lastUpdated: new Date().toISOString() });
   }
 
   public toggleCommitteeRecruitment(committeeId: string, isOpen?: boolean, notice?: string) {
     const current = this.getRecruitmentSettings();
     const comm = current.committees[committeeId] || { isOpen: true };
-    const newIsOpen = isOpen !== undefined ? isOpen : !comm.isOpen;
-    
     current.committees[committeeId] = {
       ...comm,
-      isOpen: newIsOpen,
-      closedNotice: notice || comm.closedNotice
+      isOpen: isOpen !== undefined ? isOpen : !comm.isOpen,
+      closedNotice: notice || comm.closedNotice,
     };
-    
     this.saveRecruitmentSettings(current);
   }
 
   public toggleGlobalRecruitment(isOpen?: boolean, message?: string) {
     const current = this.getRecruitmentSettings();
-    const newIsOpen = isOpen !== undefined ? isOpen : !current.isGlobalRecruitmentOpen;
-    current.isGlobalRecruitmentOpen = newIsOpen;
+    current.isGlobalRecruitmentOpen = isOpen !== undefined ? isOpen : !current.isGlobalRecruitmentOpen;
     if (message) current.globalClosedMessage = message;
     this.saveRecruitmentSettings(current);
   }
 
+  /** Restores the built-in site content. Applications and complaints are untouched. */
   public resetDefaults() {
-    localStorage.removeItem(STORAGE_KEYS.PROJECTS);
-    localStorage.removeItem(STORAGE_KEYS.EVENTS);
-    localStorage.removeItem(STORAGE_KEYS.COURSES);
-    localStorage.removeItem(STORAGE_KEYS.APPLICATIONS);
-    localStorage.removeItem(STORAGE_KEYS.TICKETS);
-    localStorage.removeItem(STORAGE_KEYS.LEADERSHIP);
-    localStorage.removeItem(STORAGE_KEYS.COLLEGES);
-    localStorage.removeItem(STORAGE_KEYS.MAJORS);
-    localStorage.removeItem(STORAGE_KEYS.SPOTLIGHT);
-    localStorage.removeItem(STORAGE_KEYS.SETTINGS);
-    this.initDefaults();
+    this.content = { ...defaultContent(), tickets: this.content.tickets };
+    this.writePublicCache();
     this.notify();
+    void (async () => {
+      try {
+        const { error } = await requireSupabase()
+          .from('club_content')
+          .delete()
+          .in('key', Object.values(CONTENT_KEYS).filter((k) => !PRIVATE_CONTENT_KEYS.includes(k)));
+        if (error) throw error;
+      } catch (err) {
+        this.reportError('فشل استعادة المحتوى الافتراضي', err);
+      }
+    })();
   }
-
 }
 
 export const dataService = new DataService();

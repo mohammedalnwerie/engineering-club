@@ -24,12 +24,12 @@ export const EventsSection: React.FC = () => {
   const [suggestContact, setSuggestContact] = useState('');
   const [suggestSubmitted, setSuggestSubmitted] = useState(false);
 
-  const handleSuggestSubmit = (e: React.FormEvent) => {
+  const handleSuggestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!suggestTopic.trim()) return;
 
     try {
-      dataService.submitComplaint({
+      await dataService.submitComplaint({
         studentName: suggestName.trim() || 'طالب مقترح',
         studentId: 'EVENT_PROPOSAL',
         email: suggestContact.trim() || 'proposal@engclub.up',
@@ -40,8 +40,9 @@ export const EventsSection: React.FC = () => {
         message: 'التخصص: ' + suggestMajor + ' | تفاصيل المقترح: ' + suggestDetails.trim(),
         isAnonymous: false,
       });
-    } catch {
-      // safe fallback
+    } catch (err) {
+      alert(`تعذر إرسال المقترح: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+      return;
     }
 
     setSuggestSubmitted(true);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LIVE_ACTIVITY_STREAM } from '../data/clubData';
 import { dataService } from '../services/dataService';
 import { Award, Send, Check, X, Lightbulb, Users, Trophy, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
@@ -30,53 +30,54 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
   const [isMemberConfirmed, setIsMemberConfirmed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lookupSeq = useRef(0);
+
   const handleStudentIdChange = (idVal: string) => {
     setNomineeStudentId(idVal);
-    const q = idVal.trim().toLowerCase();
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    const q = idVal.trim();
+    const seq = ++lookupSeq.current;
     if (!q || q.length < 4) {
       setMembershipStatus('idle');
+      setIsMemberConfirmed(false);
       return;
     }
 
-    const apps = dataService.getApplications();
-    const cleanQ = q.replace(/^up-eng-/i, '');
-    const found = apps.find((a) => {
-      const sId = (a.studentId || '').toLowerCase();
-      const aId = (a.id || '').toLowerCase();
-      const auth = `up-eng-${(a.id || '').slice(-8).toLowerCase()}`;
-      return sId === q || aId === q || aId.includes(cleanQ) || auth === q;
-    });
-
-    if (found) {
-      if (found.status === 'تم القبول') {
-        setMembershipStatus('verified');
-        if (!nomineeName || nomineeName === '') setNomineeName(found.fullName);
-        if (found.major) setNomineeMajor(found.major);
-        if (!contactInfo && (found.phone || found.email)) setContactInfo(found.phone || found.email);
-        setIsMemberConfirmed(true);
-      } else if (found.status === 'قيد المراجعة') {
-        setMembershipStatus('pending');
-        if (!nomineeName || nomineeName === '') setNomineeName(found.fullName);
-        if (found.major) setNomineeMajor(found.major);
-        setIsMemberConfirmed(true);
-      } else if (found.status === 'مرفوض') {
-        setMembershipStatus('rejected');
-      } else {
-        setMembershipStatus('manual');
+    lookupTimer.current = setTimeout(async () => {
+      let found = null;
+      try {
+        found = await dataService.verifyMember(q);
+      } catch {
+        found = null;
       }
-    } else {
-      setMembershipStatus('manual');
-    }
+      if (seq !== lookupSeq.current) return;
+
+      if (!found) {
+        setMembershipStatus('manual');
+        setIsMemberConfirmed(false);
+        return;
+      }
+      if (found.status === 'مرفوض') {
+        setMembershipStatus('rejected');
+        setIsMemberConfirmed(false);
+        return;
+      }
+      setMembershipStatus(found.status === 'تم القبول' ? 'verified' : 'pending');
+      setNomineeName((prev) => prev || found.fullName);
+      if (found.major) setNomineeMajor(found.major);
+      setIsMemberConfirmed(true);
+    }, 450);
   };
 
-  const handleNominateSubmit = (e: React.FormEvent) => {
+  const handleNominateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nomineeName.trim() || !projectTitle.trim() || !nomineeStudentId.trim()) return;
     if (membershipStatus === 'rejected') return;
     if (!isMemberConfirmed && membershipStatus !== 'verified') return;
 
     try {
-      dataService.submitComplaint({
+      await dataService.submitComplaint({
         studentName: nomineeName.trim(),
         studentId: nomineeStudentId.trim(),
         email: contactInfo.trim() || 'nomination@engclub.up',
@@ -87,8 +88,9 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
         message: 'الرقم الجامعي: ' + nomineeStudentId.trim() + ' | التخصص: ' + nomineeMajor + ' | حالة العضوية: ' + membershipStatus + ' | تفاصيل الإنجاز: ' + projectDetails.trim(),
         isAnonymous: false,
       });
-    } catch {
-      // fallback safe
+    } catch (err) {
+      alert(`تعذر إرسال الترشيح: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+      return;
     }
 
     setSubmitted(true);

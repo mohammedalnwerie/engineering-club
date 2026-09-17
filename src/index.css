@@ -247,7 +247,7 @@
     display: block !important;
     position: static !important;
     margin: 20px auto !important;
-    max-width: 480px !important;
+    max-width: 350px !important;
     box-shadow: none !important;
     page-break-inside: avoid !important;
     -webkit-print-color-adjust: exact !important;

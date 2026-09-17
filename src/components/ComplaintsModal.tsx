@@ -34,6 +34,8 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const [trackQuery, setTrackQuery] = useState('');
   const [foundTicket, setFoundTicket] = useState<ComplaintItem | null>(null);
   const [trackSearched, setTrackSearched] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [isTracking, setIsTracking] = useState(false);
 
   const handleImageUpload = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -82,7 +84,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim()) {
       sound.playError();
@@ -102,8 +104,11 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
       return;
     }
 
-    sound.playSuccess();
-    const newComplaint = dataService.submitComplaint({
+    if (isSending) return;
+    setIsSending(true);
+    let newComplaint: ComplaintItem;
+    try {
+      newComplaint = await dataService.submitComplaint({
       studentName: isAnonymous ? 'طالب مجهول (سري)' : (studentName.trim() || 'طالب من جامعة فلسطين'),
       studentId: studentId.trim() || 'N/A',
       email: email.trim() || 'N/A',
@@ -114,8 +119,16 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
       message: message.trim(),
       isAnonymous,
       attachmentImage: attachmentImage || undefined,
-    });
+      });
+    } catch (err) {
+      sound.playError();
+      alert(`تعذر إرسال الشكوى: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+      return;
+    } finally {
+      setIsSending(false);
+    }
 
+    sound.playSuccess();
     setSubmittedTicket(newComplaint);
     confetti({
       particleCount: 50,
@@ -125,7 +138,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
     });
   };
 
-  const handleTrack = (e: React.FormEvent) => {
+  const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanQuery = trackQuery.trim();
     if (!cleanQuery) return;
@@ -133,14 +146,20 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
     // Strict Privacy: If student enters numeric student ID (any digits), guide them to use ticket number
     if (!cleanQuery.toUpperCase().includes('UP-CMP') && /^\d+$/.test(cleanQuery)) {
       sound.playError();
-      alert('🔒 لدواعي الأمان وحماية خصوصية الشكاوى، تم حظر الاستعلام بالرقم الجامعي. الاستعلام متاح حصرياً عبر رمز التذكرة السري الفريد (مثال: UP-CMP-2026-1042) الذي استلمته عند تقديم الطلب لحفظ سرية الملاحظات.');
+      alert('🔒 لدواعي الأمان وحماية خصوصية الشكاوى، تم حظر الاستعلام بالرقم الجامعي. الاستعلام متاح حصرياً عبر رمز التذكرة السري الفريد (مثال: UP-CMP-2026-A1B2C3D4E5) الذي استلمته عند تقديم الطلب لحفظ سرية الملاحظات.');
       return;
     }
 
     sound.playClick();
-    const res = dataService.getComplaintByTicket(cleanQuery);
-    setFoundTicket(res || null);
-    setTrackSearched(true);
+    setIsTracking(true);
+    try {
+      setFoundTicket(await dataService.trackComplaint(cleanQuery));
+      setTrackSearched(true);
+    } catch (err) {
+      alert(`تعذر الاستعلام: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+    } finally {
+      setIsTracking(false);
+    }
   };
 
   const copyTicketNumber = (num: string) => {
@@ -465,10 +484,11 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.3)] flex items-center justify-center gap-2 transition-all"
+                    disabled={isSending}
+                    className="disabled:opacity-60 disabled:cursor-wait w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.3)] flex items-center justify-center gap-2 transition-all"
                   >
                     <Send className="w-4 h-4" />
-                    <span>إرسال الشكوى / المقترح رسمياً</span>
+                    <span>{isSending ? 'جاري الإرسال...' : 'إرسال الشكوى / المقترح رسمياً'}</span>
                   </button>
                 </div>
               </form>
@@ -491,35 +511,20 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                 <input
                   type="text"
                   required
-                  placeholder="أدخل الرمز السري الفريد للشكوى (مثال: UP-CMP-2026-1042)..."
+                  placeholder="أدخل الرمز السري الفريد للشكوى (مثال: UP-CMP-2026-A1B2C3D4E5)..."
                   value={trackQuery}
                   onChange={(e) => setTrackQuery(e.target.value)}
                   className="flex-1 px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-cyan-400 text-center tracking-wider"
                 />
                 <button
                   type="submit"
-                  className="px-5 py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shrink-0 shadow-md"
+                  disabled={isTracking}
+                  className="disabled:opacity-60 px-5 py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shrink-0 shadow-md"
                 >
                   <Search className="w-4 h-4" />
                   <span>استعلام سري</span>
                 </button>
               </form>
-              <div className="flex items-center gap-2 mt-2 text-[11px] font-mono text-gray-400">
-                <span>💡 رمز تجريبي للمعاينة:</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTrackQuery('UP-CMP-2026-1042');
-                    sound.playClick();
-                    const res = dataService.getComplaintByTicket('UP-CMP-2026-1042');
-                    setFoundTicket(res || null);
-                    setTrackSearched(true);
-                  }}
-                  className="text-cyan-400 hover:text-cyan-300 underline font-bold cursor-pointer"
-                >
-                  UP-CMP-2026-1042
-                </button>
-              </div>
             </div>
 
             {trackSearched && (

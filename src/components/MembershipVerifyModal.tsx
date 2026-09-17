@@ -36,50 +36,60 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [showCommitteeBadge, setShowCommitteeBadge] = useState(false);
 
-  useEffect(() => {
-    if (initialCode) {
-      setSearchQuery(initialCode);
-      performSearch(initialCode);
-    }
-  }, [initialCode]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  if (!isOpen) return null;
-
-  const performSearch = (query: string) => {
-    const q = query.trim().toLowerCase();
+  async function performSearch(query: string) {
+    const q = query.trim();
     if (!q) {
       setMatchedApp(null);
       setSearched(false);
       return;
     }
 
-    const apps = dataService.getApplications();
-    const cleanQ = q.replace(/^up-eng-/i, '');
-
-    const found = apps.find((a) => {
-      const sId = (a.studentId || '').toLowerCase();
-      const aId = (a.id || '').toLowerCase();
-      const name = (a.fullName || '').toLowerCase();
-      const auth = `up-eng-${aId.slice(-8)}`;
-
-      return (
-        sId === q ||
-        sId.includes(q) ||
-        aId === q ||
-        aId.includes(cleanQ) ||
-        auth === q ||
-        name.includes(q)
+    setIsSearching(true);
+    try {
+      const found = await dataService.verifyMember(q);
+      setMatchedApp(
+        found
+          ? {
+              fullName: found.fullName,
+              studentId: found.studentId,
+              email: '',
+              phone: '',
+              academicYear: found.academicYear || '',
+              college: found.college || '',
+              major: found.major || '',
+              skills: found.skills || [],
+              personalStatement: '',
+              targetCommittee: found.targetCommittee || '',
+              weeklyCommitmentHours: 0,
+              id: found.id,
+              status: found.status,
+              submittedAt: found.submittedAt || '',
+            }
+          : null
       );
-    });
+      setSearched(true);
+    } catch (err) {
+      alert(`تعذر التحقق حالياً: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+    } finally {
+      setIsSearching(false);
+    }
+  }
 
-    setMatchedApp(found || null);
-    setSearched(true);
-  };
+  useEffect(() => {
+    if (initialCode) {
+      setSearchQuery(initialCode);
+      void performSearch(initialCode);
+    }
+  }, [initialCode]);
+
+  if (!isOpen) return null;
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sound.playClick();
-    performSearch(searchQuery);
+    void performSearch(searchQuery);
   };
 
   const authCode = matchedApp
@@ -124,7 +134,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
         {/* Search Bar */}
         <form onSubmit={handleFormSubmit} className="mb-6">
           <label className="block text-xs font-mono text-gray-300 mb-2">
-            ابحث بالرقم الجامعي، كود التحقق (UP-ENG-XXXX)، أو الاسم:
+            ابحث بالرقم الجامعي أو كود التحقق (UP-ENG-XXXX):
           </label>
           <div className="relative flex items-center">
             <input
@@ -137,10 +147,11 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
             />
             <button
               type="submit"
-              className="absolute left-1.5 px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer transition-all flex items-center gap-1 shadow"
+              disabled={isSearching}
+              className="disabled:opacity-60 absolute left-1.5 px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer transition-all flex items-center gap-1 shadow"
             >
               <Search className="w-3.5 h-3.5" />
-              <span>تحقق</span>
+              <span>{isSearching ? '...' : 'تحقق'}</span>
             </button>
           </div>
         </form>
@@ -163,88 +174,83 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                     </span>
                   </div>
 
-                  {/* The Official Card */}
+                  {/* The Official Card (Vertical Portrait Ratio) */}
                   <div
                     id="verified-member-card"
-                    className="rounded-3xl p-5 sm:p-6 bg-gradient-to-b from-[#140C38] via-[#0E082C] to-[#08041D] border-2 border-[#7F1AB2]/50 shadow-[0_0_35px_rgba(127,26,178,0.25)] font-mono text-right relative overflow-hidden"
+                    className="w-full max-w-[340px] sm:max-w-[350px] mx-auto rounded-3xl p-5 bg-gradient-to-b from-[#160E3D] via-[#0D0727] to-[#070319] border-2 border-[#7F1AB2]/50 shadow-[0_12px_45px_rgba(127,26,178,0.3)] font-mono text-right relative overflow-hidden flex flex-col justify-between"
                   >
-                    {/* Lanyard Clip Slot for Realistic Printable Badge */}
-                    <div className="w-16 h-1.5 rounded-full bg-white/20 mx-auto mb-4 shadow-inner" />
+                    {/* Ambient Glows */}
+                    <div className="absolute -top-12 -right-12 w-36 h-36 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
+                    <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
 
-                    {/* Header with Prominent Logo & Smart IC Microchip */}
-                    <div className="flex items-center justify-between pb-3.5 border-b border-white/10 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-2xl bg-white shadow-md border border-white/90 flex items-center justify-center shrink-0">
-                          <img
-                            src="/brand/emblem.png"
-                            alt="شعار النادي الهندسي"
-                            className="h-10 w-10 sm:h-11 sm:w-11 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.15)]"
-                          />
-                        </div>
-                        <div>
-                          <div className="text-sm sm:text-base font-black text-white font-sans tracking-wide">
-                            النادي الهندسي
-                          </div>
-                          <div className="text-[10px] font-mono text-[#3FE7E3] tracking-wider uppercase font-bold mt-0.5">
-                            ENGINEERING CLUB
-                          </div>
-                          <div className="text-[9px] text-gray-400 font-sans">
-                            جامعة فلسطين
-                          </div>
+                    <div>
+                      {/* Lanyard Clip Slot for Realistic Printable Badge */}
+                      <div className="w-14 h-1.5 rounded-full bg-white/20 mx-auto mb-3.5 shadow-inner" />
+
+                      {/* Top Brand Banner: Dedicated 100% to Showcasing the Engineering Club & University */}
+                      <div className="bg-white rounded-2xl p-2.5 sm:p-3 shadow-md border border-white/90 mb-4 text-center">
+                        <img
+                          src="/brand/logo-horizontal.png"
+                          alt="النادي الهندسي"
+                          className="h-10 sm:h-11 w-auto mx-auto object-contain drop-shadow-sm"
+                        />
+                        <div className="text-[10px] font-bold text-gray-700 tracking-wider mt-1 font-sans border-t border-gray-200/80 pt-1 flex items-center justify-center gap-1.5">
+                          <span>جامعة فلسطين</span>
+                          <span className="text-gray-300">•</span>
+                          <span className="font-mono text-[9px] text-gray-500 uppercase tracking-wider font-semibold">University of Palestine</span>
                         </div>
                       </div>
 
-                      {/* Smart IC Microchip & Auth Code */}
-                      <div className="flex flex-col items-end gap-1">
-                        <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-400 via-yellow-200 to-amber-500 p-0.5 shadow-md border border-amber-300/60 flex items-center justify-center relative overflow-hidden shrink-0" title="Smart IC Pass">
-                          <div className="w-full h-full border border-amber-800/40 rounded-[2px] flex items-center justify-around">
-                            <div className="w-[1px] h-full bg-amber-800/30" />
-                            <div className="w-2 h-2 rounded-full border border-amber-800/40" />
-                            <div className="w-[1px] h-full bg-amber-800/30" />
-                          </div>
+                      {/* Member Details */}
+                      <div className="mb-3.5 text-right">
+                        <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
+                        <div className="text-xl sm:text-2xl font-black text-white font-sans mt-0.5 tracking-wide leading-tight">
+                          {matchedApp.fullName}
                         </div>
-                        <span className="text-[8px] font-mono text-[#3FE7E3] font-bold">{authCode}</span>
+                        <div className="text-xs font-mono text-gray-400 mt-1 flex items-center gap-1.5 justify-start">
+                          <span className="text-gray-500">الرقم الجامعي:</span>
+                          <span className="font-bold text-[#3FE7E3]">{matchedApp.studentId || 'UP-STUDENT'}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Member Details */}
-                    <div className="mb-4">
-                      <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
-                      <div className="text-xl sm:text-2xl font-black text-white font-sans mt-0.5 tracking-wide leading-snug">
-                        {matchedApp.fullName}
-                      </div>
-                      <div className="text-xs font-mono text-gray-400 mt-0.5">
-                        الرقم الجامعي: <span className="font-bold text-[#3FE7E3]">{matchedApp.studentId || 'UP-STUDENT'}</span>
-                      </div>
-                    </div>
-
-                    {/* Academic Information (Clean & Minimal) */}
-                    <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 text-xs font-sans mb-4">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-gray-400">التخصص الهندسي:</span>
-                        <span className="font-bold text-[#3FE7E3]">{matchedApp.major}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
-                        <span className="text-gray-400">نوع العضوية / اللجنة:</span>
-                        <span className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
-                          {matchedApp.targetCommittee}
-                        </span>
+                      {/* Academic Information (Clean & Minimal) */}
+                      <div className="space-y-2 p-3 rounded-2xl bg-black/50 border border-white/10 text-xs font-sans mb-4">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-400">التخصص:</span>
+                          <span className="font-bold text-[#3FE7E3]">
+                            {(matchedApp.major || '').replace(/^(تخصص\s+|كلية\s+)/i, '').trim()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
+                          <span className="text-gray-400">اللجنة / المسار:</span>
+                          <span className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
+                            {matchedApp.targetCommittee}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     {/* Scannable Verification QR Code */}
-                    <div className="pt-3 border-t border-dashed border-white/10 flex items-center justify-between">
-                      <div className="text-[9px] text-gray-400 leading-tight font-mono">
-                        <div className="text-white font-bold mb-0.5">DIGITAL SIGNATURE:</div>
-                        <div className="text-emerald-400 font-bold">OFFICIALLY REGISTERED</div>
-                        <div className="text-[8px] text-gray-500 mt-1">مسجل في قاعدة بيانات النادي الهندسي</div>
+                    <div className="pt-3 border-t border-dashed border-white/15 flex items-center justify-between gap-3">
+                      <div className="text-left flex-1 min-w-0" dir="ltr">
+                        <div className="text-[9px] text-gray-400 font-mono tracking-wider font-bold">
+                          PASS ID: <span className="text-[#3FE7E3] font-mono">{authCode}</span>
+                        </div>
+                        <div className="text-[8px] text-gray-500 font-mono tracking-tight mt-0.5 uppercase">
+                          OFFICIALLY REGISTERED PASS
+                        </div>
+                        <div className="inline-flex items-center gap-1 mt-1 text-[9px] text-[#35BC2B] font-sans font-bold" dir="rtl">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B]" />
+                          <span>عضوية معتمدة ومفعلة • 2026</span>
+                        </div>
                       </div>
-                      <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow">
+
+                      <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow shrink-0 border border-white/90">
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(verifyUrl)}`}
                           alt="Verification QR"
-                          className="w-12 h-12 object-contain"
+                          className="w-11 h-11 object-contain"
                         />
                       </div>
                     </div>

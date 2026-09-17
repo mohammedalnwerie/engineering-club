@@ -11,6 +11,7 @@ import confetti from 'canvas-confetti';
 export const JoinClubSection: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const [recruitment, setRecruitment] = useState(() => dataService.getRecruitmentSettings());
 
@@ -100,7 +101,7 @@ export const JoinClubSection: React.FC = () => {
         return;
       }
 
-      handleSubmit();
+      void handleSubmit();
     }
   };
 
@@ -122,7 +123,8 @@ export const JoinClubSection: React.FC = () => {
     setFormData({ ...formData, skills: updated });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSending) return;
     const rateCheck = checkRateLimit('join_submission', 4000);
     if (!rateCheck.allowed) {
       sound.playError();
@@ -130,9 +132,18 @@ export const JoinClubSection: React.FC = () => {
       return;
     }
 
+    setIsSending(true);
+    try {
+      await dataService.submitApplication(formData);
+    } catch (err) {
+      sound.playError();
+      alert(`تعذر إرسال طلب الانضمام: ${err instanceof Error ? err.message : 'خطأ غير معروف'}. يرجى المحاولة مرة أخرى.`);
+      return;
+    } finally {
+      setIsSending(false);
+    }
+
     sound.playSuccess();
-    // Persist real application to database/storage
-    dataService.submitApplication(formData);
     setIsSubmitted(true);
     confetti({
       particleCount: 120,
@@ -563,9 +574,10 @@ export const JoinClubSection: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleNext}
+                    disabled={isSending}
                     className="px-6 py-3 rounded-xl font-bold text-xs text-black bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_20px_rgba(0,240,255,0.3)] flex items-center gap-2 cursor-pointer transition-all"
                   >
-                    <span>{currentStep === 5 ? 'إرسال طلب الانضمام' : 'التالي'}</span>
+                    <span>{currentStep === 5 ? (isSending ? 'جاري الإرسال...' : 'إرسال طلب الانضمام') : 'التالي'}</span>
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 </div>

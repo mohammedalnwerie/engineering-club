@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
-import { supabaseBridge } from '../services/supabaseClient';
+import { supabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from '../services/supabaseClient';
 import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
 import {
-  verifyAdminPassword,
-  changeAdminPassword,
-  getLockoutStatus,
-  recordFailedLogin,
-  resetLockout,
   downloadCsv,
   getSecurityAuditLogs,
-  type SecurityAuditEntry,
-  type LockoutStatus
+  logSecurityEvent,
+  type SecurityAuditEntry
 } from '../utils/security';
 import { safeStorage } from '../services/safeStorage';
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
@@ -208,9 +203,9 @@ interface AdminDashboardProps {
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
   const [passcode, setPasscode] = useState('');
-  const [passcodeError, setPasscodeError] = useState(false);
-  const [lockoutState, setLockoutState] = useState<LockoutStatus>(getLockoutStatus());
+  const [authError, setAuthError] = useState<string | null>(null);
   const [isVerifyingAuth, setIsVerifyingAuth] = useState(false);
   const [auditLogs, setAuditLogs] = useState<SecurityAuditEntry[]>([]);
   const [storageHealth, setStorageHealth] = useState(safeStorage.getHealth());
@@ -333,11 +328,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [editingEventPrereqs, setEditingEventPrereqs] = useState<string>('');
   const [showCollegeUrlInput, setShowCollegeUrlInput] = useState(false);
 
-  // Supabase Form State
-  const [supabaseUrl, setSupabaseUrl] = useState('');
-  const [supabaseKey, setSupabaseKey] = useState('');
-  const [supabaseStatus, setSupabaseStatus] = useState<string | null>(null);
-  const [supabaseLoading, setSupabaseLoading] = useState(false);
+  const [isRefreshingData, setIsRefreshingData] = useState(false);
 
   const loadData = () => {
     setApplications(dataService.getApplications());
@@ -511,53 +502,90 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       loadData();
     });
 
-    const config = supabaseBridge.getConfig();
-    setSupabaseUrl(config.url);
-    setSupabaseKey(config.anonKey);
+    const unsubscribeErrors = dataService.subscribeErrors((message) => {
+      sound.playError();
+      showToast(`⚠️ ${message}`);
+    });
 
-    return () => unsubscribe();
+    // Restore an existing admin session (Supabase keeps it in the browser)
+    if (supabase) {
+      supabase.auth.getSession().then(async ({ data }) => {
+        if (data.session && (await checkIsAdmin())) {
+          setIsAuthenticated(true);
+          await dataService.loadAdminData().catch(() => undefined);
+        }
+      });
+    }
+
+    return () => {
+      unsubscribe();
+      unsubscribeErrors();
+    };
   }, []);
 
-  // Lockout countdown timer
-  useEffect(() => {
-    if (!lockoutState.isLocked) return;
-    const interval = setInterval(() => {
-      const current = getLockoutStatus();
-      setLockoutState(current);
-      if (!current.isLocked) {
-        clearInterval(interval);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [lockoutState.isLocked]);
+  async function checkIsAdmin(): Promise<boolean> {
+    if (!supabase) return false;
+    const { data, error } = await supabase.rpc('is_club_admin');
+    return !error && data === true;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const currentLock = getLockoutStatus();
-    if (currentLock.isLocked) {
-      setLockoutState(currentLock);
-      sound.playError();
+    if (!supabase) {
+      setAuthError('قاعدة البيانات غير مربوطة (متغيرات Supabase غير معرّفة).');
       return;
     }
 
     setIsVerifyingAuth(true);
-    const isValid = await verifyAdminPassword(passcode);
-    setIsVerifyingAuth(false);
+    setAuthError(null);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: adminEmail.trim(), password: passcode });
+      if (error) {
+        sound.playError();
+        logSecurityEvent('LOGIN_FAILED', `محاولة دخول فاشلة للحساب ${adminEmail.trim()}`);
+        setAuthError('الإيميل أو كلمة المرور غير صحيحة.');
+        return;
+      }
 
-    if (isValid) {
+      if (!(await checkIsAdmin())) {
+        await supabase.auth.signOut();
+        sound.playError();
+        logSecurityEvent('LOGIN_FAILED', `حساب بدون صلاحية مشرف: ${adminEmail.trim()}`);
+        setAuthError('هذا الحساب لا يملك صلاحية الإدارة.');
+        return;
+      }
+
       sound.playSuccess();
-      resetLockout();
+      logSecurityEvent('LOGIN_SUCCESS', `تسجيل دخول إداري ناجح: ${adminEmail.trim()}`);
       setIsAuthenticated(true);
-      setPasscodeError(false);
-      setLockoutState({ isLocked: false, remainingSeconds: 0, failedCount: 0 });
       setPasscode('');
       setAuditLogs(getSecurityAuditLogs());
       setStorageHealth(safeStorage.getHealth());
-    } else {
-      sound.playError();
-      const updatedLock = recordFailedLogin();
-      setLockoutState(updatedLock);
-      setPasscodeError(true);
+      await dataService.loadAdminData().catch(() => undefined);
+    } finally {
+      setIsVerifyingAuth(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    sound.playClick();
+    await supabase?.auth.signOut();
+    dataService.clearAdminData();
+    setIsAuthenticated(false);
+    setPasscode('');
+    showToast('تم تسجيل الخروج من لوحة الإدارة');
+  };
+
+  const handleRefreshData = async () => {
+    sound.playClick();
+    setIsRefreshingData(true);
+    try {
+      await dataService.loadAdminData();
+      showToast('تم تحديث البيانات من قاعدة البيانات');
+    } catch (err) {
+      showToast(`⚠️ تعذر التحديث: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+    } finally {
+      setIsRefreshingData(false);
     }
   };
 
@@ -568,18 +596,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       setChangePassStatus({ message: 'كلمة المرور الجديدة وتأكيدها غير متطابقين.', isError: true });
       return;
     }
-    const res = await changeAdminPassword(currentAdminPass, newAdminPass);
-    if (res.success) {
-      sound.playSuccess();
-      setChangePassStatus({ message: res.message, isError: false });
-      setCurrentAdminPass('');
-      setNewAdminPass('');
-      setConfirmAdminPass('');
-      setAuditLogs(getSecurityAuditLogs());
-    } else {
+    if (newAdminPass.length < 8) {
       sound.playError();
-      setChangePassStatus({ message: res.message, isError: true });
+      setChangePassStatus({ message: 'يجب أن تتكون كلمة المرور الجديدة من 8 خانات على الأقل.', isError: true });
+      return;
     }
+    if (!supabase) return;
+
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData.user?.email;
+    if (!email) {
+      setChangePassStatus({ message: 'انتهت الجلسة، يرجى تسجيل الدخول من جديد.', isError: true });
+      return;
+    }
+
+    const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentAdminPass });
+    if (verifyError) {
+      sound.playError();
+      setChangePassStatus({ message: 'كلمة المرور الحالية غير صحيحة.', isError: true });
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newAdminPass });
+    if (error) {
+      sound.playError();
+      setChangePassStatus({ message: `تعذر تغيير كلمة المرور: ${error.message}`, isError: true });
+      return;
+    }
+
+    sound.playSuccess();
+    logSecurityEvent('PASSWORD_CHANGED', `تم تغيير كلمة مرور الحساب ${email}`);
+    setChangePassStatus({ message: 'تم تحديث كلمة المرور بنجاح.', isError: false });
+    setCurrentAdminPass('');
+    setNewAdminPass('');
+    setConfirmAdminPass('');
+    setAuditLogs(getSecurityAuditLogs());
   };
 
   // Status update
@@ -731,16 +782,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     showToast(`تم حفظ وتحديث فعالية (${updated.title}) بنجاح`);
   };
 
-  // Supabase test
-  const handleConnectSupabase = async () => {
-    sound.playClick();
-    setSupabaseLoading(true);
-    supabaseBridge.setConfig(supabaseUrl, supabaseKey);
-    const res = await supabaseBridge.testConnection();
-    setSupabaseStatus(res.message);
-    setSupabaseLoading(false);
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -778,12 +819,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
           <div className="flex items-center gap-2.5">
             {isAuthenticated && (
               <button
-                onClick={() => {
-                  sound.playClick();
-                  setIsAuthenticated(false);
-                  setPasscode('');
-                  showToast('تم تسجيل الخروج من لوحة الإدارة');
-                }}
+                onClick={() => void handleLogout()}
                 className="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-red-950/40 border border-white/10 hover:border-red-500/30 text-gray-400 hover:text-red-300 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
                 title="تسجيل الخروج"
               >
@@ -827,55 +863,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
             <h3 className="text-2xl sm:text-3xl font-black text-white mb-2">تسجيل دخول إدارة النادي الهندسي</h3>
             <p className="text-xs sm:text-sm text-gray-400 max-w-md mb-6 leading-relaxed">
-              منطقة مشفرة ومحمية ببروتوكول حماية من التخمين الشامل. يُرجى إدخال الرمز السري للإدارة للوصول إلى منظومة التحكم.
+              هذه المنطقة مخصصة لمشرفي النادي فقط. سجّل الدخول بحساب المشرف المعتمد في قاعدة البيانات.
             </p>
 
-            {lockoutState.isLocked ? (
-              <div className="w-full max-w-sm p-5 rounded-2xl bg-red-950/70 border-2 border-red-500/60 text-red-200 text-xs text-center space-y-2.5 mb-4 animate-in zoom-in-95 duration-200 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
-                <div className="font-extrabold flex items-center justify-center gap-2 text-sm text-red-400">
-                  <ShieldAlert className="w-4 h-4" />
-                  <span>تم تفعيل القفل الأمني التلقائي</span>
-                </div>
-                <p className="leading-relaxed">
-                  تم تجميد محاولات الدخول مؤقتاً لحماية النظام بعد 5 محاولات خاطئة متتالية.
-                </p>
-                <div className="font-mono text-sm font-bold text-white bg-black/60 py-2 rounded-xl border border-red-500/30">
-                  الوقت المتبقي لفك القفل: {lockoutState.remainingSeconds} ثانية
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleLogin} className="w-full max-w-xs space-y-3.5">
-                <div className="relative">
-                  <input
-                    type="password"
-                    required
-                    placeholder="رمز المرور المشفر (Passcode)"
-                    value={passcode}
-                    disabled={isVerifyingAuth}
-                    onChange={(e) => {
-                      setPasscode(e.target.value);
-                      if (passcodeError) setPasscodeError(false);
-                    }}
-                    className="w-full px-4 py-3.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-center font-mono tracking-widest text-sm transition-all"
-                  />
-                </div>
+            <form onSubmit={handleLogin} className="w-full max-w-xs space-y-3.5">
+              <input
+                type="email"
+                required
+                autoComplete="username"
+                placeholder="البريد الإلكتروني للمشرف"
+                value={adminEmail}
+                disabled={isVerifyingAuth}
+                onChange={(e) => {
+                  setAdminEmail(e.target.value);
+                  if (authError) setAuthError(null);
+                }}
+                className="w-full px-4 py-3.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-center text-sm transition-all"
+                dir="ltr"
+              />
+              <input
+                type="password"
+                required
+                autoComplete="current-password"
+                placeholder="كلمة المرور"
+                value={passcode}
+                disabled={isVerifyingAuth}
+                onChange={(e) => {
+                  setPasscode(e.target.value);
+                  if (authError) setAuthError(null);
+                }}
+                className="w-full px-4 py-3.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-center text-sm transition-all"
+                dir="ltr"
+              />
 
-                {passcodeError && (
-                  <div className="p-2.5 rounded-xl bg-red-950/50 border border-red-500/40 text-xs text-red-400 font-medium">
-                    رمز المرور غير صحيح. (محاولات متبقية قبل القفل: {Math.max(0, 5 - lockoutState.failedCount)})
-                  </div>
-                )}
+              {authError && (
+                <div className="p-2.5 rounded-xl bg-red-950/50 border border-red-500/40 text-xs text-red-400 font-medium">
+                  {authError}
+                </div>
+              )}
 
-                <button
-                  type="submit"
-                  disabled={isVerifyingAuth || !passcode}
-                  className="w-full py-3.5 rounded-xl font-bold text-sm text-black bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>{isVerifyingAuth ? 'جاري التحقق المشفر...' : 'تأكيد الدخول الآمن'}</span>
-                </button>
-              </form>
-            )}
+              <button
+                type="submit"
+                disabled={isVerifyingAuth || !passcode || !adminEmail}
+                className="w-full py-3.5 rounded-xl font-bold text-sm text-black bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>{isVerifyingAuth ? 'جاري التحقق...' : 'تسجيل الدخول'}</span>
+              </button>
+            </form>
           </div>
         ) : (
           /* Main Authenticated Dashboard */
@@ -3515,46 +3550,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <div>
                   <h3 className="text-base font-bold text-white">إعدادات الربط السحابي (Supabase Cloud Database)</h3>
                   <p className="text-xs text-gray-400">
-                    يمكنك ربط المنصة مباشرة مع مشروع Supabase حقيقي ليتم حفظ كل الفعاليات والطلبات في قاعدة بيانات Postgres حقيقية.
+                    كل المحتوى والطلبات والشكاوى محفوظة في قاعدة بيانات Supabase ومشتركة بين جميع الزوار والمشرفين.
                   </p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4 max-w-xl">
-                  <div>
-                    <label className="block text-xs font-mono text-cyan-400 mb-1">SUPABASE PROJECT URL:</label>
-                    <input
-                      type="text"
-                      placeholder="https://xyzabcdefg.supabase.co"
-                      value={supabaseUrl}
-                      onChange={(e) => setSupabaseUrl(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white font-mono"
-                    />
+                  <div className="flex items-center gap-2 text-xs font-bold">
+                    <span className={`w-2 h-2 rounded-full ${isSupabaseConfigured ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    <span className={isSupabaseConfigured ? 'text-emerald-300' : 'text-red-300'}>
+                      {isSupabaseConfigured ? 'مربوط بقاعدة بيانات Supabase' : 'غير مربوط — متغيرات البيئة غير معرّفة'}
+                    </span>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-mono text-cyan-400 mb-1">SUPABASE ANON PUBLIC KEY:</label>
-                    <input
-                      type="password"
-                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
-                      value={supabaseKey}
-                      onChange={(e) => setSupabaseKey(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white font-mono"
-                    />
-                  </div>
-
-                  {supabaseStatus && (
-                    <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-cyan-300">
-                      {supabaseStatus}
-                    </div>
+                  {SUPABASE_PROJECT_URL && (
+                    <div className="text-xs font-mono text-gray-400 break-all" dir="ltr">{SUPABASE_PROJECT_URL}</div>
                   )}
-
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    تُضبط بيانات الربط من ملف <span className="font-mono">.env.local</span> محلياً، ومن إعدادات Environment Variables في Vercel للموقع المنشور.
+                  </p>
                   <button
-                    onClick={handleConnectSupabase}
-                    disabled={supabaseLoading}
-                    className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md"
+                    onClick={() => void handleRefreshData()}
+                    disabled={isRefreshingData}
+                    className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md disabled:opacity-60"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${supabaseLoading ? 'animate-spin' : ''}`} />
-                    <span>فحص وحفظ إعدادات الربط</span>
+                    <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                    <span>تحديث البيانات من قاعدة البيانات</span>
                   </button>
                 </div>
 
@@ -3584,7 +3603,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                     <button
                       onClick={() => {
-                        if (window.confirm('هل أنت متأكد من استعادة بيانات العينة الافتراضية؟')) {
+                        if (window.confirm('سيتم حذف كل تعديلات محتوى الموقع (الإعدادات، المشاريع، الفعاليات، القيادة...) من قاعدة البيانات والرجوع للمحتوى الأصلي. الطلبات والشكاوى لن تُحذف. هل أنت متأكد؟')) {
                           dataService.resetDefaults();
                           sound.playSuccess();
                         }
@@ -3698,7 +3717,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <span>تغيير الرمز السري الرئيسي للإدارة</span>
                       </h4>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
-                        SHA-256 ENCRYPTED
+                        SUPABASE AUTH
                       </span>
                     </div>
 
@@ -3716,7 +3735,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       </div>
 
                       <div>
-                        <label className="block text-xs text-gray-300 mb-1">كلمة المرور الجديدة (6 خانات على الأقل):</label>
+                        <label className="block text-xs text-gray-300 mb-1">كلمة المرور الجديدة (8 خانات على الأقل):</label>
                         <input
                           type="password"
                           required
@@ -3756,7 +3775,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         className="w-full py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
                       >
                         <Save className="w-3.5 h-3.5" />
-                        <span>حفظ وتشفير كلمة المرور الجديدة</span>
+                        <span>حفظ كلمة المرور الجديدة</span>
                       </button>
                     </form>
                   </div>
@@ -4061,7 +4080,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         {/* Digital Member ID Card Modal (Official UP Engineering Club Pass) */}
         {viewingBadgeApp && (
           <div className="absolute inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
-            <div className="w-full max-w-md rounded-3xl glass-panel border border-emerald-500/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(22,163,74,0.3)] relative text-right animate-in zoom-in-95 duration-200">
+            <div className="w-full max-w-md rounded-3xl glass-panel border border-emerald-500/40 p-5 sm:p-7 shadow-[0_0_50px_rgba(22,163,74,0.3)] relative text-right animate-in zoom-in-95 duration-200">
               <button
                 onClick={() => setViewingBadgeApp(null)}
                 className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -4069,90 +4088,95 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-xs mb-3">
+              <div className="text-center mb-5">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-xs mb-1.5 shadow-sm">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   <span>بطاقة عضوية رقمية معتمدة // CERTIFIED PASS</span>
                 </div>
-                <h3 className="text-xl font-black text-white">بطاقة العضوية الرسمية</h3>
-                <p className="text-xs text-gray-400 mt-1">النادي الهندسي — جامعة فلسطين</p>
+                <h3 className="text-lg sm:text-xl font-black text-white">بطاقة العضوية الرسمية</h3>
+                <p className="text-xs text-gray-400 mt-0.5">النادي الهندسي — جامعة فلسطين</p>
               </div>
 
-              {/* The Actual Digital Badge Card */}
+              {/* The Actual Digital Badge Card (Vertical Portrait Ratio) */}
               <div
                 id="printable-member-badge"
-                className="w-full rounded-3xl p-6 bg-gradient-to-b from-[#140C38] via-[#0E082C] to-[#08041D] border-2 border-[#7F1AB2]/50 shadow-[0_0_35px_rgba(127,26,178,0.25)] relative overflow-hidden font-mono text-right"
+                className="w-full max-w-[340px] sm:max-w-[350px] mx-auto rounded-3xl p-5 bg-gradient-to-b from-[#160E3D] via-[#0D0727] to-[#070319] border-2 border-[#7F1AB2]/50 shadow-[0_12px_45px_rgba(127,26,178,0.3)] relative overflow-hidden font-mono text-right flex flex-col justify-between"
               >
                 {/* Decorative Tech Elements */}
-                <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -top-12 -right-12 w-36 h-36 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
 
-                {/* Badge Top Header: Prominent Enlarged Logo */}
-                <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
-                  <div className="flex items-center gap-3">
+                <div>
+                  {/* Lanyard Clip Slot for Realistic Printable Badge */}
+                  <div className="w-14 h-1.5 rounded-full bg-white/20 mx-auto mb-3.5 shadow-inner" />
+
+                  {/* Top Brand Banner: Dedicated 100% to Showcasing the Engineering Club & University */}
+                  <div className="bg-white rounded-2xl p-2.5 sm:p-3 shadow-md border border-white/90 mb-4 text-center">
                     <img
-                      src="/brand/emblem.png"
-                      alt="شعار النادي الهندسي"
-                      className="h-12 w-12 sm:h-14 sm:w-14 object-contain drop-shadow-[0_4px_16px_rgba(127,26,178,0.4)] transition-transform hover:scale-105"
+                      src="/brand/logo-horizontal.png"
+                      alt="النادي الهندسي"
+                      className="h-10 sm:h-11 w-auto mx-auto object-contain drop-shadow-sm"
                     />
-                    <div>
-                      <div className="text-sm sm:text-base font-black text-white font-sans tracking-wide">
-                        النادي الهندسي
-                      </div>
-                      <div className="text-[10px] font-mono text-[#3FE7E3] tracking-wider uppercase font-bold mt-0.5">
-                        ENGINEERING CLUB
-                      </div>
-                      <div className="text-[9px] text-gray-400 font-sans">
-                        جامعة فلسطين
-                      </div>
+                    <div className="text-[10px] font-bold text-gray-700 tracking-wider mt-1 font-sans border-t border-gray-200/80 pt-1 flex items-center justify-center gap-1.5">
+                      <span>جامعة فلسطين</span>
+                      <span className="text-gray-300">•</span>
+                      <span className="font-mono text-[9px] text-gray-500 uppercase tracking-wider font-semibold">University of Palestine</span>
                     </div>
                   </div>
-                  <div className="text-left">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#35BC2B] px-2.5 py-1 rounded-full bg-[#35BC2B]/10 border border-[#35BC2B]/30 font-sans">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
-                      عضو معتمد
-                    </span>
-                  </div>
-                </div>
 
-                {/* Member Info */}
-                <div className="mb-4">
-                  <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
-                  <div className="text-lg font-extrabold text-white font-sans mt-0.5 tracking-wide">
-                    {viewingBadgeApp.fullName}
+                  {/* Member Info */}
+                  <div className="mb-3.5 text-right">
+                    <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
+                    <div className="text-xl sm:text-2xl font-black text-white font-sans mt-0.5 tracking-wide leading-tight">
+                      {viewingBadgeApp.fullName}
+                    </div>
+                    <div className="text-xs font-mono text-gray-400 mt-1 flex items-center gap-1.5 justify-start">
+                      <span className="text-gray-500">الرقم الجامعي:</span>
+                      <span className="text-[#3FE7E3] font-bold">{viewingBadgeApp.studentId || 'UP-STUDENT'}</span>
+                    </div>
                   </div>
-                  <div className="text-xs text-[#3FE7E3] mt-1 font-bold">
-                    الرقم الجامعي: {viewingBadgeApp.studentId || 'UP-STUDENT'}
-                  </div>
-                </div>
 
-                {/* Academic Fields (Cleaned: No College, No Academic Year) */}
-                <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 mb-4 text-xs font-sans">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-400">التخصص الهندسي:</span>
-                    <span className="font-bold text-[#3FE7E3]">{viewingBadgeApp.major}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
-                    <span className="text-gray-400">نوع العضوية / اللجنة:</span>
-                    <span className="font-bold text-[#35BC2B]">{viewingBadgeApp.targetCommittee}</span>
+                  {/* Academic Fields (Cleaned: No College, No Academic Year, No redundant words) */}
+                  <div className="space-y-2 p-3 rounded-2xl bg-black/50 border border-white/10 mb-4 text-xs font-sans">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400">التخصص:</span>
+                      <span className="font-bold text-[#3FE7E3]">
+                        {(viewingBadgeApp.major || '').replace(/^(تخصص\s+|كلية\s+)/i, '').trim()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
+                      <span className="text-gray-400">اللجنة / المسار:</span>
+                      <span className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
+                        {viewingBadgeApp.targetCommittee}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Verification Barcode & Seal */}
-                <div className="pt-3 border-t border-dashed border-white/15 flex items-center justify-between">
-                  <div className="text-[9px] text-gray-400 leading-tight">
-                    <div className="text-white font-bold mb-0.5">AUTH CODE:</div>
-                    <div className="text-cyan-400 font-bold">UP-ENG-{(viewingBadgeApp.id || 'VALID').slice(-8).toUpperCase()}</div>
-                    <div className="text-[8px] text-gray-500 mt-1">ISSUED BY UNIVERSITY OF PALESTINE</div>
+                <div className="pt-3 border-t border-dashed border-white/15 flex items-center justify-between gap-3">
+                  <div className="text-left flex-1 min-w-0" dir="ltr">
+                    <div className="text-[9px] text-gray-400 font-mono tracking-wider font-bold">
+                      PASS ID: <span className="text-cyan-400 font-mono">UP-ENG-{(viewingBadgeApp.id || 'VALID').slice(-8).toUpperCase()}</span>
+                    </div>
+                    <div className="text-[8px] text-gray-500 font-mono tracking-tight mt-0.5 uppercase">
+                      OFFICIALLY REGISTERED PASS
+                    </div>
+                    <div className="inline-flex items-center gap-1 mt-1 text-[9px] text-[#35BC2B] font-sans font-bold" dir="rtl">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B]" />
+                      <span>عضوية معتمدة ومفعلة • 2026</span>
+                    </div>
                   </div>
+
                   {/* Scannable Verification QR Code */}
-                  <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow">
+                  <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow shrink-0 border border-white/90">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(
                         `${window.location.origin}/?verify=${encodeURIComponent(viewingBadgeApp.studentId || viewingBadgeApp.id)}`
                       )}`}
                       alt="Verification QR"
-                      className="w-12 h-12 object-contain"
+                      className="w-11 h-11 object-contain"
                     />
                   </div>
                 </div>
