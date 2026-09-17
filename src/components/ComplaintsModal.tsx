@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { dataService } from '../services/dataService';
 import type { ComplaintItem, ComplaintPriority } from '../types';
 import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check, Camera, Upload, Trash2 } from 'lucide-react';
@@ -130,6 +130,16 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
     reader.readAsDataURL(file);
   };
 
+  // Stop the page behind from scrolling while the dialog is open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -236,41 +246,43 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
+    <div className="fixed inset-0 z-[65] flex items-stretch sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-lg">
       <div
-        className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl glass-panel border border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_60px_rgba(0,240,255,0.25)] relative text-right animate-in zoom-in-95 duration-200"
+        className="w-full max-w-3xl h-full sm:h-auto sm:max-h-[90vh] flex flex-col rounded-none sm:rounded-3xl glass-panel border-0 sm:border border-cyan-500/40 shadow-[0_0_60px_rgba(0,240,255,0.25)] relative text-right animate-in fade-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={() => {
-            onClose();
-          }}
-          className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors cursor-pointer"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-mono text-xs mb-2.5">
-            <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
-            <span>STUDENT VOICE & FEEDBACK // صوت الطلبة ومقترحاتهم</span>
+        {/* Header — stays put while the form scrolls */}
+        <div className="shrink-0 px-5 sm:px-7 pt-5 pb-4 border-b border-white/10">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-cyan-400 shrink-0" />
+                <span>صندوق الشكاوى والمقترحات</span>
+              </h3>
+              <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                اكتب شكواك أو اقتراحك، ويوصلك رقم تتبع تقدر تتابع فيه الرد.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="إغلاق"
+              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <h3 className="text-xl sm:text-2xl font-black text-white">صندوق الشكاوى والمقترحات والعرائض</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-md mx-auto leading-relaxed">
-            صوتك واحتياجاتك محط اهتمام إدارة النادي وعمادة الكلية — نتعامل مع كافة الملاحظات بأمانة وسرية تامة.
-          </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex rounded-2xl bg-black/40 p-1.5 border border-white/10 mb-6">
+        <div className="shrink-0 px-5 sm:px-7 pt-4">
+        <div className="flex rounded-2xl bg-black/40 p-1.5 border border-white/10">
           <button
             type="button"
             onClick={() => {
               setActiveTab('submit');
             }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
               activeTab === 'submit'
                 ? 'bg-cyan-400 text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
@@ -285,7 +297,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
             onClick={() => {
               setActiveTab('track');
             }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
               activeTab === 'track'
                 ? 'bg-cyan-400 text-black shadow-md'
                 : 'text-gray-400 hover:text-white'
@@ -295,6 +307,10 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
             <span>متابعة حالة شكوى سابقة</span>
           </button>
         </div>
+        </div>
+
+        {/* Only this part scrolls, so the header and tabs never disappear */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-7 py-5">
 
         {/* TAB 1: SUBMIT NEW */}
         {activeTab === 'submit' && (
@@ -343,7 +359,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              <form onSubmit={handleSubmit} className="space-y-5 text-sm">
                 {/* Who is writing — every ticket is signed so the team can reply */}
                 <div className="p-3.5 rounded-2xl bg-cyan-950/20 border border-cyan-500/20 flex items-start gap-2.5">
                   <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
@@ -759,6 +775,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
