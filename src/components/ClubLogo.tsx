@@ -90,21 +90,35 @@ export const ClubLogo: React.FC<ClubLogoProps> = ({
   }
 
   // Horizontal variant (default for navbar, headers, footers)
+  const hSizeMap = {
+    sm: 'h-6 sm:h-7',
+    md: 'h-7 sm:h-8',
+    lg: 'h-10 sm:h-12',
+    xl: 'h-14 sm:h-16',
+  };
+
+  const currentHSize = hSizeMap[size] || hSizeMap.md;
+
+  if (!withPod) {
+    return (
+      <div className={`inline-flex items-center select-none group ${className}`}>
+        <img
+          src="/brand/logo-horizontal.png"
+          alt="النادي الهندسي — Engineering Club"
+          className={`${currentHSize} w-auto object-contain transition-transform duration-300 group-hover:scale-102`}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className={`inline-flex items-center gap-3 select-none text-right group ${className}`}>
-      {renderEmblem()}
-      <div className="flex flex-col leading-none">
-        <span className={`font-black ${currentSize.text} ${textColor} tracking-tight`}>
-          النادي الهندسي
-        </span>
-        {showSubtitle && (
-          <span className={`font-mono ${currentSize.sub} font-semibold tracking-wider text-[#3FE7E3] uppercase mt-1`}>
-            ENGINEERING CLUB
-          </span>
-        )}
-        <span className="text-[9px] sm:text-[10px] text-gray-400 font-sans mt-0.5">
-          جامعة فلسطين
-        </span>
+    <div className={`inline-flex items-center select-none group ${className}`}>
+      <div className="bg-white px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl shadow-sm border border-white/90 group-hover:shadow-[0_0_20px_rgba(63,231,227,0.35)] transition-all flex items-center justify-center">
+        <img
+          src="/brand/logo-horizontal.png"
+          alt="النادي الهندسي — Engineering Club"
+          className={`${currentHSize} w-auto object-contain transition-transform duration-300 group-hover:scale-102`}
+        />
       </div>
     </div>
   );
