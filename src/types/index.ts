@@ -140,6 +140,7 @@ export interface EventTicket {
   eventTitle: string;
   attendeeName: string;
   studentId?: string;
+  email?: string;
   ticketNumber: string;
   qrHash: string;
   registeredAt: string;

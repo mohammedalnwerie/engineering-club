@@ -423,6 +423,52 @@ class DataService {
     return target.checkedIn;
   }
 
+  public registerEventTicket(params: {
+    eventId: string;
+    attendeeName: string;
+    studentId?: string;
+    email?: string;
+  }): { success: boolean; ticket?: EventTicket; error?: string } {
+    const events = this.getEvents();
+    const event = events.find((e) => e.id === params.eventId);
+    if (!event) return { success: false, error: 'الفعالية غير موجودة' };
+
+    const currentTickets = this.getTickets(params.eventId);
+    if (event.capacity && currentTickets.length >= event.capacity) {
+      return { success: false, error: 'عذراً، اكتمل العدد المتاح للمقاعد في هذه الفعالية' };
+    }
+
+    if (params.studentId && currentTickets.some((t) => t.studentId === params.studentId?.trim())) {
+      return { success: false, error: 'لقد قمت بالتسجيل مسبقاً في هذه الفعالية بهذا الرقم الجامعي' };
+    }
+
+    const newTicket: EventTicket = {
+      id: 'ticket_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      eventId: params.eventId,
+      eventTitle: event.title,
+      attendeeName: params.attendeeName.trim(),
+      studentId: params.studentId?.trim(),
+      email: params.email?.trim(),
+      ticketNumber: 'UP-EVT-' + Math.floor(100000 + Math.random() * 900000),
+      qrHash: 'UP-EVT-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+      registeredAt: new Date().toISOString(),
+      checkedIn: false,
+    };
+
+    const allTickets = this.getTickets();
+    allTickets.push(newTicket);
+    this.setContent('tickets', allTickets);
+
+    // Update registeredCount on event
+    const updatedEvent: EventItem = {
+      ...event,
+      registeredCount: (event.registeredCount || 0) + 1,
+    };
+    this.saveEvent(updatedEvent);
+
+    return { success: true, ticket: newTicket };
+  }
+
   // --- APPLICATIONS ---
   /** Admin only — populated by loadAdminData(). */
   public getApplications(): StoredApplication[] {
