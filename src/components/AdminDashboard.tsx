@@ -21,6 +21,7 @@ import { ApplicationsTable } from './admin/ApplicationsTable';
 import { QuickNav, type QuickNavItem } from './admin/QuickNav';
 import { LeadershipPanel } from './admin/LeadershipPanel';
 import { CollegesPanel } from './admin/CollegesPanel';
+import { complaintCategoryLabel, COMPLAINT_CATEGORIES, PRIORITY_LABELS } from '../data/complaints';
 import {
   fetchMyRole,
   hasFullAccess,
@@ -279,7 +280,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   // Complaints & Suggestions state
   const [complaints, setComplaints] = useState<ComplaintItem[]>([]);
   const [complaintsFilter, setComplaintsFilter] = useState<'all' | 'pending' | 'in-progress' | 'resolved' | 'rejected'>('all');
-  const [complaintsCategoryFilter, setComplaintsCategoryFilter] = useState<'all' | 'complaint' | 'suggestion' | 'inquiry'>('all');
+  const [complaintsCategoryFilter, setComplaintsCategoryFilter] = useState<'all' | ComplaintItem['category']>('all');
   const [complaintsSearch, setComplaintsSearch] = useState('');
   const [inspectComplaint, setInspectComplaint] = useState<ComplaintItem | null>(null);
   const [adminResponseNote, setAdminResponseNote] = useState('');
@@ -2417,13 +2418,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
-                        const headers = ['رقم التذكرة', 'الاسم', 'الرقم الجامعي', 'الكلية', 'التصنيف', 'الموضوع', 'الرسالة', 'الحالة', 'تاريخ الإرسال'];
+                        const headers = ['رقم التذكرة', 'الاسم', 'الرقم الجامعي', 'الكلية', 'التصنيف', 'الأهمية', 'الموضوع', 'الرسالة', 'الحالة', 'تاريخ الإرسال'];
                         const rows = complaints.map((c) => [
                           c.ticketNumber,
-                          c.isAnonymous ? 'مجهول (سري)' : c.studentName,
-                          c.isAnonymous ? 'مخفي' : c.studentId,
+                          c.studentName,
+                          c.studentId,
                           c.college,
-                          c.category,
+                          complaintCategoryLabel(c.category),
+                          PRIORITY_LABELS[c.priority || 'normal'],
                           c.subject,
                           c.message,
                           c.status,
@@ -2549,55 +2551,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </div>
                   </div>
 
-                  {/* Category Filter */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-white/5 text-xs text-gray-400">
+                  {/* Category filter — generated from the same list the student form uses */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5 text-xs text-gray-400">
                     <span className="font-mono text-xs text-gray-500">التصنيف:</span>
                     <button
                       onClick={() => setComplaintsCategoryFilter('all')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-                        complaintsCategoryFilter === 'all'
-                          ? 'bg-white/10 text-white font-bold'
-                          : 'text-gray-400 hover:text-gray-200'
+                      className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${
+                        complaintsCategoryFilter === 'all' ? 'bg-white/10 text-white font-bold' : 'text-gray-400 hover:text-gray-200'
                       }`}
                     >
                       جميع الأنواع
                     </button>
-                    <button
-                      onClick={() => setComplaintsCategoryFilter('complaint')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-                        complaintsCategoryFilter === 'complaint'
-                          ? 'bg-red-950/60 text-red-300 border border-red-500/40 font-bold'
-                          : 'text-gray-400 hover:text-gray-200'
-                      }`}
-                    >
-                      شكاوى رسمية
-                    </button>
-                    <button
-                      onClick={() => setComplaintsCategoryFilter('suggestion')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-                        complaintsCategoryFilter === 'suggestion'
-                          ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 font-bold'
-                          : 'text-gray-400 hover:text-gray-200'
-                      }`}
-                    >
-                      مقترحات تطوير
-                    </button>
-                    <button
-                      onClick={() => setComplaintsCategoryFilter('inquiry')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
-                        complaintsCategoryFilter === 'inquiry'
-                          ? 'bg-purple-950/60 text-purple-300 border border-purple-500/40 font-bold'
-                          : 'text-gray-400 hover:text-gray-200'
-                      }`}
-                    >
-                      استفسارات عامة
-                    </button>
+                    {COMPLAINT_CATEGORIES.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setComplaintsCategoryFilter(option.value)}
+                        className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${
+                          complaintsCategoryFilter === option.value
+                            ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 font-bold'
+                            : 'text-gray-400 hover:text-gray-200'
+                        }`}
+                      >
+                        {option.label} ({complaints.filter((c) => c.category === option.value).length})
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 {/* Complaints List */}
                 <div className="space-y-3">
                   {complaints
+                    .slice()
+                    .sort((a, b) => {
+                      const rank = (c: typeof a) => (c.priority === 'urgent' ? 0 : c.priority === 'medium' ? 1 : 2);
+                      return rank(a) - rank(b);
+                    })
                     .filter((c) => {
                       if (complaintsFilter !== 'all' && c.status !== complaintsFilter) return false;
                       if (complaintsCategoryFilter !== 'all' && c.category !== complaintsCategoryFilter) return false;
@@ -2658,11 +2646,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                     : 'bg-purple-950/60 text-purple-300 border-purple-500/40'
                                 }`}
                               >
-                                {item.category === 'complaint'
-                                  ? '⚠️ شكوى'
-                                  : item.category === 'suggestion'
-                                  ? '💡 مقترح'
-                                  : '❓ استفسار'}
+                                {complaintCategoryLabel(item.category)}
                               </span>
 
                               {/* Status Badge */}
@@ -2682,9 +2666,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                   : isInProgress
                                   ? 'جاري المتابعة'
                                   : isResolved
-                                  ? 'تم الحل والمعالجة ✓'
+                                  ? 'تم الحل والمعالجة'
                                   : 'مرفوض'}
                               </span>
+
+                              {/* Priority Badge */}
+                              {item.priority && item.priority !== 'normal' && (
+                                <span
+                                  className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
+                                    item.priority === 'urgent'
+                                      ? 'bg-red-950/70 text-red-300 border-red-500/50'
+                                      : 'bg-amber-950/60 text-amber-300 border-amber-500/40'
+                                  }`}
+                                >
+                                  {item.priority === 'urgent' ? 'عاجل' : 'أهمية متوسطة'}
+                                </span>
+                              )}
 
                               {/* Photo Attachment Badge */}
                               {item.attachmentImage && (
@@ -2712,7 +2709,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/5 text-xs">
                             <div className="font-mono text-gray-400 space-x-3 space-x-reverse">
                               {item.isAnonymous ? (
-                                <span className="text-amber-400/90 font-sans">👤 مُرسل مجهول الهوية (طلب عدم الكشف)</span>
+                                <span className="text-amber-400/90 font-sans">مُرسل مجهول الهوية (طلب قديم قبل إلغاء الخيار)</span>
                               ) : (
                                 <>
                                   <span className="text-white font-bold">{item.studentName}</span>

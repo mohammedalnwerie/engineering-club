@@ -1,10 +1,53 @@
 import React, { useState } from 'react';
 import { dataService } from '../services/dataService';
-import type { ComplaintItem } from '../types';
+import type { ComplaintItem, ComplaintPriority } from '../types';
 import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check, Camera, Upload, Trash2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { normalizeCode } from '../utils/validation';
+import {
+  normalizeCode,
+  normalizePhone,
+  suggestEmailFix,
+  validateEmail,
+  validateFullName,
+  validatePhone,
+  validateStudentId,
+} from '../utils/validation';
 import { checkRateLimit } from '../utils/security';
+import { COMPLAINT_CATEGORIES } from '../data/complaints';
+
+const FieldError: React.FC<{ message?: string }> = ({ message }) =>
+  message ? (
+    <p role="alert" className="text-xs text-red-300 mt-1.5 flex items-center gap-1.5">
+      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+      <span>{message}</span>
+    </p>
+  ) : null;
+
+const fieldClass = (error?: string) =>
+  `w-full px-3.5 py-2.5 rounded-xl bg-black/50 border text-white focus:outline-none ${
+    error ? 'border-red-400/70 focus:border-red-300' : 'border-white/10 focus:border-cyan-400'
+  }`;
+
+const PRIORITIES: { value: ComplaintPriority; label: string; hint: string; active: string }[] = [
+  {
+    value: 'normal',
+    label: 'عادي',
+    hint: 'نرد خلال أسبوع عمل تقريباً.',
+    active: 'bg-cyan-400 text-black border-cyan-300',
+  },
+  {
+    value: 'medium',
+    label: 'متوسط',
+    hint: 'موضوع يؤثر على دراستك أو على فعالية قريبة.',
+    active: 'bg-amber-400 text-black border-amber-300',
+  },
+  {
+    value: 'urgent',
+    label: 'عاجل',
+    hint: 'يحتاج تدخل سريع خلال يوم أو يومين.',
+    active: 'bg-red-500 text-white border-red-400',
+  },
+];
 
 interface ComplaintsModalProps {
   isOpen: boolean;
@@ -23,8 +66,10 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const [category, setCategory] = useState<ComplaintItem['category']>('suggestion');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [priority, setPriority] = useState<ComplaintPriority>('normal');
   const [attachmentImage, setAttachmentImage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [emailHint, setEmailHint] = useState<string | null>(null);
 
   // Submission result state
   const [submittedTicket, setSubmittedTicket] = useState<ComplaintItem | null>(null);
@@ -88,12 +133,22 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-    if (!subject.trim()) {
-      setSubmitError('اكتب عنوان الشكوى أو المقترح.');
-      return;
-    }
-    if (!message.trim()) {
-      setSubmitError('اكتب تفاصيل الشكوى أو المقترح.');
+
+    // Every ticket is signed now, so the identity fields are checked first.
+    const errors: Record<string, string> = {};
+    const nameError = validateFullName(studentName);
+    if (nameError) errors.studentName = nameError;
+    const idError = validateStudentId(studentId);
+    if (idError) errors.studentId = idError;
+    const emailError = validateEmail(email);
+    if (emailError) errors.email = emailError;
+    const phoneError = validatePhone(phone, false);
+    if (phoneError) errors.phone = phoneError;
+    if (!subject.trim()) errors.subject = 'اكتب عنواناً مختصراً للطلب';
+    if (message.trim().length < 15) errors.message = 'اشرح طلبك بجملة أوضح (15 حرفاً على الأقل)';
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      setSubmitError('راجع الخانات المعلّمة بالأحمر.');
       return;
     }
 
@@ -108,16 +163,16 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
     let newComplaint: ComplaintItem;
     try {
       newComplaint = await dataService.submitComplaint({
-      studentName: isAnonymous ? 'طالب مجهول (سري)' : (studentName.trim() || 'طالب من جامعة فلسطين'),
-      studentId: studentId.trim() || 'N/A',
-      email: email.trim() || 'N/A',
-      phone: phone.trim() || undefined,
-      college,
-      category,
-      subject: subject.trim(),
-      message: message.trim(),
-      isAnonymous,
-      attachmentImage: attachmentImage || undefined,
+        studentName: studentName.trim().replace(/\s+/g, ' '),
+        studentId: normalizeCode(studentId),
+        email: email.trim(),
+        phone: phone.trim() ? normalizePhone(phone) : undefined,
+        college,
+        category,
+        priority,
+        subject: subject.trim(),
+        message: message.trim(),
+        attachmentImage: attachmentImage || undefined,
       });
     } catch (err) {
       setSubmitError(`تعذر إرسال الشكوى: ${err instanceof Error ? (err.message.includes('Failed to fetch') ? 'تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.' : err.message) : 'خطأ غير معروف'}`);
@@ -172,8 +227,10 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
     setPhone('');
     setSubject('');
     setMessage('');
-    setIsAnonymous(false);
+    setPriority('normal');
     setAttachmentImage(null);
+    setFieldErrors({});
+    setEmailHint(null);
   };
 
   return (
@@ -285,68 +342,113 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-                {/* Identity Toggle: Anonymous Option */}
-                <div className="p-3.5 rounded-2xl bg-cyan-950/20 border border-cyan-500/20 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
-                    <div>
-                      <div className="font-bold text-white">التقديم بهوية سرية (Anonymous)</div>
-                      <div className="text-xs text-gray-400">إخفاء اسمك وبياناتك الشخصية عن فريق المتابعة واللجان</div>
-                    </div>
+                {/* Who is writing — every ticket is signed so the team can reply */}
+                <div className="p-3.5 rounded-2xl bg-cyan-950/20 border border-cyan-500/20 flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-gray-300 leading-relaxed">
+                    <span className="font-bold text-white">بياناتك تصل لفريق المتابعة فقط.</span> نطلبها عشان نقدر نرد عليك
+                    ونتابع طلبك، ولا تظهر لأي طالب آخر على الموقع.
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                    className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
-                  />
                 </div>
 
-                {/* Personal Information (only if not anonymous) */}
-                {!isAnonymous && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-gray-300 mb-1 font-mono">الاسم الكامل:</label>
-                      <input
-                        type="text"
-                        placeholder="مثال: أحمد محمد"
-                        value={studentName}
-                        onChange={(e) => setStudentName(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-1 font-mono">الرقم الجامعي:</label>
-                      <input
-                        type="text"
-                        placeholder="مثال: 120230XXX"
-                        value={studentId}
-                        onChange={(e) => setStudentId(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-mono focus:outline-none focus:border-cyan-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-1 font-mono">البريد الإلكتروني / الجامعي:</label>
-                      <input
-                        type="email"
-                        placeholder="student@up.edu.ps"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-mono focus:outline-none focus:border-cyan-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 mb-1 font-mono">رقم التواصل / واتساب (اختياري):</label>
-                      <input
-                        type="tel"
-                        placeholder="059XXXXXXX"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-mono focus:outline-none focus:border-cyan-400"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">الاسم الكامل *</label>
+                    <input
+                      type="text"
+                      placeholder="مثال: أحمد محمد خليل"
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
+                      onBlur={() => setFieldErrors((p) => ({ ...p, studentName: validateFullName(studentName) || '' }))}
+                      aria-invalid={Boolean(fieldErrors.studentName)}
+                      className={fieldClass(fieldErrors.studentName)}
+                    />
+                    <FieldError message={fieldErrors.studentName} />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">الرقم الجامعي *</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="مثال: 120251628"
+                      value={studentId}
+                      onChange={(e) => setStudentId(e.target.value)}
+                      onBlur={() => setFieldErrors((p) => ({ ...p, studentId: validateStudentId(studentId) || '' }))}
+                      aria-invalid={Boolean(fieldErrors.studentId)}
+                      className={`${fieldClass(fieldErrors.studentId)} font-mono`}
+                      dir="ltr"
+                    />
+                    <FieldError message={fieldErrors.studentId} />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">البريد الإلكتروني *</label>
+                    <input
+                      type="email"
+                      placeholder="student@up.edu.ps"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setEmailHint(null);
+                      }}
+                      onBlur={() => {
+                        setFieldErrors((p) => ({ ...p, email: validateEmail(email) || '' }));
+                        setEmailHint(suggestEmailFix(email));
+                      }}
+                      aria-invalid={Boolean(fieldErrors.email)}
+                      className={`${fieldClass(fieldErrors.email)} font-mono`}
+                      dir="ltr"
+                    />
+                    <FieldError message={fieldErrors.email} />
+                    {emailHint && !fieldErrors.email && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmail(emailHint);
+                          setEmailHint(null);
+                        }}
+                        className="mt-1.5 text-xs text-cyan-300 hover:text-white underline underline-offset-4 cursor-pointer"
+                      >
+                        هل تقصد {emailHint}؟ اضغط للتصحيح
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1 font-mono">رقم الواتساب (اختياري)</label>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="0599123456"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      onBlur={() => setFieldErrors((p) => ({ ...p, phone: validatePhone(phone, false) || '' }))}
+                      aria-invalid={Boolean(fieldErrors.phone)}
+                      className={`${fieldClass(fieldErrors.phone)} font-mono`}
+                      dir="ltr"
+                    />
+                    <FieldError message={fieldErrors.phone} />
+                  </div>
+                </div>
+
+                {/* Priority — drives the order the team works through the inbox */}
+                <fieldset>
+                  <legend className="block text-gray-300 mb-1.5 font-mono">درجة الأهمية</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {PRIORITIES.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setPriority(option.value)}
+                        aria-pressed={priority === option.value}
+                        className={`px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                          priority === option.value ? option.active : 'bg-black/40 border-white/10 text-gray-300 hover:text-white'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1.5">{PRIORITIES.find((p) => p.value === priority)?.hint}</p>
+                </fieldset>
 
                 {/* College & Category */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -368,14 +470,14 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                     <label className="block text-gray-300 mb-1 font-mono">تصنيف الطلب:</label>
                     <select
                       value={category}
-                      onChange={(e) => setCategory(e.target.value as any)}
+                      onChange={(e) => setCategory(e.target.value as ComplaintItem['category'])}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
                     >
-                      <option value="suggestion">💡 مقترح أو فكرة مبادرة جديدة</option>
-                      <option value="club_activities">🎯 أنشطة وفعاليات وورش النادي</option>
-                      <option value="academic">📚 معوقات أكاديمية أو دراسية</option>
-                      <option value="facilities">🏢 مرافق، قاعات، أو معامل الكلية</option>
-                      <option value="other">📝 شكوى أو ملاحظة عامة أخرى</option>
+                      {COMPLAINT_CATEGORIES.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

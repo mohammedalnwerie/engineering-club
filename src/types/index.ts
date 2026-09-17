@@ -193,6 +193,9 @@ export interface StudentSpotlightData {
   publicationsCount: number;
 }
 
+/** كم هو مستعجل الطلب — يحدد ترتيب المتابعة في لوحة الإدارة */
+export type ComplaintPriority = 'normal' | 'medium' | 'urgent';
+
 export interface ComplaintItem {
   id: string;
   ticketNumber: string; // e.g. UP-CMP-2026-0812
@@ -205,7 +208,9 @@ export interface ComplaintItem {
   subject: string;
   message: string;
   attachmentImage?: string; // Base64 data URL of student's screenshot/photo
-  isAnonymous: boolean;
+  priority?: ComplaintPriority;
+  /** لم يعد التقديم مجهولاً؛ تبقى للطلبات القديمة */
+  isAnonymous?: boolean;
   status: 'pending' | 'in-progress' | 'resolved' | 'rejected' | 'new' | 'in_progress';
   adminNotes?: string;
   createdAt: string;
