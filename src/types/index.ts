@@ -164,6 +164,8 @@ export interface SiteSettings {
   mission: string;
   values: BrandValue[];
   showEventsSection?: boolean;
+  showProjectsSection?: boolean;
+  showLiveFeedSection?: boolean;
 }
 
 export interface StudentSpotlightData {

@@ -1413,6 +1413,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             {/* Tab 2: Projects Manager */}
             {activeTab === 'projects' && (
               <div className="flex-1 overflow-y-auto p-6">
+                {/* Public Website Projects Section Visibility Toggle */}
+                <div className="mb-6 p-4 rounded-2xl bg-black/40 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl border ${settings.showProjectsSection !== false ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400' : 'bg-amber-950/60 border-amber-500/30 text-amber-400'}`}>
+                      {settings.showProjectsSection !== false ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white flex items-center gap-2">
+                        <span>ظهور قسم المشاريع والمبادرات في الموقع الرئيسي:</span>
+                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono ${settings.showProjectsSection !== false ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'}`}>
+                          {settings.showProjectsSection !== false ? 'معروض للزوار' : 'مخفي عن الزوار'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {settings.showProjectsSection !== false
+                          ? 'قسم المبادرات والمشاريع معروض حالياً في الصفحة الرئيسية للموقع.'
+                          : 'قسم المبادرات والمشاريع مخفي حالياً عن زوار الموقع وقائمته مخفية من شريط التنقل.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = {
+                        ...settings,
+                        showProjectsSection: settings.showProjectsSection === false ? true : false,
+                      };
+                      setSettings(updated);
+                      dataService.saveSettings(updated);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow ${settings.showProjectsSection !== false ? 'bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                  >
+                    {settings.showProjectsSection !== false ? (
+                      <>
+                        <EyeOff className="w-4 h-4" />
+                        <span>إخفاء قسم المشاريع من الموقع</span>
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-4 h-4" />
+                        <span>إظهار قسم المشاريع في الموقع</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-base font-bold text-white">مشاريع النادي المنشورة</h3>
@@ -2744,6 +2791,137 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <p className="text-xs text-gray-400 mt-0.5">
                     تعديل نصوص الواجهة الرئيسية (Hero Section)، المانيفستو الهندسي، وبيانات مهندس الشهر المتميز (Spotlight).
                   </p>
+                </div>
+
+                {/* Master Public Website Sections Visibility Hub */}
+                <div className="p-6 rounded-2xl bg-black/50 border border-[#7F1AB2]/40 space-y-4 shadow-xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-white/10 gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-[#7F1AB2]/20 text-[#3FE7E3]">
+                        <Eye className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">التحكم في ظهور وإخفاء أقسام الموقع الرئيسي</h4>
+                        <p className="text-[11px] text-gray-400">إظهار أو إخفاء الأقسام التفاعلية في الموقع وشريط التنقل فورياً بنقرة زر واحدة</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-[#381C4A] text-[#3FE7E3] border border-[#3FE7E3]/30 w-fit">
+                      SECTIONS VISIBILITY
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Section 1: Events */}
+                    <div className={`p-4 rounded-2xl border transition-all ${settings.showEventsSection !== false ? 'bg-black/40 border-emerald-500/30' : 'bg-black/60 border-amber-500/30'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-white">أجندة الفعاليات والورش</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${settings.showEventsSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                          {settings.showEventsSection !== false ? 'معروض' : 'مخفي'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                        جدول ورش العمل والفعاليات والهاكاثونات الهندسية ورابطها بالقائمة.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = {
+                            ...settings,
+                            showEventsSection: settings.showEventsSection === false ? true : false,
+                          };
+                          setSettings(updated);
+                          dataService.saveSettings(updated);
+                        }}
+                        className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow ${settings.showEventsSection !== false ? 'bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                      >
+                        {settings.showEventsSection !== false ? (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5" />
+                            <span>إخفاء القسم</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>إظهار القسم</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Section 2: Projects */}
+                    <div className={`p-4 rounded-2xl border transition-all ${settings.showProjectsSection !== false ? 'bg-black/40 border-emerald-500/30' : 'bg-black/60 border-amber-500/30'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-white">المشاريع والمبادرات</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${settings.showProjectsSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                          {settings.showProjectsSection !== false ? 'معروض' : 'مخفي'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                        المبادرات والمشاريع قيد التأسيس ومراحل تطوير النماذج للطلبة.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = {
+                            ...settings,
+                            showProjectsSection: settings.showProjectsSection === false ? true : false,
+                          };
+                          setSettings(updated);
+                          dataService.saveSettings(updated);
+                        }}
+                        className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow ${settings.showProjectsSection !== false ? 'bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                      >
+                        {settings.showProjectsSection !== false ? (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5" />
+                            <span>إخفاء القسم</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>إظهار القسم</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Section 3: Live Feed & Engineer of the Month */}
+                    <div className={`p-4 rounded-2xl border transition-all ${settings.showLiveFeedSection !== false ? 'bg-black/40 border-emerald-500/30' : 'bg-black/60 border-amber-500/30'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-white">مهندس الشهر والتحديثات</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${settings.showLiveFeedSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                          {settings.showLiveFeedSection !== false ? 'معروض' : 'مخفي'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                        قسم "كُن أنت مهندس الشهر" وبطاقة الترشيح ونبض وتحديثات النادي الحية.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = {
+                            ...settings,
+                            showLiveFeedSection: settings.showLiveFeedSection === false ? true : false,
+                          };
+                          setSettings(updated);
+                          dataService.saveSettings(updated);
+                        }}
+                        className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow ${settings.showLiveFeedSection !== false ? 'bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                      >
+                        {settings.showLiveFeedSection !== false ? (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5" />
+                            <span>إخفاء القسم</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>إظهار القسم</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

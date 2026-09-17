@@ -9,10 +9,16 @@ export const ProjectsSection: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'ai' | 'architecture' | 'software'>('all');
   const [activeModalProject, setActiveModalProject] = useState<ProjectCaseStudy | null>(null);
 
+  const [isVisible, setIsVisible] = useState<boolean>(() => {
+    return dataService.getSettings().showProjectsSection !== false;
+  });
+
   useEffect(() => {
     setProjectsList(dataService.getProjects());
+    setIsVisible(dataService.getSettings().showProjectsSection !== false);
     const unsub = dataService.subscribe(() => {
       setProjectsList(dataService.getProjects());
+      setIsVisible(dataService.getSettings().showProjectsSection !== false);
     });
     return () => unsub();
   }, []);
@@ -31,6 +37,10 @@ export const ProjectsSection: React.FC = () => {
     sound.playClick();
     setActiveModalProject(null);
   };
+
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <section id="projects" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LIVE_ACTIVITY_STREAM } from '../data/clubData';
 import { dataService } from '../services/dataService';
 import { Award, Send, Check, X, Lightbulb, Users, Trophy, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
@@ -9,6 +9,16 @@ interface LiveFeedSectionProps {
 }
 
 export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) => {
+  const [isVisible, setIsVisible] = useState<boolean>(() => {
+    return dataService.getSettings().showLiveFeedSection !== false;
+  });
+
+  useEffect(() => {
+    const unsub = dataService.subscribe(() => {
+      setIsVisible(dataService.getSettings().showLiveFeedSection !== false);
+    });
+    return unsub;
+  }, []);
   const [showNominateModal, setShowNominateModal] = useState(false);
   const [nomineeStudentId, setNomineeStudentId] = useState('');
   const [nomineeName, setNomineeName] = useState('');
@@ -101,6 +111,10 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
       setIsMemberConfirmed(false);
     }, 2800);
   };
+
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 border-t border-white/5 bg-[#08041D]/80">

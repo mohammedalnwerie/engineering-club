@@ -102,11 +102,11 @@ export const LeadershipSection: React.FC = () => {
                   {/* Card Header: Prominent Club Logo & University Identity */}
                   <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
                     <div className="flex items-center gap-3">
-                      <div className="p-1.5 sm:p-2 rounded-2xl bg-gradient-to-b from-white/[0.14] via-white/[0.04] to-white/[0.01] border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.3)] backdrop-blur-md flex items-center justify-center shrink-0">
+                      <div className="p-1.5 sm:p-2 rounded-2xl bg-white shadow-md border border-white/90 flex items-center justify-center shrink-0">
                         <img
                           src="/brand/emblem.png"
                           alt="شعار النادي الهندسي"
-                          className="w-9 h-9 sm:w-10 sm:h-10 object-contain filter drop-shadow-[0_0_1.5px_rgba(255,255,255,0.75)] drop-shadow-[0_4px_12px_rgba(63,231,227,0.35)] transition-transform group-hover:scale-105"
+                          className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.15)] transition-transform group-hover:scale-105"
                         />
                       </div>
                       <div>

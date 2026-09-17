@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { SiteSettings } from '../types';
-import { ClubLogo } from './ClubLogo';
 import { Target, Compass, Sparkles, Award, ShieldCheck, HeartHandshake, Zap, Rocket, FileText, ArrowLeft, BookOpen } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 
@@ -60,28 +59,18 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
       <div className="absolute bottom-1/4 -left-40 w-96 h-96 bg-[#3FE7E3]/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* Section Header with Official Brand Emblem */}
-        <div className="text-center mb-16 flex flex-col items-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-4 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
-            <span className="w-2 h-2 rounded-full bg-[#3FE7E3] animate-pulse" />
-            <span>الهوية الرسمية والمرجعية الأكاديمية للنادي</span>
+        {/* Section Header */}
+        <div className="text-center mb-12 flex flex-col items-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-3 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>الهوية والركائز المؤسسية // CORE FOUNDATIONS</span>
           </div>
-
-          <div className="my-6">
-            <ClubLogo variant="full" theme="dark" size="xl" className="mx-auto drop-shadow-[0_15px_35px_rgba(0,0,0,0.7)]" />
-          </div>
-
-          {/* Slogan Banner */}
-          <div className="mt-4 inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-4 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-[#381C4A]/70 via-[#7F1AB2]/20 to-[#381C4A]/70 border border-[#7F1AB2]/40 backdrop-blur-md shadow-[0_0_25px_rgba(127,26,178,0.2)]">
-            <div className="text-base sm:text-lg md:text-xl font-black text-white tracking-wide flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#3FE7E3] shrink-0" />
-              <span>{settings.sloganAr || 'هندسة اليوم .. تصنع أثر الغد'}</span>
-            </div>
-            <span className="hidden sm:inline text-white/30">|</span>
-            <div className="font-mono text-xs sm:text-sm font-semibold tracking-wider text-[#3FE7E3] uppercase">
-              {settings.sloganEn || 'ENGINEERING TODAY .. IMPACT TOMORROW'}
-            </div>
-          </div>
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+            من نحن والرسالة والرؤية
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-400 mt-2 max-w-xl mx-auto font-sans">
+            المرتكزات والمبادئ الأساسية التي يقوم عليها النادي الهندسي في جامعة فلسطين
+          </p>
         </div>
 
         {/* 3 Pillars: من نحن | الرؤية | الرسالة (Concise Cards) */}

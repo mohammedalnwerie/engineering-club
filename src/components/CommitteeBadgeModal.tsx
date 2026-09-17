@@ -96,11 +96,11 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
           {/* Top Header: Prominent Enlarged Emblem & Official Club Identity (No extra years or cadres) */}
           <div className="flex items-center justify-between pb-4 border-b border-white/15 mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-2xl bg-gradient-to-b from-white/[0.14] via-white/[0.04] to-white/[0.01] border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.3)] backdrop-blur-md flex items-center justify-center shrink-0">
+              <div className="p-2 rounded-2xl bg-white shadow-md border border-white/90 flex items-center justify-center shrink-0">
                 <img
                   src="/brand/emblem.png"
                   alt="شعار النادي الهندسي"
-                  className="h-10 w-10 sm:h-11 sm:w-11 object-contain filter drop-shadow-[0_0_1.5px_rgba(255,255,255,0.75)] drop-shadow-[0_4px_12px_rgba(63,231,227,0.35)] transition-transform hover:scale-105"
+                  className="h-10 w-10 sm:h-11 sm:w-11 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.15)] transition-transform hover:scale-105"
                 />
               </div>
               <div>

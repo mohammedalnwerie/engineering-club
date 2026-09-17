@@ -18,10 +18,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showEvents, setShowEvents] = useState<boolean>(() => dataService.getSettings().showEventsSection !== false);
+  const [showProjects, setShowProjects] = useState<boolean>(() => dataService.getSettings().showProjectsSection !== false);
 
   useEffect(() => {
     const unsub = dataService.subscribe(() => {
       setShowEvents(dataService.getSettings().showEventsSection !== false);
+      setShowProjects(dataService.getSettings().showProjectsSection !== false);
     });
     return unsub;
   }, []);
@@ -38,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenAdmin, on
     { label: 'من نحن', href: '#brand-identity' },
     { label: 'الكليات', href: '#colleges' },
     { label: 'التخصصات', href: '#majors' },
-    { label: 'المشاريع', href: '#projects' },
+    ...(showProjects ? [{ label: 'المشاريع', href: '#projects' }] : []),
     ...(showEvents ? [{ label: 'الفعاليات', href: '#events' }] : []),
     { label: 'القيادة', href: '#leadership' },
     { label: 'الأسئلة الشائعة', href: '#faq' },

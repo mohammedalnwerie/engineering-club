@@ -32,7 +32,7 @@ export const ClubLogo: React.FC<ClubLogoProps> = ({
       <img
         src="/brand/emblem.png"
         alt="شعار النادي الهندسي"
-        className={`${customImgClass || currentSize.img} object-contain filter drop-shadow-[0_0_1.5px_rgba(255,255,255,0.75)] drop-shadow-[0_4px_12px_rgba(63,231,227,0.35)] drop-shadow-[0_8px_24px_rgba(127,26,178,0.3)] transition-all duration-300 group-hover:scale-105 select-none shrink-0 relative z-10`}
+        className={`${customImgClass || currentSize.img} object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300 group-hover:scale-105 select-none shrink-0 relative z-10`}
       />
     );
 
@@ -42,9 +42,8 @@ export const ClubLogo: React.FC<ClubLogoProps> = ({
 
     return (
       <div
-        className={`relative inline-flex items-center justify-center ${customPodClass || currentSize.pod} bg-gradient-to-b from-white/[0.14] via-white/[0.04] to-white/[0.01] border border-white/20 shadow-[0_4px_24px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.3)] backdrop-blur-md transition-all duration-300 group-hover:border-[#3FE7E3]/60 group-hover:shadow-[0_0_25px_rgba(63,231,227,0.25)] shrink-0`}
+        className={`relative inline-flex items-center justify-center ${customPodClass || currentSize.pod} bg-white shadow-[0_4px_20px_rgba(0,0,0,0.35)] border border-white/90 transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(63,231,227,0.35)] shrink-0`}
       >
-        <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none" />
         {emblemImg}
       </div>
     );
@@ -55,7 +54,7 @@ export const ClubLogo: React.FC<ClubLogoProps> = ({
       <div className={`inline-flex flex-col items-center justify-center text-center select-none group ${className}`}>
         {renderEmblem(
           currentSize.img,
-          'p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-white/[0.16] via-[#381C4A]/40 to-white/[0.02] border border-white/25 shadow-[0_8px_35px_rgba(0,0,0,0.6),inset_0_1.5px_0_rgba(255,255,255,0.35)] backdrop-blur-md'
+          'p-5 sm:p-6 rounded-3xl bg-white shadow-[0_12px_45px_rgba(0,0,0,0.55)] border border-white/95'
         )}
         <div className="mt-4">
           <span className={`block font-black ${currentSize.text} ${textColor} tracking-tight leading-tight`}>

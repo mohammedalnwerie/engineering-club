@@ -67,7 +67,9 @@ const DEFAULT_SETTINGS: SiteSettings = {
     { id: 'v4', name: 'التمكين', description: 'إتاحة الفرص والموارد للطلبة للقيادة وبناء مشاريعهم الخاصة بثقة.', iconName: 'GraduationCap' },
     { id: 'v5', name: 'الأثر', description: 'صناعة فارق ملموس في المجتمع وسوق العمل والبيئة الجامعية.', iconName: 'Target' }
   ],
-  showEventsSection: true
+  showEventsSection: true,
+  showProjectsSection: true,
+  showLiveFeedSection: true,
 };
 
 
