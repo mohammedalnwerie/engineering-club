@@ -22,6 +22,7 @@ import { QuickNav, type QuickNavItem } from './admin/QuickNav';
 import { LeadershipPanel } from './admin/LeadershipPanel';
 import { CollegesPanel } from './admin/CollegesPanel';
 import { ContactPanel } from './admin/ContactPanel';
+import { TodoPanel } from './admin/TodoPanel';
 import { complaintCategoryLabel, COMPLAINT_CATEGORIES, PRIORITY_LABELS } from '../data/complaints';
 import {
   fetchMyRole,
@@ -1675,6 +1676,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         </button>
                       </div>
                     </div>
+
+                    <TodoPanel
+                      applications={applications}
+                      complaints={complaints}
+                      fullAccess={fullAccess}
+                      onNavigate={(tab) => setActiveTab(tab as AdminTab)}
+                    />
 
                     {/* 4 Key Metrics KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
