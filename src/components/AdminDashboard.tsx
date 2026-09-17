@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { dataService } from '../services/dataService';
 import { getSupabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from '../services/supabaseClient';
 import { ClubLogo } from './ClubLogo';
@@ -10,6 +10,20 @@ import {
 } from '../utils/security';
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
 import { CommitteeBadgeModal } from './CommitteeBadgeModal';
+import { MembersPanel } from './admin/MembersPanel';
+import { EventsPanel } from './admin/EventsPanel';
+import { TeamPanel } from './admin/TeamPanel';
+import { ActivityPanel } from './admin/ActivityPanel';
+import { TrashPanel } from './admin/TrashPanel';
+import { SidebarNavItem } from './admin/ui';
+import {
+  fetchMyRole,
+  hasFullAccess,
+  requestPasswordReset,
+  trashContentItem,
+  ROLE_LABELS,
+  type AdminRole,
+} from './admin/adminApi';
 import { COMMITTEES, effectiveCommittee, findCommittee } from '../data/committees';
 import { downloadCardPng, printCard } from '../utils/cardRenderer';
 import { memberCardFor } from '../utils/memberCard';
@@ -17,9 +31,7 @@ import { MemberCard } from './MemberCard';
 import { AcceptanceDispatchModal } from './AcceptanceDispatchModal';
 import type {
   ProjectCaseStudy,
-  EventItem,
   StoredApplication,
-  EventTicket,
   LeaderMember,
   College,
   Major,
@@ -198,6 +210,20 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
+  const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
+  const fullAccess = hasFullAccess(adminRole);
+  const [needsPasswordSetup, setNeedsPasswordSetup] = useState(() => {
+    try {
+      return sessionStorage.getItem('eng_club_admin_setup_password') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [setupPassword, setSetupPassword] = useState('');
+  const [setupPasswordConfirm, setSetupPasswordConfirm] = useState('');
+  const [setupError, setSetupError] = useState<string | null>(null);
+  const [isSavingSetup, setIsSavingSetup] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [passcode, setPasscode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [isVerifyingAuth, setIsVerifyingAuth] = useState(false);
@@ -209,14 +235,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [appCommitteeFilter, setAppCommitteeFilter] = useState<string>('الكل');
   const [dispatchModalApp, setDispatchModalApp] = useState<StoredApplication | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud' | 'security'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    | 'overview'
+    | 'applications'
+    | 'members'
+    | 'projects'
+    | 'events'
+    | 'leadership'
+    | 'colleges'
+    | 'complaints'
+    | 'settings'
+    | 'cloud'
+    | 'team'
+    | 'activity'
+    | 'trash'
+    | 'security'
+  >('overview');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Live Data states
   const [applications, setApplications] = useState<StoredApplication[]>([]);
   const [projects, setProjects] = useState<ProjectCaseStudy[]>([]);
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [tickets, setTickets] = useState<EventTicket[]>([]);
   const [leadership, setLeadership] = useState<LeaderMember[]>([]);
   const [colleges, setColleges] = useState<College[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
@@ -308,40 +347,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   });
 
 
-  // New Event Form State
-  const [showAddEvent, setShowAddEvent] = useState(false);
-  const [newEvent, setNewEvent] = useState<Partial<EventItem>>({
-    title: '',
-    category: 'Workshop',
-    date: '2026-11-20',
-    time: '04:00 م - 07:00 م',
-    location: 'مختبر الابتكار المركزي',
-    capacity: 40,
-    description: '',
-    prerequisites: ['إحضار الحاسب الشخصي'],
-    badgeColor: '#00F0FF',
-  });
-
   // Edit Project & Event States
   const [editingProject, setEditingProject] = useState<ProjectCaseStudy | null>(null);
   const [editingProjectTechStack, setEditingProjectTechStack] = useState<string>('');
-  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
-  const [editingEventPrereqs, setEditingEventPrereqs] = useState<string>('');
   const [showCollegeUrlInput, setShowCollegeUrlInput] = useState(false);
 
   const [isRefreshingData, setIsRefreshingData] = useState(false);
   const [subscribers, setSubscribers] = useState<{ email: string; created_at: string }[]>([]);
 
+  const lastLoadedSettings = useRef<SiteSettings | null>(null);
+  const lastLoadedSpotlight = useRef<StudentSpotlightData | null>(null);
+
   const loadData = () => {
     setApplications(dataService.getApplications());
     setProjects(dataService.getProjects());
-    setEvents(dataService.getEvents());
-    setTickets(dataService.getTickets());
     setLeadership(dataService.getLeadership());
     setColleges(dataService.getColleges());
     setMajors(dataService.getMajors());
-    setSettings(dataService.getSettings());
-    setSpotlight(dataService.getSpotlight());
+    // Forms keep unsaved edits: only replace them when they still match what was last loaded.
+    const freshSettings = dataService.getSettings();
+    setSettings((prev) => {
+      const pristine = !lastLoadedSettings.current || JSON.stringify(prev) === JSON.stringify(lastLoadedSettings.current);
+      const saved = JSON.stringify(prev) === JSON.stringify(freshSettings);
+      if (pristine || saved) {
+        lastLoadedSettings.current = freshSettings;
+        return freshSettings;
+      }
+      return prev;
+    });
+    const freshSpotlight = dataService.getSpotlight();
+    setSpotlight((prev) => {
+      const pristine = !lastLoadedSpotlight.current || JSON.stringify(prev) === JSON.stringify(lastLoadedSpotlight.current);
+      const saved = JSON.stringify(prev) === JSON.stringify(freshSpotlight);
+      if (pristine || saved) {
+        lastLoadedSpotlight.current = freshSpotlight;
+        return freshSpotlight;
+      }
+      return prev;
+    });
     setComplaints(dataService.getComplaints());
     setRecruitmentSettings(dataService.getRecruitmentSettings());
     setSubscribers(dataService.getSubscribers());
@@ -365,7 +408,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   };
 
   const handleDeleteComplaint = (id: string, ticket: string) => {
-    if (window.confirm(`هل أنت متأكد من حذف البلاغ برقم تذكرة (${ticket}) نهائياً؟`)) {
+    if (window.confirm(`حذف البلاغ (${ticket})؟ سينتقل إلى سلة المحذوفات لمدة 30 يوماً.`)) {
       dataService.deleteComplaint(id);
       setComplaints(dataService.getComplaints());
     setRecruitmentSettings(dataService.getRecruitmentSettings());
@@ -456,7 +499,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   };
 
   const handleDeleteLeader = (id: string, name: string) => {
-    if (window.confirm(`هل أنت متأكد من حذف عضو الكادر (${name})؟`)) {
+    if (window.confirm(`حذف عضو الكادر (${name})؟ سينتقل إلى سلة المحذوفات.`)) {
+      const leader = dataService.getLeadership().find((l) => l.id === id);
+      if (leader) void trashContentItem('leader', id, `قيادة: ${leader.role}${leader.name ? ` — ${leader.name}` : ''}`, leader);
       dataService.deleteLeader(id);
       setLeadership(dataService.getLeadership());
       showToast(`تم حذف عضو الكادر (${name})`);
@@ -506,6 +551,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       getSupabase().then(async (supabase) => {
         const { data } = await supabase.auth.getSession();
         if (data.session && (await checkIsAdmin())) {
+          setAdminEmail(data.session.user.email || '');
+          await applyRole();
           setIsAuthenticated(true);
           await dataService.loadAdminData().catch(() => undefined);
         }
@@ -517,6 +564,57 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       unsubscribeErrors();
     };
   }, []);
+
+  async function applyRole() {
+    const role = await fetchMyRole().catch(() => null);
+    setAdminRole(role);
+    if (!hasFullAccess(role)) setActiveTab('applications');
+  }
+
+  // Keep lists fresh while the dashboard is open (new applications, complaints…)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const timer = setInterval(() => {
+      if (!document.hidden) void dataService.loadAdminData().catch(() => undefined);
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [isAuthenticated]);
+
+  const handleForgotPassword = async () => {
+    const email = (adminEmail || window.prompt('اكتب إيميل حسابك في لوحة التحكم') || '').trim();
+    if (!email) return;
+    setResetMessage('جاري الإرسال…');
+    try {
+      const result = await requestPasswordReset(email);
+      setResetMessage(result.message);
+    } catch (err) {
+      setResetMessage(err instanceof Error ? err.message : 'تعذر إرسال رابط إعادة التعيين');
+    }
+  };
+
+  const handleSetupPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (setupPassword.length < 8) return setSetupError('كلمة المرور 8 خانات على الأقل');
+    if (setupPassword !== setupPasswordConfirm) return setSetupError('كلمتا المرور غير متطابقتين');
+    setIsSavingSetup(true);
+    setSetupError(null);
+    try {
+      const { error } = await (await getSupabase()).auth.updateUser({ password: setupPassword });
+      if (error) throw error;
+      try {
+        sessionStorage.removeItem('eng_club_admin_setup_password');
+      } catch {
+        // ignore
+      }
+      window.history.replaceState(null, '', window.location.pathname + '#/admin');
+      setNeedsPasswordSetup(false);
+      showToast('تم حفظ كلمة المرور');
+    } catch (err) {
+      setSetupError(err instanceof Error ? err.message : 'تعذر حفظ كلمة المرور');
+    } finally {
+      setIsSavingSetup(false);
+    }
+  };
 
   async function checkIsAdmin(): Promise<boolean> {
     if (!isSupabaseConfigured) return false;
@@ -551,6 +649,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       }
 
       logSecurityEvent('LOGIN_SUCCESS', `تسجيل دخول إداري ناجح: ${adminEmail.trim()}`);
+      await applyRole();
       setIsAuthenticated(true);
       setPasscode('');
       setAuditLogs(getSecurityAuditLogs());
@@ -563,6 +662,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const handleLogout = async () => {
     if (isSupabaseConfigured) await (await getSupabase()).auth.signOut();
     dataService.clearAdminData();
+    setAdminRole(null);
     setIsAuthenticated(false);
     setPasscode('');
     showToast('تم تسجيل الخروج من لوحة الإدارة');
@@ -633,7 +733,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
   // Delete single application
   const handleDeleteApplication = (id: string, name: string) => {
-    if (window.confirm(`هل أنت متأكد من حذف طلب الانضمام الخاص بـ (${name}) نهائياً؟`)) {
+    if (window.confirm(`حذف طلب الانضمام الخاص بـ (${name})؟ سينتقل إلى سلة المحذوفات لمدة 30 يوماً.`)) {
       dataService.deleteApplication(id);
       showToast(`تم حذف طلب (${name}) بنجاح`);
       if (inspectApp?.id === id) {
@@ -691,30 +791,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     });
   };
 
-  // Add Event
-  const handleCreateEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEvent.title?.trim()) return;
-
-    const ev: EventItem = {
-      id: `event-${Date.now()}`,
-      title: newEvent.title || 'فعالية هندسية',
-      category: newEvent.category || 'Workshop',
-      date: newEvent.date || '2026-11-20',
-      time: newEvent.time || '04:00 م',
-      location: newEvent.location || 'قاعة الابتكار',
-      capacity: Number(newEvent.capacity) || 50,
-      registeredCount: 0,
-      description: newEvent.description || 'ورشة عملية تطبيقية',
-      prerequisites: newEvent.prerequisites || ['معرفة هندسية مبدئية'],
-      speakers: [{ name: 'نخبة المدربين', title: 'مهندسون معتمدون' }],
-      badgeColor: newEvent.badgeColor || '#00F0FF',
-    };
-
-    dataService.saveEvent(ev);
-    setShowAddEvent(false);
-  };
-
   // Edit Project Handlers
   const handleOpenEditProject = (proj: ProjectCaseStudy) => {
     setEditingProject({ ...proj });
@@ -735,29 +811,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setProjects(dataService.getProjects());
     setEditingProject(null);
     showToast(`تم حفظ وتحديث مشروع (${updated.title}) بنجاح`);
-  };
-
-  // Edit Event Handlers
-  const handleOpenEditEvent = (ev: EventItem) => {
-    setEditingEvent({ ...ev });
-    setEditingEventPrereqs((ev.prerequisites || []).join(', '));
-  };
-
-  const handleSaveEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingEvent) return;
-    const updated: EventItem = {
-      ...editingEvent,
-      capacity: Number(editingEvent.capacity) || 50,
-      prerequisites: editingEventPrereqs
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
-    };
-    dataService.saveEvent(updated);
-    setEvents(dataService.getEvents());
-    setEditingEvent(null);
-    showToast(`تم حفظ وتحديث فعالية (${updated.title}) بنجاح`);
   };
 
   if (!isOpen) return null;
@@ -823,6 +876,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
           </div>
         )}
 
+        {isAuthenticated && needsPasswordSetup && (
+          <div className="absolute inset-0 z-[90] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <form onSubmit={handleSetupPassword} className="w-full max-w-sm rounded-3xl glass-panel border border-white/10 p-6 space-y-4 text-right">
+              <h3 className="text-xl font-black text-white">عيّن كلمة المرور</h3>
+              <p className="text-sm text-gray-400">اختر كلمة مرور لحسابك لتدخل بها إلى لوحة التحكم لاحقاً.</p>
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder="كلمة المرور (8 خانات على الأقل)"
+                value={setupPassword}
+                onChange={(e) => setSetupPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-sm"
+                dir="ltr"
+              />
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder="تأكيد كلمة المرور"
+                value={setupPasswordConfirm}
+                onChange={(e) => setSetupPasswordConfirm(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-sm"
+                dir="ltr"
+              />
+              {setupError && <p role="alert" className="text-sm text-red-300">{setupError}</p>}
+              <button
+                type="submit"
+                disabled={isSavingSetup}
+                className="w-full py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-60 text-black font-bold text-sm cursor-pointer"
+              >
+                {isSavingSetup ? 'جاري الحفظ…' : 'حفظ كلمة المرور'}
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* Authentication Gate with Cryptographic SHA-256 & Brute-force Lockout */}
         {!isAuthenticated ? (
           <div className="p-8 sm:p-16 flex flex-col items-center justify-center text-center my-auto">
@@ -884,6 +972,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <ShieldCheck className="w-4 h-4" />
                 <span>{isVerifyingAuth ? 'جاري التحقق...' : 'تسجيل الدخول'}</span>
               </button>
+              <button
+                type="button"
+                onClick={() => void handleForgotPassword()}
+                className="w-full text-sm text-gray-400 hover:text-white underline underline-offset-4 cursor-pointer"
+              >
+                نسيت كلمة المرور؟
+              </button>
+              {resetMessage && <p role="status" className="text-sm text-cyan-200 text-center leading-relaxed">{resetMessage}</p>}
             </form>
           </div>
         ) : (
@@ -936,6 +1032,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </div>
                   )}
                   <nav className="space-y-1">
+                    {fullAccess && (<>
                     {/* Overview Hub */}
                     <button
                       type="button"
@@ -951,6 +1048,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       {!isSidebarCollapsed && <span className="flex-1 text-right">نظرة عامة والتحكم</span>}
                     </button>
 
+                    </>)}
                     {/* Applications */}
                     <button
                       type="button"
@@ -979,6 +1077,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       )}
                     </button>
 
+                    {fullAccess && (
+                      <SidebarNavItem
+                        active={activeTab === 'members'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<CreditCard className="w-4 h-4" />}
+                        label="العضويات والمدفوعات"
+                        onClick={() => setActiveTab('members')}
+                      />
+                    )}
+
                     {/* Events & Tickets */}
                     <button
                       type="button"
@@ -993,12 +1101,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       <Calendar className={`w-4 h-4 shrink-0 ${activeTab === 'events' ? 'text-cyan-400' : 'text-gray-400'}`} />
                       {!isSidebarCollapsed && (
                         <>
-                          <span className="flex-1 text-right">الفعاليات والحضور</span>
-                          <span className="text-[10px] font-mono text-gray-500">{events.length}</span>
+                          <span className="flex-1 text-right">الفعاليات والتسجيل</span>
                         </>
                       )}
                     </button>
 
+                    {fullAccess && (<>
                     {/* Complaints & Inquiries */}
                     <button
                       type="button"
@@ -1024,9 +1132,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         </>
                       )}
                     </button>
+                    </>)}
                   </nav>
                 </div>
 
+                {fullAccess && (<>
                 {/* Group 2: Content & CMS */}
                 <div>
                   {!isSidebarCollapsed && (
@@ -1092,6 +1202,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   </nav>
                 </div>
 
+                </>)}
                 {/* Group 3: System & Tech */}
                 <div>
                   {!isSidebarCollapsed && (
@@ -1100,6 +1211,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </div>
                   )}
                   <nav className="space-y-1">
+                    {fullAccess && (<>
                     {/* Site Settings & Visibility */}
                     <button
                       type="button"
@@ -1135,6 +1247,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       )}
                     </button>
 
+                    <SidebarNavItem
+                        active={activeTab === 'team'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<Users className="w-4 h-4" />}
+                        label="فريق الإدارة"
+                        onClick={() => setActiveTab('team')}
+                      />
+                      <SidebarNavItem
+                        active={activeTab === 'activity'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<Clock className="w-4 h-4" />}
+                        label="سجل النشاط"
+                        onClick={() => setActiveTab('activity')}
+                      />
+                      <SidebarNavItem
+                        active={activeTab === 'trash'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<Trash2 className="w-4 h-4" />}
+                        label="سلة المحذوفات"
+                        onClick={() => setActiveTab('trash')}
+                      />
+                    </>)}
                     {/* Security & Audit Logs */}
                     <button
                       type="button"
@@ -1167,7 +1301,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <div className="text-[11px] font-bold text-white truncate">
                             {adminEmail || 'مشرف معتمد'}
                           </div>
-                          <div className="text-[9px] font-mono text-emerald-400">جلسة نشطة</div>
+                          <div className="text-xs text-emerald-400">{adminRole ? ROLE_LABELS[adminRole] : 'جلسة نشطة'}</div>
                         </div>
                       </div>
                       <button
@@ -1208,8 +1342,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <h2 className="text-sm sm:text-base font-extrabold text-white">
                     {activeTab === 'overview' && 'نظرة عامة ومؤشرات القيادة'}
                     {activeTab === 'applications' && 'إدارة طلبات الانضمام للجان'}
+                    {activeTab === 'members' && 'العضويات والمدفوعات'}
+                    {activeTab === 'team' && 'فريق الإدارة والصلاحيات'}
+                    {activeTab === 'activity' && 'سجل النشاط'}
+                    {activeTab === 'trash' && 'سلة المحذوفات'}
                     {activeTab === 'projects' && 'المشاريع ودراسات الحالة الهندسية'}
-                    {activeTab === 'events' && 'أجندة الفعاليات والورش والتذاكر'}
+                    {activeTab === 'events' && 'الفعاليات والتسجيل للأعضاء'}
                     {activeTab === 'complaints' && 'صندوق الشكاوى والمقترحات'}
                     {activeTab === 'leadership' && 'الهيكل والكادر القيادي'}
                     {activeTab === 'colleges' && 'الكليات والتخصصات الهندسية'}
@@ -1349,27 +1487,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         </div>
                       </div>
 
-                      {/* KPI 3: Events & RSVPs */}
+                      {/* KPI 3: Memberships */}
                       <div
-                        onClick={() => setActiveTab('events')}
+                        onClick={() => setActiveTab('members')}
                         className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-purple-400/40 transition-all cursor-pointer group shadow-lg flex flex-col justify-between"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-gray-400">الفعاليات والتذاكر</span>
+                          <span className="text-xs font-bold text-gray-400">العضويات</span>
                           <div className="p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/30 text-purple-400 group-hover:scale-110 transition-transform">
-                            <Calendar className="w-4 h-4" />
+                            <CreditCard className="w-4 h-4" />
                           </div>
                         </div>
                         <div className="mt-3">
                           <div className="text-2xl sm:text-3xl font-black text-white">
-                            {events.length}
+                            {applications.filter((a) => a.status === 'تم القبول' && a.validUntil && new Date(a.validUntil).getTime() > Date.now()).length}
                           </div>
-                          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
-                            <span className="text-purple-300 font-bold">{tickets.length} تذكرة مسجلة</span>
+                          <div className="text-xs text-gray-400 mt-1 flex flex-wrap items-center gap-x-2">
+                            <span className="text-emerald-300 font-bold">
+                              {applications.filter((a) => a.membershipType === 'semester' && a.validUntil && new Date(a.validUntil).getTime() > Date.now()).length} فصلية
+                            </span>
+                            <span className="text-red-300">
+                              {applications.filter((a) => a.status === 'تم القبول' && a.validUntil && new Date(a.validUntil).getTime() <= Date.now()).length} منتهية
+                            </span>
                           </div>
                         </div>
                         <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-purple-400 group-hover:translate-x-[-2px] transition-transform">
-                          <span>جدول الفعاليات</span>
+                          <span>العضويات والمدفوعات</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
                       </div>
@@ -1422,10 +1565,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                         <button
                           type="button"
-                          onClick={() => {
-                            setShowAddEvent(true);
-                            setActiveTab('events');
-                          }}
+                          onClick={() => setActiveTab('events')}
                           className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5 text-purple-400" />
@@ -2097,7 +2237,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         </button>
                         <button
                           onClick={() => {
-                            if (window.confirm(`هل أنت متأكد من حذف مشروع (${proj.title})؟`)) {
+                            if (window.confirm(`حذف مشروع (${proj.title})؟ سينتقل إلى سلة المحذوفات.`)) {
+                              void trashContentItem('project', proj.id, `مشروع: ${proj.title}`, proj);
                               dataService.deleteProject(proj.id);
                               setProjects(dataService.getProjects());
                               showToast(`تم حذف مشروع (${proj.title})`);
@@ -2117,257 +2258,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
             {/* Tab 3: Events & Attendance Manager */}
             {activeTab === 'events' && (
-              <div className="flex-1 overflow-y-auto p-6">
-                {/* Public Website Events Section Visibility Toggle */}
-                <div className="mb-6 p-4 rounded-2xl bg-black/40 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl border ${settings.showEventsSection !== false ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400' : 'bg-amber-950/60 border-amber-500/30 text-amber-400'}`}>
-                      {settings.showEventsSection !== false ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-white flex items-center gap-2">
-                        <span>ظهور قسم الفعاليات في الموقع الرئيسي:</span>
-                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono ${settings.showEventsSection !== false ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'}`}>
-                          {settings.showEventsSection !== false ? 'معروض للزوار' : 'مخفي عن الزوار'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {settings.showEventsSection !== false
-                          ? 'قسم الفعاليات معروض حالياً في الصفحة الرئيسية للموقع.'
-                          : 'قسم الفعاليات مخفي حالياً عن زوار الموقع إلى حين جدولة فعاليات جديدة.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = {
-                        ...settings,
-                        showEventsSection: settings.showEventsSection === false ? true : false,
-                      };
-                      setSettings(updated);
-                      dataService.saveSettings(updated);
-                    }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow ${settings.showEventsSection !== false ? 'bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/40 text-amber-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
-                  >
-                    {settings.showEventsSection !== false ? (
-                      <>
-                        <EyeOff className="w-4 h-4" />
-                        <span>إخفاء قسم الفعاليات من الموقع</span>
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="w-4 h-4" />
-                        <span>إظهار قسم الفعاليات في الموقع</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-base font-bold text-white">إدارة الفعاليات وكشوف الحضور</h3>
-                    <p className="text-xs text-gray-400">إضافة فعاليات جديدة ومتابعة أسماء الطلاب المسجلين وتحضيرهم</p>
-                  </div>
-
-                  <button
-                    onClick={() => setShowAddEvent(true)}
-                    className="px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>إضافة فعالية جديدة</span>
-                  </button>
-                </div>
-
-                {/* Add Event Form Modal */}
-                {showAddEvent && (
-                  <form onSubmit={handleCreateEvent} className="p-6 rounded-2xl bg-black/50 border border-cyan-500/30 mb-8 space-y-4">
-                    <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                      <h4 className="text-sm font-bold text-white">إضافة فعالية أو هاكاثون جديد</h4>
-                      <button type="button" onClick={() => setShowAddEvent(false)} className="text-gray-400 hover:text-white">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-gray-300 mb-1 font-mono">عنوان الفعالية:</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="مثال: ورشة الأمن السيبراني التطبيقي"
-                          value={newEvent.title || ''}
-                          onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-gray-300 mb-1 font-mono">الموقع / القاعة:</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="مبنى 4 — قاعة الابتكار"
-                          value={newEvent.location || ''}
-                          onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs text-gray-300 mb-1 font-mono">التاريخ:</label>
-                        <input
-                          type="text"
-                          placeholder="24 نوفمبر 2026"
-                          value={newEvent.date || ''}
-                          onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-gray-300 mb-1 font-mono">التوقيت:</label>
-                        <input
-                          type="text"
-                          placeholder="05:00 م - 08:00 م"
-                          value={newEvent.time || ''}
-                          onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-gray-300 mb-1 font-mono">السعة الكلية للمقاعد:</label>
-                        <input
-                          type="number"
-                          placeholder="40"
-                          value={newEvent.capacity || ''}
-                          onChange={(e) => setNewEvent({ ...newEvent, capacity: Number(e.target.value) })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-md"
-                    >
-                      حفظ ونشر الفعالية فوراً
-                    </button>
-                  </form>
-                )}
-
-                {/* Events list with Registered Attendees selector */}
-                <div className="space-y-4">
-                  {events.map((ev) => {
-                    const eventTickets = tickets.filter((t) => t.eventId === ev.id);
-
-                    return (
-                      <div key={ev.id} className="p-5 rounded-2xl bg-black/30 border border-white/10">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-500/20">
-                                {ev.category}
-                              </span>
-                              <span className="text-xs text-gray-400 font-mono">
-                                {ev.date} — {ev.location}
-                              </span>
-                            </div>
-                            <h4 className="text-base font-bold text-white mt-1">{ev.title}</h4>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-cyan-400 px-3 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/30">
-                              {eventTickets.length} / {ev.capacity} مسجل
-                            </span>
-
-                            <button
-                              onClick={() => {
-                                const headers = ['رقم التذكرة', 'اسم الحاضر', 'الرقم الجامعي', 'تاريخ التسجيل', 'حالة الحضور'];
-                                const rows = eventTickets.map((t) => [
-                                  t.ticketNumber,
-                                  t.attendeeName,
-                                  t.studentId || '',
-                                  t.registeredAt,
-                                  t.checkedIn ? 'حاضر' : 'لم يحضر'
-                                ]);
-                                downloadCsv(`Attendance_${ev.title.replace(/\s+/g, '_')}`, headers, rows);
-                                showToast('تم تصدير كشف الحضور بنجاح');
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/40 text-xs font-bold text-emerald-300 flex items-center gap-1.5 transition-colors cursor-pointer"
-                              title="تصدير كشف حضور هذه الفعالية"
-                            >
-                              <Download className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>تصدير الكشف</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleOpenEditEvent(ev)}
-                              className="px-3 py-1.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-500/20 text-xs font-bold text-cyan-300 hover:text-cyan-200 border border-cyan-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
-                              title="تعديل بيانات الفعالية"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              <span>تعديل</span>
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                if (window.confirm(`هل أنت متأكد من حذف فعالية (${ev.title})؟`)) {
-                                  dataService.deleteEvent(ev.id);
-                                  setEvents(dataService.getEvents());
-                                  showToast(`تم حذف فعالية (${ev.title})`);
-                                }
-                              }}
-                              className="p-1.5 rounded-xl bg-red-950/40 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
-                              title="حذف الفعالية"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Attendee Roster */}
-                        <div className="mt-3">
-                          <div className="text-xs font-mono text-gray-400 mb-2">قائمة الطلاب الحاصلين على تذاكر:</div>
-                          {eventTickets.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                              {eventTickets.map((t) => (
-                                <div
-                                  key={t.id}
-                                  onClick={() => dataService.toggleCheckIn(t.id)}
-                                  className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between ${
-                                    t.checkedIn
-                                      ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-                                      : 'bg-black/40 border-white/5 text-gray-300 hover:border-white/20'
-                                  }`}
-                                >
-                                  <div>
-                                    <div className="font-bold text-white">{t.attendeeName}</div>
-                                    <div className="text-[10px] font-mono text-gray-400">{t.ticketNumber}</div>
-                                  </div>
-                                  <span className="text-[10px] font-mono">
-                                    {t.checkedIn ? '✓ تم التحضير' : 'لم يحضر بعد'}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-gray-500 font-mono">لا يوجد مسجلون في هذه الفعالية حتى الآن.</div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="flex-1 overflow-y-auto">
+                <EventsPanel role={adminRole} showToast={showToast} />
               </div>
             )}
 
-            {/* Tab: Leadership Management */}
-            {/* Tab: Complaints & Feedback Portal */}
             {activeTab === 'complaints' && (
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {/* Header Banner */}
@@ -3991,6 +3886,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             )}
 
             {/* Tab: Security & System Audit */}
+            {activeTab === 'members' && fullAccess && (
+              <div className="flex-1 overflow-y-auto">
+                <MembersPanel showToast={showToast} />
+              </div>
+            )}
+
+            {activeTab === 'team' && fullAccess && (
+              <div className="flex-1 overflow-y-auto">
+                <TeamPanel myRole={adminRole} myEmail={adminEmail} showToast={showToast} />
+              </div>
+            )}
+
+            {activeTab === 'activity' && fullAccess && (
+              <div className="flex-1 overflow-y-auto">
+                <ActivityPanel />
+              </div>
+            )}
+
+            {activeTab === 'trash' && fullAccess && (
+              <div className="flex-1 overflow-y-auto">
+                <TrashPanel showToast={showToast} onRestored={() => void dataService.loadAdminData().catch(() => undefined)} />
+              </div>
+            )}
+
             {activeTab === 'security' && (
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 <div>
@@ -5271,134 +5190,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
           </div>
         )}
 
-        {/* Event Edit Modal */}
-        {editingEvent && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-lg rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setEditingEvent(null)}
-                className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="mb-4">
-                <span className="font-mono text-xs text-cyan-400">تعديل بيانات الفعالية والورشة</span>
-                <h3 className="text-xl font-bold text-white mt-1">{editingEvent.title}</h3>
-              </div>
-
-              <form onSubmit={handleSaveEvent} className="space-y-4 text-xs">
-                <div>
-                  <label className="block text-gray-300 mb-1 font-mono">عنوان الفعالية:</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingEvent.title}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-gray-300 mb-1 font-mono">التصنيف:</label>
-                    <select
-                      value={editingEvent.category}
-                      onChange={(e) => setEditingEvent({ ...editingEvent, category: e.target.value as any })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
-                    >
-                      <option value="Workshop">ورشة عمل (Workshop)</option>
-                      <option value="Hackathon">هاكاثون وتحدي برمجي</option>
-                      <option value="Site Visit">زيارة ميدانية صناعية</option>
-                      <option value="Conference">مؤتمر ولقاء علمي</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1 font-mono">السعة الاستيعابية (عدد المقاعد):</label>
-                    <input
-                      type="number"
-                      required
-                      min={5}
-                      value={editingEvent.capacity}
-                      onChange={(e) => setEditingEvent({ ...editingEvent, capacity: Number(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-gray-300 mb-1 font-mono">التاريخ:</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingEvent.date}
-                      onChange={(e) => setEditingEvent({ ...editingEvent, date: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1 font-mono">التوقيت:</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingEvent.time}
-                      onChange={(e) => setEditingEvent({ ...editingEvent, time: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1 font-mono">الموقع / القاعة:</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingEvent.location}
-                      onChange={(e) => setEditingEvent({ ...editingEvent, location: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-300 mb-1 font-mono">وصف الفعالية وأهدافها:</label>
-                  <textarea
-                    rows={3}
-                    required
-                    value={editingEvent.description}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-300 mb-1 font-mono">المتطلبات المسبقة (مفصولة بفواصل):</label>
-                  <input
-                    type="text"
-                    value={editingEventPrereqs}
-                    onChange={(e) => setEditingEventPrereqs(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-3 border-t border-white/10">
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer shadow-md transition-all"
-                  >
-                    حفظ وتحديث بيانات الفعالية
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingEvent(null)}
-                    className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 text-xs cursor-pointer"
-                  >
-                    إلغاء
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       
         {/* Inspect & Action Complaint Modal */}
         {inspectComplaint && (
