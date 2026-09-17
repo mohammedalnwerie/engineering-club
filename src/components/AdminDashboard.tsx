@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { dataService } from '../services/dataService';
 import { getSupabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from '../services/supabaseClient';
 import { ClubLogo } from './ClubLogo';
@@ -15,7 +15,9 @@ import { EventsPanel } from './admin/EventsPanel';
 import { TeamPanel } from './admin/TeamPanel';
 import { ActivityPanel } from './admin/ActivityPanel';
 import { TrashPanel } from './admin/TrashPanel';
-import { SidebarNavItem } from './admin/ui';
+import { Button, SidebarNavItem } from './admin/ui';
+import { useConfirm } from './admin/controls';
+import { ApplicationsTable } from './admin/ApplicationsTable';
 import {
   fetchMyRole,
   hasFullAccess,
@@ -49,6 +51,7 @@ import {
   Calendar,
   Layers,
   CheckCircle,
+  XCircle,
   Clock,
   Search,
   Database,
@@ -320,6 +323,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   // Filters & Search
   const [appSearch, setAppSearch] = useState('');
   const [appStatusFilter, setAppStatusFilter] = useState<string>('all');
+  const [selectedApps, setSelectedApps] = useState<string[]>([]);
+  const { confirm, confirmDialog } = useConfirm();
 
   // Selected application for detail modal
   const [inspectApp, setInspectApp] = useState<StoredApplication | null>(null);
@@ -412,8 +417,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     }
   };
 
-  const handleDeleteComplaint = (id: string, ticket: string) => {
-    if (window.confirm(`حذف البلاغ (${ticket})؟ سينتقل إلى سلة المحذوفات لمدة 30 يوماً.`)) {
+  const handleDeleteComplaint = async (id: string, ticket: string) => {
+    if (
+      await confirm({
+        title: `حذف البلاغ (${ticket})؟`,
+        message: 'ينتقل إلى سلة المحذوفات لمدة 30 يوماً ويمكن استعادته.',
+        confirmLabel: 'حذف',
+        danger: true,
+      })
+    ) {
       dataService.deleteComplaint(id);
       setComplaints(dataService.getComplaints());
     setRecruitmentSettings(dataService.getRecruitmentSettings());
@@ -464,8 +476,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     );
   };
 
-  const handleResetLeaderAvatar = (leader: LeaderMember) => {
-    if (window.confirm(`هل أنت متأكد من حذف صورة (${leader.name}) واستعادة الصورة الافتراضية؟`)) {
+  const handleResetLeaderAvatar = async (leader: LeaderMember) => {
+    if (
+      await confirm({
+        title: `حذف صورة (${leader.name})؟`,
+        message: 'ترجع الصورة الافتراضية مكانها.',
+        confirmLabel: 'حذف الصورة',
+        danger: true,
+      })
+    ) {
       const updated: LeaderMember = { ...leader, avatar: '' };
       dataService.saveLeader(updated);
       setLeadership(dataService.getLeadership());
@@ -504,8 +523,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     showToast(`تم حفظ بيانات المهندس (${saved.name}) بنجاح`);
   };
 
-  const handleDeleteLeader = (id: string, name: string) => {
-    if (window.confirm(`حذف عضو الكادر (${name})؟ سينتقل إلى سلة المحذوفات.`)) {
+  const handleDeleteLeader = async (id: string, name: string) => {
+    if (
+      await confirm({
+        title: `حذف عضو الكادر (${name})؟`,
+        message: 'ينتقل إلى سلة المحذوفات ويمكن استعادته. لإخفائه عن الموقع فقط استخدم زر العين.',
+        confirmLabel: 'حذف',
+        danger: true,
+      })
+    ) {
       const leader = dataService.getLeadership().find((l) => l.id === id);
       if (leader) void trashContentItem('leader', id, `قيادة: ${leader.role}${leader.name ? ` — ${leader.name}` : ''}`, leader);
       dataService.deleteLeader(id);
@@ -734,6 +760,98 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setAuditLogs(getSecurityAuditLogs());
   };
 
+  // The applications the list is currently showing (search + both filters).
+  const filteredApplications = useMemo(() => {
+    const q = appSearch.trim().toLowerCase();
+    return applications.filter((app) => {
+      const matchesSearch =
+        !q ||
+        app.fullName.toLowerCase().includes(q) ||
+        (app.studentId && app.studentId.toLowerCase().includes(q)) ||
+        (app.id && app.id.toLowerCase().includes(q)) ||
+        `up-eng-${app.id.slice(-8)}`.toLowerCase().includes(q) ||
+        app.major.toLowerCase().includes(q) ||
+        app.targetCommittee.toLowerCase().includes(q) ||
+        app.email.toLowerCase().includes(q);
+      const matchesStatus = appStatusFilter === 'all' || app.status === appStatusFilter;
+      const matchesCommittee = appCommitteeFilter === 'الكل' || effectiveCommittee(app).includes(appCommitteeFilter);
+      return matchesSearch && matchesStatus && matchesCommittee;
+    });
+  }, [applications, appSearch, appStatusFilter, appCommitteeFilter]);
+
+  // Drop selected rows that the filters no longer show.
+  useEffect(() => {
+    setSelectedApps((prev) => {
+      const visible = new Set(filteredApplications.map((a) => a.id));
+      const next = prev.filter((id) => visible.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [filteredApplications]);
+
+  const toggleAppSelection = (id: string) =>
+    setSelectedApps((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const toggleAllApps = () =>
+    setSelectedApps((prev) => (prev.length === filteredApplications.length ? [] : filteredApplications.map((a) => a.id)));
+
+  const selectedApplications = () => applications.filter((a) => selectedApps.includes(a.id));
+
+  /** Bulk status change — unlike the single-row action it does not open the send-email modal. */
+  const applyStatusToSelected = async (status: StoredApplication['status']) => {
+    const targets = selectedApplications();
+    if (!targets.length) return;
+    const label = status === 'تم القبول' ? 'قبول' : status === 'مرفوض' ? 'رفض' : 'تحديد مقابلة لـ';
+    const ok = await confirm({
+      title: `${label} ${targets.length} طلب؟`,
+      message:
+        status === 'تم القبول'
+          ? 'سيصدر لكل واحد منهم رمز عضو وبطاقة. رسائل القبول تُرسل بعدها من زر «إرسال القبول».'
+          : undefined,
+      confirmLabel: 'تأكيد',
+      danger: status === 'مرفوض',
+    });
+    if (!ok) return;
+    targets.forEach((app) => dataService.updateApplicationStatus(app.id, status));
+    setSelectedApps([]);
+    showToast(`تم تحديث ${targets.length} طلب`);
+  };
+
+  const deleteSelectedApps = async () => {
+    const targets = selectedApplications();
+    if (!targets.length) return;
+    const ok = await confirm({
+      title: `حذف ${targets.length} طلب؟`,
+      message: 'تنتقل الطلبات إلى سلة المحذوفات لمدة 30 يوماً ويمكن استعادتها.',
+      confirmLabel: 'حذف',
+      danger: true,
+    });
+    if (!ok) return;
+    targets.forEach((app) => {
+      void trashContentItem('application', app.id, `طلب: ${app.fullName}`, app);
+      dataService.deleteApplication(app.id);
+    });
+    setSelectedApps([]);
+    showToast(`تم حذف ${targets.length} طلب`);
+  };
+
+  const exportApplications = (list: StoredApplication[]) => {
+    const headers = ['الاسم الكامل', 'الرقم الجامعي', 'الكلية', 'التخصص', 'السنة الدراسية', 'اللجنة المستهدفة', 'البريد الإلكتروني', 'رقم الهاتف', 'الحالة', 'تاريخ التقديم'];
+    const rows = list.map((a) => [
+      a.fullName,
+      a.studentId,
+      a.college,
+      a.major,
+      a.academicYear,
+      a.targetCommittee,
+      a.email,
+      a.phone || '',
+      a.status,
+      a.submittedAt ? new Date(a.submittedAt).toLocaleDateString('ar-SA') : '',
+    ]);
+    downloadCsv(`UP_Engineering_Club_Applicants_${new Date().toISOString().split('T')[0]}`, headers, rows);
+    showToast(`تم تصدير ${list.length} متقدم كملف Excel (CSV)`);
+  };
+
   // Status update
   const handleUpdateAppStatus = (id: string, status: StoredApplication['status']) => {
     dataService.updateApplicationStatus(id, status);
@@ -746,8 +864,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   };
 
   // Delete single application
-  const handleDeleteApplication = (id: string, name: string) => {
-    if (window.confirm(`حذف طلب الانضمام الخاص بـ (${name})؟ سينتقل إلى سلة المحذوفات لمدة 30 يوماً.`)) {
+  const handleDeleteApplication = async (id: string, name: string) => {
+    if (
+      await confirm({
+        title: `حذف طلب (${name})؟`,
+        message: 'ينتقل إلى سلة المحذوفات لمدة 30 يوماً ويمكن استعادته.',
+        confirmLabel: 'حذف',
+        danger: true,
+      })
+    ) {
       dataService.deleteApplication(id);
       showToast(`تم حذف طلب (${name}) بنجاح`);
       if (inspectApp?.id === id) {
@@ -757,10 +882,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   };
 
   // Batch delete all rejected applications
-  const handleDeleteAllRejected = () => {
+  const handleDeleteAllRejected = async () => {
     const rejectedList = applications.filter((a) => a.status === 'مرفوض');
     if (rejectedList.length === 0) return;
-    if (window.confirm(`هل أنت متأكد من حذف كافة الطلبات المرفوضة (${rejectedList.length} طلب) نهائياً من النظام؟`)) {
+    if (
+      await confirm({
+        title: `حذف كل الطلبات المرفوضة (${rejectedList.length} طلب)؟`,
+        message: 'هذا الحذف نهائي ولا تمر الطلبات على سلة المحذوفات.',
+        confirmLabel: 'حذف نهائي',
+        danger: true,
+      })
+    ) {
       const removedCount = dataService.deleteRejectedApplications();
       showToast(`تم حذف ${removedCount} طلب مرفوض بنجاح`);
       if (inspectApp?.status === 'مرفوض') {
@@ -842,17 +974,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-extrabold text-white text-base">لوحة الإدارة الهندسية المركزية</span>
-                <span className="hidden md:inline-flex items-center gap-1 font-mono text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold">
+                <span className="hidden md:inline-flex items-center gap-1 font-mono text-xs px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold">
                   {settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}
                 </span>
                 {isAuthenticated && (
-                  <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+                  <span className="hidden sm:inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     جلسة نشطة
                   </span>
                 )}
               </div>
-              <div className="font-mono text-[11px] text-gray-400">
+              <div className="font-mono text-xs text-gray-400">
                 {settings.universityNameAr || "جامعة فلسطين"} — إدارة المشاريع، الكادر القيادي، الفعاليات، الهوية والرؤية
               </div>
             </div>
@@ -881,6 +1013,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             </button>
           </div>
         </div>
+
+        {confirmDialog}
 
         {/* Global Toast Notification */}
         {toastMsg && (
@@ -1009,7 +1143,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               <div className="p-4 border-b border-white/10 flex items-center justify-between gap-2">
                 {!isSidebarCollapsed ? (
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-mono text-[#3FE7E3] font-bold tracking-wider uppercase flex items-center gap-1.5">
+                    <div className="text-xs font-mono text-[#3FE7E3] font-bold tracking-wider uppercase flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#3FE7E3] animate-pulse" />
                       <span>غرفة القيادة والتحكم</span>
                     </div>
@@ -1041,7 +1175,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 {/* Group 1: Operations & Students */}
                 <div>
                   {!isSidebarCollapsed && (
-                    <div className="px-3 text-[10px] font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
+                    <div className="px-3 text-xs font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
                       العمليات والطلبة
                     </div>
                   )}
@@ -1079,11 +1213,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <>
                           <span className="flex-1 text-right">طلبات الانضمام</span>
                           {applications.filter((a) => a.status === 'قيد المراجعة').length > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-bold">
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold">
                               {applications.filter((a) => a.status === 'قيد المراجعة').length} جديد
                             </span>
                           ) : (
-                            <span className="text-[10px] font-mono text-gray-500">
+                            <span className="text-xs font-mono text-gray-500">
                               {applications.length}
                             </span>
                           )}
@@ -1137,11 +1271,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <>
                           <span className="flex-1 text-right">صندوق الشكاوى</span>
                           {complaints.filter((c) => c.status === 'pending').length > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-mono text-[10px] font-black">
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-mono text-xs font-black">
                               {complaints.filter((c) => c.status === 'pending').length}
                             </span>
                           ) : (
-                            <span className="text-[10px] font-mono text-gray-500">{complaints.length}</span>
+                            <span className="text-xs font-mono text-gray-500">{complaints.length}</span>
                           )}
                         </>
                       )}
@@ -1154,7 +1288,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 {/* Group 2: Content & CMS */}
                 <div>
                   {!isSidebarCollapsed && (
-                    <div className="px-3 text-[10px] font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
+                    <div className="px-3 text-xs font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
                       محتوى الموقع
                     </div>
                   )}
@@ -1174,7 +1308,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       {!isSidebarCollapsed && (
                         <>
                           <span className="flex-1 text-right">المشاريع والمبادرات</span>
-                          <span className="text-[10px] font-mono text-gray-500">{projects.length}</span>
+                          <span className="text-xs font-mono text-gray-500">{projects.length}</span>
                         </>
                       )}
                     </button>
@@ -1194,7 +1328,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       {!isSidebarCollapsed && (
                         <>
                           <span className="flex-1 text-right">الكادر القيادي</span>
-                          <span className="text-[10px] font-mono text-gray-500">{leadership.length}</span>
+                          <span className="text-xs font-mono text-gray-500">{leadership.length}</span>
                         </>
                       )}
                     </button>
@@ -1220,7 +1354,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 {/* Group 3: System & Tech */}
                 <div>
                   {!isSidebarCollapsed && (
-                    <div className="px-3 text-[10px] font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
+                    <div className="px-3 text-xs font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
                       إعدادات النظام والتقنية
                     </div>
                   )}
@@ -1256,7 +1390,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       {!isSidebarCollapsed && (
                         <>
                           <span className="flex-1 text-right">السحابة والمشتركون</span>
-                          <span className="text-[10px] font-mono text-gray-500">{subscribers.length}</span>
+                          <span className="text-xs font-mono text-gray-500">{subscribers.length}</span>
                         </>
                       )}
                     </button>
@@ -1312,7 +1446,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                         <div className="truncate">
-                          <div className="text-[11px] font-bold text-white truncate">
+                          <div className="text-xs font-bold text-white truncate">
                             {adminEmail || 'مشرف معتمد'}
                           </div>
                           <div className="text-xs text-emerald-400">{adminRole ? ROLE_LABELS[adminRole] : 'جلسة نشطة'}</div>
@@ -1372,7 +1506,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="hidden md:flex items-center gap-2 font-mono text-[11px] text-gray-400 bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
+                  <div className="hidden md:flex items-center gap-2 font-mono text-xs text-gray-400 bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>Supabase Cloud: متصل</span>
                   </div>
@@ -1412,7 +1546,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       {/* Recruitment Quick Switch Card */}
                       <div className="p-4 rounded-2xl bg-black/50 border border-white/10 shrink-0 flex flex-col sm:flex-row sm:items-center gap-4 relative z-10">
                         <div>
-                          <div className="text-[11px] text-gray-400 font-mono">حالة استقبال طلبات الانضمام:</div>
+                          <div className="text-xs text-gray-400 font-mono">حالة استقبال طلبات الانضمام:</div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`w-2 h-2 rounded-full ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-[#35BC2B] animate-pulse' : 'bg-red-400'}`} />
                             <span className="font-bold text-sm text-white">
@@ -1462,13 +1596,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <div className="text-2xl sm:text-3xl font-black text-white">
                             {applications.length}
                           </div>
-                          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                          <div className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
                             <span className="text-emerald-400 font-bold">{applications.filter((a) => a.status === 'تم القبول').length} مقبول</span>
                             <span>•</span>
                             <span className="text-amber-400 font-bold">{applications.filter((a) => a.status === 'قيد المراجعة').length} معلق</span>
                           </div>
                         </div>
-                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-cyan-400 group-hover:translate-x-[-2px] transition-transform">
+                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-xs text-cyan-400 group-hover:translate-x-[-2px] transition-transform">
                           <span>إدارة الطلبات</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
@@ -1489,13 +1623,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <div className="text-2xl sm:text-3xl font-black text-white">
                             {complaints.length}
                           </div>
-                          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                          <div className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
                             <span className="text-amber-400 font-bold">
                               {complaints.filter((c) => c.status === 'pending').length} بلاغ بانتظار الرد
                             </span>
                           </div>
                         </div>
-                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-amber-400 group-hover:translate-x-[-2px] transition-transform">
+                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-xs text-amber-400 group-hover:translate-x-[-2px] transition-transform">
                           <span>فتح الصندوق</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
@@ -1525,7 +1659,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             </span>
                           </div>
                         </div>
-                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-purple-400 group-hover:translate-x-[-2px] transition-transform">
+                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-xs text-purple-400 group-hover:translate-x-[-2px] transition-transform">
                           <span>العضويات والمدفوعات</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
@@ -1546,11 +1680,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <div className="text-2xl sm:text-3xl font-black text-white">
                             {subscribers.length}
                           </div>
-                          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                          <div className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
                             <span className="text-emerald-400 font-bold">قائمة المهندسين المسجلة</span>
                           </div>
                         </div>
-                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-emerald-400 group-hover:translate-x-[-2px] transition-transform">
+                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-xs text-emerald-400 group-hover:translate-x-[-2px] transition-transform">
                           <span>السحابة والمشتركون</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
@@ -1662,7 +1796,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                 <div className="space-y-0.5">
                                   <div className="flex items-center gap-2">
                                     <span className="font-extrabold text-white text-sm">{app.fullName}</span>
-                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
                                       قيد المراجعة
                                     </span>
                                   </div>
@@ -1697,7 +1831,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         </div>
                         <div className="min-w-0">
                           <div className="font-bold text-white">قاعدة بيانات Supabase</div>
-                          <div className="text-[11px] text-gray-400 truncate mt-0.5">متصلة وجاهزة للمزامنة السحابية</div>
+                          <div className="text-xs text-gray-400 truncate mt-0.5">متصلة وجاهزة للمزامنة السحابية</div>
                         </div>
                       </div>
 
@@ -1707,7 +1841,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         </div>
                         <div className="min-w-0">
                           <div className="font-bold text-white">سيرفر الإيميل (Edge Function)</div>
-                          <div className="text-[11px] text-gray-400 truncate mt-0.5">إرسال القبول عبر Gmail مفعل</div>
+                          <div className="text-xs text-gray-400 truncate mt-0.5">إرسال القبول عبر Gmail مفعل</div>
                         </div>
                       </div>
 
@@ -1717,7 +1851,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         </div>
                         <div className="min-w-0">
                           <div className="font-bold text-white">جلسة المشرف المعتمدة</div>
-                          <div className="text-[11px] text-gray-400 truncate mt-0.5 font-mono">{adminEmail || 'admin-authenticated'}</div>
+                          <div className="text-xs text-gray-400 truncate mt-0.5 font-mono">{adminEmail || 'admin-authenticated'}</div>
                         </div>
                       </div>
                     </div>
@@ -1737,7 +1871,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-sm font-bold text-white">إدارة استقطاب اللجان والتسجيل</h4>
-                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-red-500/10 text-red-300 border-red-500/20'}`}>
+                          <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-red-500/10 text-red-300 border-red-500/20'}`}>
                             {recruitmentSettings.isGlobalRecruitmentOpen ? 'الاستقطاب العام: مفتوح' : 'الاستقطاب العام: متوقف'}
                           </span>
                         </div>
@@ -1782,12 +1916,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <div key={comm.id} className={`p-3.5 rounded-xl border transition-all ${isCommOpen ? 'bg-black/30 border-white/10' : 'bg-red-950/20 border-red-500/30'}`}>
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold text-white truncate max-w-[130px]">{comm.name}</span>
-                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${isCommOpen ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30' : 'bg-red-950/60 text-red-400 border-red-500/30'}`}>
+                            <span className={`text-xs font-mono px-2 py-0.5 rounded border ${isCommOpen ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30' : 'bg-red-950/60 text-red-400 border-red-500/30'}`}>
                               {isCommOpen ? 'مفتوح' : 'مغلق'}
                             </span>
                           </div>
 
-                          <div className="text-[11px] text-gray-400 mb-3 font-mono">
+                          <div className="text-xs text-gray-400 mb-3 font-mono">
                             المتقدمون: <strong className="text-white">{appCount}</strong> طالب/ة
                           </div>
 
@@ -1875,176 +2009,72 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                     {/* Delete all rejected button if any exist */}
                     {applications.some((a) => a.status === 'مرفوض') && (
-                      <button
-                        onClick={handleDeleteAllRejected}
-                        className="px-3 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-xs text-red-300 flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
-                        title="حذف جميع الطلبات التي تم رفضها دفعة واحدة"
+                      <Button
+                        variant="danger"
+                        icon={<Trash2 className="w-4 h-4" />}
+                        onClick={() => void handleDeleteAllRejected()}
+                        className="shrink-0"
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                        <span>حذف المرفوضين ({applications.filter((a) => a.status === 'مرفوض').length})</span>
-                      </button>
+                        حذف المرفوضين ({applications.filter((a) => a.status === 'مرفوض').length})
+                      </Button>
                     )}
 
-                    <button
-                      onClick={() => {
-                        const headers = ['الاسم الكامل', 'الرقم الجامعي', 'الكلية', 'التخصص', 'السنة الدراسية', 'اللجنة المستهدفة', 'البريد الإلكتروني', 'رقم الهاتف', 'الحالة', 'تاريخ التقديم'];
-                        const rows = applications.map((a) => [
-                          a.fullName,
-                          a.studentId,
-                          a.college,
-                          a.major,
-                          a.academicYear,
-                          a.targetCommittee,
-                          a.email,
-                          a.phone || '',
-                          a.status,
-                          a.submittedAt ? new Date(a.submittedAt).toLocaleDateString('ar-SA') : ''
-                        ]);
-                        downloadCsv(`UP_Engineering_Club_Applicants_${new Date().toISOString().split('T')[0]}`, headers, rows);
-                        showToast('تم تصدير ملف المتقدمين كـ CSV متوافق مع Excel بنجاح');
-                      }}
-                      className="px-4 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-950/70 border border-emerald-500/40 text-xs text-emerald-300 font-bold flex items-center gap-2 transition-colors cursor-pointer shrink-0 shadow-sm"
+                    <Button
+                      icon={<Download className="w-4 h-4" />}
+                      onClick={() => exportApplications(filteredApplications)}
+                      className="shrink-0"
                     >
-                      <Download className="w-4 h-4 text-emerald-400" />
-                      <span>تصدير Excel (CSV)</span>
-                    </button>
+                      تصدير Excel (CSV)
+                    </Button>
                   </div>
                 </div>
 
-                {/* Applications Table */}
-                <div className="rounded-2xl border border-white/10 overflow-hidden bg-black/30 overflow-x-auto">
-                  <table className="w-full min-w-[760px] table-fixed text-right text-xs">
-                    <thead className="bg-white/[0.04] text-gray-400 font-mono text-[11px] border-b border-white/10">
-                      <tr>
-                        <th className="p-3 w-[24%] text-right font-medium">اسم المتقدم</th>
-                        <th className="p-3 w-[15%] text-right font-medium">الرقم الجامعي</th>
-                        <th className="p-3 w-[22%] text-right font-medium">التخصص والكلية</th>
-                        <th className="p-3 w-[17%] text-right font-medium">اللجنة والمسمى</th>
-                        <th className="p-3 w-[10%] text-center font-medium">حالة الطلب</th>
-                        <th className="p-3 w-[12%] text-center font-medium">الإجراءات</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-gray-300">
-                      {applications
-                        .filter((app) => {
-                          const q = appSearch.trim().toLowerCase();
-                          const matchesSearch =
-                            !q ||
-                            app.fullName.toLowerCase().includes(q) ||
-                            (app.studentId && app.studentId.toLowerCase().includes(q)) ||
-                            (app.id && app.id.toLowerCase().includes(q)) ||
-                            `up-eng-${app.id.slice(-8)}`.toLowerCase().includes(q) ||
-                            app.major.toLowerCase().includes(q) ||
-                            app.targetCommittee.toLowerCase().includes(q) ||
-                            app.email.toLowerCase().includes(q);
-                          const matchesFilter =
-                            appStatusFilter === 'all' || app.status === appStatusFilter;
-                          const matchesCommittee =
-                            appCommitteeFilter === 'الكل' ||
-                            effectiveCommittee(app).includes(appCommitteeFilter);
-                          return matchesSearch && matchesFilter && matchesCommittee;
-                        })
-                        .map((app) => (
-                          <tr key={app.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="p-3 w-[24%] text-right">
-                              <div className="font-bold text-white truncate">{app.fullName}</div>
-                              <div className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">{app.email}</div>
-                            </td>
-                            <td className="p-3 w-[15%] text-right font-mono text-cyan-400 font-semibold">{app.studentId}</td>
-                            <td className="p-3 w-[22%] text-right">
-                              <div className="truncate text-gray-200">{app.major}</div>
-                              <div className="text-[10px] text-gray-400">{app.academicYear}</div>
-                            </td>
-                            <td className="p-3 w-[17%] text-right">
-                              <div className="text-cyan-300 font-medium truncate">{effectiveCommittee(app)}</div>
-                              <div className={`text-xs truncate ${app.organizationalRole ? 'text-emerald-300' : 'text-gray-500'}`}>
-                                {app.organizationalRole || 'بدون مسمى'}
-                              </div>
-                            </td>
-                            <td className="p-3 w-[10%] text-center">
-                              <span
-                                className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                  app.status === 'تم القبول'
-                                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
-                                    : app.status === 'مقابلة مجدولة'
-                                    ? 'bg-blue-950 text-blue-400 border border-blue-500/30'
-                                    : app.status === 'مرفوض'
-                                    ? 'bg-red-950 text-red-400 border border-red-500/30'
-                                    : 'bg-amber-950 text-amber-400 border border-amber-500/30'
-                                }`}
-                              >
-                                {app.status}
-                              </span>
-                            </td>
-                            <td className="p-3 w-[12%] text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  onClick={() => setInspectApp(app)}
-                                  className="p-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/20 text-gray-300 hover:text-cyan-300 transition-colors"
-                                  title="معاينة الملف الكامل"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
+                {/* Bulk actions bar — appears once rows are selected */}
+                {selectedApps.length > 0 && (
+                  <div className="sticky top-0 z-20 mb-4 p-3 rounded-2xl border border-cyan-400/40 bg-[#0C1230]/95 backdrop-blur flex flex-wrap items-center gap-2 shadow-lg">
+                    <span className="text-sm font-bold text-white ml-1">محدد: {selectedApps.length}</span>
+                    <Button
+                      size="sm"
+                      variant="success"
+                      icon={<CheckCircle className="w-4 h-4" />}
+                      onClick={() => void applyStatusToSelected('تم القبول')}
+                    >
+                      قبول
+                    </Button>
+                    <Button size="sm" icon={<Clock className="w-4 h-4" />} onClick={() => void applyStatusToSelected('مقابلة مجدولة')}>
+                      تحديد مقابلة
+                    </Button>
+                    <Button size="sm" icon={<XCircle className="w-4 h-4" />} onClick={() => void applyStatusToSelected('مرفوض')}>
+                      رفض
+                    </Button>
+                    <Button
+                      size="sm"
+                      icon={<Download className="w-4 h-4" />}
+                      onClick={() => exportApplications(applications.filter((a) => selectedApps.includes(a.id)))}
+                    >
+                      تصدير المحدد
+                    </Button>
+                    <Button size="sm" variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => void deleteSelectedApps()}>
+                      حذف
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedApps([])} className="mr-auto">
+                      إلغاء التحديد
+                    </Button>
+                  </div>
+                )}
 
-                                {app.status === 'تم القبول' && (
-                                  <>
-                                    <button
-                                      onClick={() => setDispatchModalApp(app)}
-                                      className="p-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-colors"
-                                      title="إرسال رسالة القبول وبطاقة العضوية (إيميل / واتساب)"
-                                    >
-                                      <Send className="w-3.5 h-3.5 text-emerald-400" />
-                                    </button>
-                                    <button
-                                      onClick={() => setViewingBadgeApp(app)}
-                                      className="p-1.5 rounded-lg bg-cyan-950/60 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-colors"
-                                      title="إصدار وعرض بطاقة العضوية الرقمية"
-                                    >
-                                      <CreditCard className="w-3.5 h-3.5" />
-                                    </button>
-                                  </>
-                                )}
-
-                                {app.status === 'تم القبول' && app.targetCommittee && !app.targetCommittee.includes('عامة') && (
-                                  <button
-                                    onClick={() => setViewingCommitteeApp(app)}
-                                    className="p-1.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-colors"
-                                    title="إصدار وعرض كرت عضو اللجنة التنفيذية الرسمية"
-                                  >
-                                    <Award className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-
-                                <button
-                                  onClick={() => handleUpdateAppStatus(app.id, 'تم القبول')}
-                                  className="p-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-500/20 text-emerald-400 transition-colors"
-                                  title="قبول الطالب"
-                                >
-                                  <CheckCircle className="w-3.5 h-3.5" />
-                                </button>
-
-                                <button
-                                  onClick={() => handleUpdateAppStatus(app.id, 'مقابلة مجدولة')}
-                                  className="p-1.5 rounded-lg bg-blue-950/40 hover:bg-blue-500/20 text-blue-400 transition-colors"
-                                  title="تحديد موعد مقابلة"
-                                >
-                                  <Clock className="w-3.5 h-3.5" />
-                                </button>
-
-                                <button
-                                  onClick={() => handleDeleteApplication(app.id, app.fullName)}
-                                  className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
-                                  title="حذف هذا الطلب نهائياً"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
+                <ApplicationsTable
+                  apps={filteredApplications}
+                  selected={selectedApps}
+                  onToggle={toggleAppSelection}
+                  onToggleAll={toggleAllApps}
+                  onInspect={setInspectApp}
+                  onDispatch={setDispatchModalApp}
+                  onBadge={setViewingBadgeApp}
+                  onCommitteeBadge={setViewingCommitteeApp}
+                  onStatus={(app, status) => handleUpdateAppStatus(app.id, status)}
+                  onDelete={(app) => void handleDeleteApplication(app.id, app.fullName)}
+                />
               </div>
             )}
 
@@ -2231,10 +2261,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <div key={proj.id} className="p-4 rounded-2xl bg-black/40 border border-white/10 flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30">
+                          <span className="font-mono text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30">
                             {proj.category.toUpperCase()}
                           </span>
-                          <span className="font-mono text-[10px] text-gray-400">● {proj.status}</span>
+                          <span className="font-mono text-xs text-gray-400">● {proj.status}</span>
                         </div>
                         <h4 className="text-sm font-bold text-white">{proj.title}</h4>
                         <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{proj.tagline}</p>
@@ -2250,8 +2280,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <span>تعديل</span>
                         </button>
                         <button
-                          onClick={() => {
-                            if (window.confirm(`حذف مشروع (${proj.title})؟ سينتقل إلى سلة المحذوفات.`)) {
+                          onClick={async () => {
+                            if (
+                              await confirm({
+                                title: `حذف مشروع (${proj.title})؟`,
+                                message: 'ينتقل إلى سلة المحذوفات ويمكن استعادته.',
+                                confirmLabel: 'حذف',
+                                danger: true,
+                              })
+                            ) {
                               void trashContentItem('project', proj.id, `مشروع: ${proj.title}`, proj);
                               dataService.deleteProject(proj.id);
                               setProjects(dataService.getProjects());
@@ -2334,23 +2371,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 {/* Quick Summary Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10">
-                    <div className="text-[11px] font-mono text-gray-400">إجمالي البلاغات</div>
+                    <div className="text-xs font-mono text-gray-400">إجمالي البلاغات</div>
                     <div className="text-xl font-black text-white mt-0.5">{complaints.length}</div>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30">
-                    <div className="text-[11px] font-mono text-amber-300">قيد المراجعة والانتظار</div>
+                    <div className="text-xs font-mono text-amber-300">قيد المراجعة والانتظار</div>
                     <div className="text-xl font-black text-amber-400 mt-0.5">
                       {complaints.filter((c) => c.status === 'pending').length}
                     </div>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-blue-950/20 border border-blue-500/30">
-                    <div className="text-[11px] font-mono text-blue-300">جاري المتابعة والمعالجة</div>
+                    <div className="text-xs font-mono text-blue-300">جاري المتابعة والمعالجة</div>
                     <div className="text-xl font-black text-blue-400 mt-0.5">
                       {complaints.filter((c) => c.status === 'in-progress').length}
                     </div>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30">
-                    <div className="text-[11px] font-mono text-emerald-300">تم الحل والمعالجة</div>
+                    <div className="text-xs font-mono text-emerald-300">تم الحل والمعالجة</div>
                     <div className="text-xl font-black text-emerald-400 mt-0.5">
                       {complaints.filter((c) => c.status === 'resolved').length}
                     </div>
@@ -2429,10 +2466,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                   {/* Category Filter */}
                   <div className="flex items-center gap-2 pt-2 border-t border-white/5 text-xs text-gray-400">
-                    <span className="font-mono text-[11px] text-gray-500">التصنيف:</span>
+                    <span className="font-mono text-xs text-gray-500">التصنيف:</span>
                     <button
                       onClick={() => setComplaintsCategoryFilter('all')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] ${
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
                         complaintsCategoryFilter === 'all'
                           ? 'bg-white/10 text-white font-bold'
                           : 'text-gray-400 hover:text-gray-200'
@@ -2442,7 +2479,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </button>
                     <button
                       onClick={() => setComplaintsCategoryFilter('complaint')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] ${
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
                         complaintsCategoryFilter === 'complaint'
                           ? 'bg-red-950/60 text-red-300 border border-red-500/40 font-bold'
                           : 'text-gray-400 hover:text-gray-200'
@@ -2452,7 +2489,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </button>
                     <button
                       onClick={() => setComplaintsCategoryFilter('suggestion')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] ${
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
                         complaintsCategoryFilter === 'suggestion'
                           ? 'bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 font-bold'
                           : 'text-gray-400 hover:text-gray-200'
@@ -2462,7 +2499,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </button>
                     <button
                       onClick={() => setComplaintsCategoryFilter('inquiry')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] ${
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
                         complaintsCategoryFilter === 'inquiry'
                           ? 'bg-purple-950/60 text-purple-300 border border-purple-500/40 font-bold'
                           : 'text-gray-400 hover:text-gray-200'
@@ -2528,7 +2565,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                               {/* Category Badge */}
                               <span
-                                className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                                className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
                                   item.category === 'complaint'
                                     ? 'bg-red-950/60 text-red-300 border-red-500/40'
                                     : item.category === 'suggestion'
@@ -2545,7 +2582,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                               {/* Status Badge */}
                               <span
-                                className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                                className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
                                   isPending
                                     ? 'bg-amber-950/60 text-amber-300 border-amber-500/40 animate-pulse'
                                     : isInProgress
@@ -2566,7 +2603,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                               {/* Photo Attachment Badge */}
                               {item.attachmentImage && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 font-mono">
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 font-mono">
                                   <Camera className="w-3 h-3 text-cyan-400" />
                                   <span>مرفق صورة 📸</span>
                                 </span>
@@ -2637,7 +2674,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           {/* Admin Notes Preview */}
                           {item.adminNotes && (
                             <div className="mt-2.5 p-2.5 rounded-xl bg-cyan-950/30 border border-cyan-500/30 text-xs">
-                              <div className="font-bold text-cyan-300 font-mono text-[11px] mb-1">
+                              <div className="font-bold text-cyan-300 font-mono text-xs mb-1">
                                 💬 رد وملاحظات الإدارة:
                               </div>
                               <div className="text-gray-200 leading-relaxed">{item.adminNotes}</div>
@@ -2687,7 +2724,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] font-mono text-amber-300/80">رئاسة ومجلس الإدارة</div>
+                      <div className="text-xs font-mono text-amber-300/80">رئاسة ومجلس الإدارة</div>
                       <div className="text-base font-bold text-white mt-0.5">
                         {leadership.filter((l) => l.tier === 'executive').length} قيادات
                       </div>
@@ -2699,7 +2736,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                   <div className="p-3.5 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] font-mono text-cyan-300/80">رؤساء اللجان التنفيذية</div>
+                      <div className="text-xs font-mono text-cyan-300/80">رؤساء اللجان التنفيذية</div>
                       <div className="text-base font-bold text-white mt-0.5">
                         {leadership.filter((l) => l.tier === 'committee-lead').length} لجان
                       </div>
@@ -2711,7 +2748,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                   <div className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/30 flex items-center justify-between">
                     <div>
-                      <div className="text-[11px] font-mono text-purple-300/80">تغيير الصور الفوري</div>
+                      <div className="text-xs font-mono text-purple-300/80">تغيير الصور الفوري</div>
                       <div className="text-xs text-gray-300 mt-0.5">
                         انقر على أيقونة الكاميرا على أي بطاقة
                       </div>
@@ -2850,7 +2887,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                   {leader.name || <span className="text-gray-500">بدون اسم</span>}
                                 </h4>
                                 {leader.hidden && (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-950/50 border border-amber-500/40 rounded-md px-1.5 py-0.5 mt-1">
+                                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-300 bg-amber-950/50 border border-amber-500/40 rounded-md px-1.5 py-0.5 mt-1">
                                     <EyeOff className="w-3 h-3" /> مخفي عن الموقع
                                   </span>
                                 )}
@@ -2858,7 +2895,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                   {leader.role}
                                 </div>
                                 <span
-                                  className={`inline-block font-mono text-[10px] px-2 py-0.5 rounded-md mt-1.5 border ${
+                                  className={`inline-block font-mono text-xs px-2 py-0.5 rounded-md mt-1.5 border ${
                                     isPresident
                                       ? 'bg-amber-950/60 text-amber-300 border-amber-500/40'
                                       : leader.tier === 'executive'
@@ -2883,7 +2920,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               <div className="truncate">
                                 <span className="text-gray-500">القسم:</span> {leader.department}
                               </div>
-                              <div className="truncate text-[11px] text-gray-400">
+                              <div className="truncate text-xs text-gray-400">
                                 <span className="text-gray-500">البريد:</span> {leader.email}
                               </div>
                             </div>
@@ -2893,7 +2930,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               {leader.skills.slice(0, 4).map((skill, sIdx) => (
                                 <span
                                   key={sIdx}
-                                  className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/5"
+                                  className="text-xs font-mono px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/5"
                                 >
                                   {skill}
                                 </span>
@@ -2947,7 +2984,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <div className="mt-12 pt-8 border-t border-white/10">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
                     <div>
-                      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] mb-1.5">
+                      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-cyan-300 font-mono text-xs mb-1.5">
                         <Users className="w-3.5 h-3.5 text-cyan-400" />
                         <span>فرق عمل اللجان</span>
                       </div>
@@ -2998,7 +3035,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               {members.length} أعضاء
                             </span>
                           </h5>
-                          <span className="text-[11px] text-gray-400 font-mono hidden sm:inline">
+                          <span className="text-xs text-gray-400 font-mono hidden sm:inline">
                             {isEvt ? 'EVENTS & HACKATHONS' : isRel ? 'RELATIONS & TRAINING' : 'MEDIA & CONTENT'}
                           </span>
                         </div>
@@ -3019,12 +3056,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                     <span className="text-xs font-bold text-white truncate max-w-[160px]">
                                       {member.fullName}
                                     </span>
-                                    <span className="text-[10px] font-mono text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30">
+                                    <span className="text-xs font-mono text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30">
                                       {member.studentId}
                                     </span>
                                   </div>
-                                  <div className="text-[11px] text-gray-300 truncate">{member.major}</div>
-                                  <div className="text-[10px] text-gray-400 truncate mb-3">{member.college} — {member.academicYear}</div>
+                                  <div className="text-xs text-gray-300 truncate">{member.major}</div>
+                                  <div className="text-xs text-gray-400 truncate mb-3">{member.college} — {member.academicYear}</div>
                                 </div>
 
                                 <button
@@ -3093,10 +3130,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       >
                         <div>
                           <div className="flex items-start justify-between gap-2 mb-2">
-                            <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                            <span className="font-mono text-xs px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
                               {col.code}
                             </span>
-                            <span className="font-mono text-[11px] text-gray-400">
+                            <span className="font-mono text-xs text-gray-400">
                               {col.labsCount} مختبرات متطورة
                             </span>
                           </div>
@@ -3115,9 +3152,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               }}
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="text-[11px] text-gray-400">منسق الكلية:</div>
+                              <div className="text-xs text-gray-400">منسق الكلية:</div>
                               <div className="text-xs font-bold text-white truncate">{col.coordinator.name}</div>
-                              <div className="text-[10px] text-cyan-400 truncate">{col.coordinator.title}</div>
+                              <div className="text-xs text-cyan-400 truncate">{col.coordinator.title}</div>
                             </div>
                           </div>
 
@@ -3148,10 +3185,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       >
                         <div>
                           <div className="flex items-center justify-between gap-2 mb-2">
-                            <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                            <span className="font-mono text-xs px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
                               {maj.code}
                             </span>
-                            <span className="text-[11px] text-gray-400 truncate max-w-[150px]">
+                            <span className="text-xs text-gray-400 truncate max-w-[150px]">
                               {maj.collegeName}
                             </span>
                           </div>
@@ -3161,12 +3198,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <p className="text-xs text-gray-300 mb-3 line-clamp-2">{maj.description}</p>
 
                           <div className="mb-3">
-                            <div className="text-[10px] text-gray-500 font-mono mb-1">التقنيات والأدوات:</div>
+                            <div className="text-xs text-gray-500 font-mono mb-1">التقنيات والأدوات:</div>
                             <div className="flex flex-wrap gap-1">
                               {maj.techStack.map((tech, tIdx) => (
                                 <span
                                   key={tIdx}
-                                  className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/5"
+                                  className="text-xs font-mono px-2 py-0.5 rounded bg-white/5 text-gray-300 border border-white/5"
                                 >
                                   {tech}
                                 </span>
@@ -3208,10 +3245,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-white">التحكم في ظهور وإخفاء أقسام الموقع الرئيسي</h4>
-                        <p className="text-[11px] text-gray-400">إظهار أو إخفاء الأقسام التفاعلية في الموقع وشريط التنقل فورياً بنقرة زر واحدة</p>
+                        <p className="text-xs text-gray-400">إظهار أو إخفاء الأقسام التفاعلية في الموقع وشريط التنقل فورياً بنقرة زر واحدة</p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-[#381C4A] text-[#3FE7E3] border border-[#3FE7E3]/30 w-fit">
+                    <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-[#381C4A] text-[#3FE7E3] border border-[#3FE7E3]/30 w-fit">
                       SECTIONS VISIBILITY
                     </span>
                   </div>
@@ -3221,11 +3258,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <div className={`p-4 rounded-2xl border transition-all ${settings.showEventsSection !== false ? 'bg-black/40 border-emerald-500/30' : 'bg-black/60 border-amber-500/30'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold text-white">أجندة الفعاليات والورش</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${settings.showEventsSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${settings.showEventsSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
                           {settings.showEventsSection !== false ? 'معروض' : 'مخفي'}
                         </span>
                       </div>
-                      <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                      <p className="text-xs text-gray-400 mb-3 leading-relaxed">
                         جدول ورش العمل والفعاليات والهاكاثونات الهندسية ورابطها بالقائمة.
                       </p>
                       <button
@@ -3258,11 +3295,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <div className={`p-4 rounded-2xl border transition-all ${settings.showProjectsSection !== false ? 'bg-black/40 border-emerald-500/30' : 'bg-black/60 border-amber-500/30'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold text-white">المشاريع والمبادرات</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${settings.showProjectsSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${settings.showProjectsSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
                           {settings.showProjectsSection !== false ? 'معروض' : 'مخفي'}
                         </span>
                       </div>
-                      <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                      <p className="text-xs text-gray-400 mb-3 leading-relaxed">
                         المبادرات والمشاريع قيد التأسيس ومراحل تطوير النماذج للطلبة.
                       </p>
                       <button
@@ -3295,11 +3332,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <div className={`p-4 rounded-2xl border transition-all ${settings.showLiveFeedSection !== false ? 'bg-black/40 border-emerald-500/30' : 'bg-black/60 border-amber-500/30'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold text-white">مهندس الشهر والتحديثات</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${settings.showLiveFeedSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${settings.showLiveFeedSection !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
                           {settings.showLiveFeedSection !== false ? 'معروض' : 'مخفي'}
                         </span>
                       </div>
-                      <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                      <p className="text-xs text-gray-400 mb-3 leading-relaxed">
                         قسم "كُن أنت مهندس الشهر" وبطاقة الترشيح ونبض وتحديثات النادي الحية.
                       </p>
                       <button
@@ -3341,7 +3378,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <ClubLogo variant="emblem" size="sm" />
                         <div>
                           <h4 className="text-sm font-bold text-white">الهوية الرسمية والرؤية والرسالة (UP Charter)</h4>
-                          <p className="text-[11px] text-gray-400">تحديث نصوص الرؤية والرسالة والشعار المعتمد</p>
+                          <p className="text-xs text-gray-400">تحديث نصوص الرؤية والرسالة والشعار المعتمد</p>
                         </div>
                       </div>
                       {settingsSavedMsg && (
@@ -3461,7 +3498,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <Eye className="w-4 h-4 text-emerald-400" />
                           <h4 className="text-sm font-bold text-white">المعاينة الحية للهوية الرسمية</h4>
                         </div>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
                           LIVE PREVIEW
                         </span>
                       </div>
@@ -3469,33 +3506,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       {/* Official Logo Banner */}
                       <div className="p-4 rounded-xl bg-[#381C4A]/40 border border-[#7F1AB2]/30 flex items-center justify-between gap-4 mb-4">
                         <ClubLogo variant="horizontal" size="md" />
-                        <span className="text-[11px] font-mono text-emerald-300 font-bold px-2.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40">
+                        <span className="text-xs font-mono text-emerald-300 font-bold px-2.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40">
                           {settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}
                         </span>
                       </div>
 
                       {/* Vision Snippet */}
                       <div className="p-3.5 rounded-xl bg-black/40 border border-emerald-500/20 mb-3">
-                        <div className="text-[11px] font-bold text-emerald-400 mb-1">الرؤية:</div>
+                        <div className="text-xs font-bold text-emerald-400 mb-1">الرؤية:</div>
                         <p className="text-xs text-gray-300 leading-relaxed">{settings.vision}</p>
                       </div>
 
                       {/* Mission Snippet */}
                       <div className="p-3.5 rounded-xl bg-black/40 border border-cyan-500/20 mb-3">
-                        <div className="text-[11px] font-bold text-cyan-400 mb-1">الرسالة:</div>
+                        <div className="text-xs font-bold text-cyan-400 mb-1">الرسالة:</div>
                         <p className="text-xs text-gray-300 leading-relaxed line-clamp-3">{settings.mission}</p>
                       </div>
 
                       {/* Values Chips */}
                       <div>
-                        <div className="text-[11px] font-mono text-gray-400 mb-1.5">القيم الخمس المعتمدة:</div>
+                        <div className="text-xs font-mono text-gray-400 mb-1.5">القيم الخمس المعتمدة:</div>
                         <div className="flex flex-wrap gap-1.5">
                           {(settings.values || []).map((v, idx) => {
                             const vName = typeof v === 'string' ? v : v.name;
                             return (
                               <span
                                 key={idx}
-                                className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-emerald-950/50 text-emerald-300 border border-emerald-500/30 font-mono"
+                                className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-950/50 text-emerald-300 border border-emerald-500/30 font-mono"
                               >
                                 ★ {vName}
                               </span>
@@ -3505,7 +3542,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-white/5 text-[11px] font-mono text-gray-500 flex justify-between items-center">
+                    <div className="pt-3 border-t border-white/5 text-xs font-mono text-gray-500 flex justify-between items-center">
                       <span>{settings.universityNameAr || "جامعة فلسطين"}</span>
                       <span>{settings.sloganEn || "ENGINEERING TODAY .. IMPACT TOMORROW"}</span>
                     </div>
@@ -3773,7 +3810,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <label className="block text-[10px] text-gray-400 mb-1 font-mono">عدد المشاريع:</label>
+                        <label className="block text-xs text-gray-400 mb-1 font-mono">عدد المشاريع:</label>
                         <input
                           type="number"
                           value={spotlight.projectsCount}
@@ -3782,7 +3819,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-gray-400 mb-1 font-mono">عدد الجوائز:</label>
+                        <label className="block text-xs text-gray-400 mb-1 font-mono">عدد الجوائز:</label>
                         <input
                           type="number"
                           value={spotlight.awardsCount}
@@ -3791,7 +3828,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-gray-400 mb-1 font-mono">الأوراق المنشورة:</label>
+                        <label className="block text-xs text-gray-400 mb-1 font-mono">الأوراق المنشورة:</label>
                         <input
                           type="number"
                           value={spotlight.publicationsCount}
@@ -3904,8 +3941,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </button>
 
                     <button
-                      onClick={() => {
-                        if (window.confirm('سيتم حذف كل تعديلات محتوى الموقع (الإعدادات، المشاريع، الفعاليات، القيادة...) من قاعدة البيانات والرجوع للمحتوى الأصلي. الطلبات والشكاوى لن تُحذف. هل أنت متأكد؟')) {
+                      onClick={async () => {
+                        if (
+                          await confirm({
+                            title: 'استعادة المحتوى الأصلي للموقع؟',
+                            message:
+                              'يُحذف كل تعديلات المحتوى (الإعدادات، المشاريع، الفعاليات، القيادة...) ويرجع الموقع لمحتواه الأصلي. الطلبات والشكاوى لا تُحذف.',
+                            confirmLabel: 'استعادة',
+                            danger: true,
+                          })
+                        ) {
                           dataService.resetDefaults();
                         }
                       }}
@@ -3964,7 +4009,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <Lock className="w-4 h-4 text-cyan-400" />
                         <span>تغيير كلمة مرور حسابك</span>
                       </h4>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
                         SUPABASE AUTH
                       </span>
                     </div>
@@ -4038,7 +4083,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <ShieldAlert className="w-4 h-4 text-amber-400" />
                         <span>سجل الرقابة والعمليات الأمنية (Security Audit Trail)</span>
                       </h4>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-400 mt-0.5">
                         يوثق النظام تلقائياً عمليات الدخول، المحاولات الفاشلة، وتصدير البيانات لحماية خصوصية النادي.
                       </p>
                     </div>
@@ -4063,7 +4108,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <div className="overflow-x-auto">
                       <table className="w-full text-right text-xs">
                         <thead>
-                          <tr className="border-b border-white/10 text-gray-400 font-mono text-[11px]">
+                          <tr className="border-b border-white/10 text-gray-400 font-mono text-xs">
                             <th className="pb-2">الوقت والتاريخ</th>
                             <th className="pb-2">نوع العملية</th>
                             <th className="pb-2">تفاصيل العملية</th>
@@ -4072,12 +4117,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <tbody className="divide-y divide-white/5 text-gray-300 font-sans">
                           {auditLogs.map((log) => (
                             <tr key={log.id} className="hover:bg-white/[0.02]">
-                              <td className="py-2.5 font-mono text-[10px] text-gray-400 whitespace-nowrap">
+                              <td className="py-2.5 font-mono text-xs text-gray-400 whitespace-nowrap">
                                 {new Date(log.timestamp).toLocaleString('ar-SA')}
                               </td>
                               <td className="py-2.5 whitespace-nowrap">
                                 <span
-                                  className={`inline-block px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
+                                  className={`inline-block px-2 py-0.5 rounded font-mono text-xs font-bold ${
                                     log.action === 'LOGIN_SUCCESS'
                                       ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
                                       : log.action === 'LOGIN_FAILED'
@@ -4138,7 +4183,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <span className="text-gray-500">المهارات المحددة:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {inspectApp.skills.map((s, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded bg-cyan-950/60 text-[10px] text-cyan-300 border border-cyan-500/30">
+                      <span key={i} className="px-2 py-0.5 rounded bg-cyan-950/60 text-xs text-cyan-300 border border-cyan-500/30">
                         {s}
                       </span>
                     ))}
@@ -4519,7 +4564,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <div className="flex-1 text-center sm:text-right space-y-2.5 w-full">
                     <div className="text-xs font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
                       <span>صورة البطاقة الشخصية</span>
-                      <span className="text-[10px] font-mono text-cyan-400">(اسحب وأفلت أو اختر ملفاً)</span>
+                      <span className="text-xs font-mono text-cyan-400">(اسحب وأفلت أو اختر ملفاً)</span>
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -4583,7 +4628,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           placeholder="https://example.com/avatar.jpg"
                           value={leaderForm.avatar || ''}
                           onChange={(e) => setLeaderForm({ ...leaderForm, avatar: e.target.value })}
-                          className="w-full px-3 py-1.5 rounded-xl bg-black/50 border border-cyan-500/40 text-white font-mono text-[11px] focus:outline-none"
+                          className="w-full px-3 py-1.5 rounded-xl bg-black/50 border border-cyan-500/40 text-white font-mono text-xs focus:outline-none"
                         />
                       </div>
                     )}
@@ -4593,7 +4638,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 {/* Quick Role Templates */}
                 <div className="p-3 rounded-2xl bg-black/30 border border-white/5 space-y-1.5">
-                  <div className="text-[11px] text-gray-300 font-mono flex items-center gap-1.5">
+                  <div className="text-xs text-gray-300 font-mono flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                     <span>تعبئة سريعة حسب الهيكل المعتمد للنادي:</span>
                   </div>
@@ -4612,7 +4657,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           }));
                           setLeaderSkillsInput(tmpl.skills);
                         }}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer border ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                           leaderForm.role === tmpl.role
                             ? 'bg-cyan-400/20 text-cyan-300 border-cyan-400/50 font-bold'
                             : 'bg-white/[0.03] text-gray-400 hover:text-white border-white/5 hover:border-white/20'

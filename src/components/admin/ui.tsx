@@ -31,10 +31,12 @@ const BUTTON_STYLES: Record<ButtonVariant, string> = {
   ghost: 'hover:bg-white/5 text-gray-300 hover:text-white',
 };
 
-export const Button: React.FC<
+export const Button = React.forwardRef<
+  HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; icon?: React.ReactNode; loading?: boolean; size?: 'sm' | 'md' }
-> = ({ variant = 'secondary', icon, loading, size = 'md', children, className = '', disabled, ...rest }) => (
+>(({ variant = 'secondary', icon, loading, size = 'md', children, className = '', disabled, ...rest }, ref) => (
   <button
+    ref={ref}
     type="button"
     disabled={disabled || loading}
     className={`${BUTTON_STYLES[variant]} ${
@@ -45,7 +47,8 @@ export const Button: React.FC<
     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : icon}
     {children}
   </button>
-);
+));
+Button.displayName = 'Button';
 
 const BADGE_TONES = {
   gray: 'bg-white/5 text-gray-300 border-white/10',

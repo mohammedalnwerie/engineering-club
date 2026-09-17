@@ -64,6 +64,14 @@
     border-color: rgba(255, 255, 255, 0.08);
   }
 
+  /* Keyboard users must always see where they are, even on elements that
+     switch the default outline off for mouse styling. */
+  *:focus-visible {
+    outline: 2px solid #3FE7E3 !important;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
   html {
     font-family: var(--font-sans);
     background-color: #08041D;
