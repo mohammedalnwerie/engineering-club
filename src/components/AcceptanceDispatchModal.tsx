@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import type { StoredApplication } from '../types';
 import { emailService } from '../services/emailService';
 import { effectiveCommittee } from '../data/committees';
-import { X, Mail, MessageCircle, Copy, Check, ExternalLink, ShieldCheck, Send, AlertCircle, CreditCard } from 'lucide-react';
+import { dataService } from '../services/dataService';
+import { normalizePhone, suggestEmailFix, validateEmail, validatePhone } from '../utils/validation';
+import { X, Mail, MessageCircle, Copy, Check, ExternalLink, ShieldCheck, Send, AlertCircle, CreditCard, Pencil } from 'lucide-react';
 
 interface AcceptanceDispatchModalProps {
   isOpen: boolean;
@@ -20,10 +22,45 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   const [isSending, setIsSending] = useState(false);
   const [status, setStatus] = useState<{ success: boolean; message: string } | null>(null);
   const [sentAt, setSentAt] = useState<string | undefined>(app?.acceptanceEmailSentAt);
+  const [contact, setContact] = useState({ email: app?.email || '', phone: app?.phone || '' });
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [draft, setDraft] = useState(contact);
+  const [contactError, setContactError] = useState<string | null>(null);
+  const [isSavingContact, setIsSavingContact] = useState(false);
 
   if (!isOpen || !app) return null;
 
-  const verifyUrl = `${window.location.origin}/?verify=${encodeURIComponent(app.studentId || app.id)}`;
+  // Messages and sending always use the latest corrected contact details.
+  const current: StoredApplication = { ...app, ...contact };
+  const emailProblem = validateEmail(contact.email);
+
+  const startEditing = () => {
+    setDraft(contact);
+    setContactError(null);
+    setIsEditingContact(true);
+  };
+
+  const saveContact = async () => {
+    const next = { email: draft.email.trim().toLowerCase(), phone: normalizePhone(draft.phone) };
+    const problem = validateEmail(next.email) || validatePhone(next.phone, false);
+    if (problem) {
+      setContactError(problem);
+      return;
+    }
+    setIsSavingContact(true);
+    try {
+      await dataService.updateApplicationContact(app.id, next);
+      setContact(next);
+      setIsEditingContact(false);
+      setStatus(null);
+    } catch (err) {
+      setContactError(`تعذر الحفظ: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+    } finally {
+      setIsSavingContact(false);
+    }
+  };
+
+  const verifyUrl = `${window.location.origin}/?verify=${encodeURIComponent(current.studentId || current.id)}`;
   const committee = effectiveCommittee(app);
   const lastSentAt = sentAt || app.acceptanceEmailSentAt;
 
@@ -34,7 +71,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   };
 
   const handleCopyMessage = () => {
-    navigator.clipboard.writeText(emailService.formatAcceptanceEmail(app).body);
+    navigator.clipboard.writeText(emailService.formatAcceptanceEmail(current).body);
     setCopiedMsg(true);
     setTimeout(() => setCopiedMsg(false), 2500);
   };
@@ -42,9 +79,10 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   const handleSendEmail = async () => {
     setIsSending(true);
     setStatus(null);
-    const result = await emailService.sendAcceptanceEmail(app);
+    const result = await emailService.sendAcceptanceEmail(current);
     setStatus(result);
     if (result.sentAt) setSentAt(result.sentAt);
+    else if (/عنوان البريد|غير صحيح|غير موجود/.test(result.message)) startEditing();
     setIsSending(false);
   };
 
@@ -84,11 +122,83 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
                 <span>{app.organizationalRole}</span>
               </>
             )}
-            <span className="text-gray-500">الإيميل</span>
-            <span dir="ltr" className="text-right break-all">{app.email || '—'}</span>
-            <span className="text-gray-500">الجوال</span>
-            <span dir="ltr" className="text-right">{app.phone || '—'}</span>
+            {!isEditingContact && (
+              <>
+                <span className="text-gray-500">الإيميل</span>
+                <span dir="ltr" className={`text-right break-all ${emailProblem ? 'text-red-300' : ''}`}>{contact.email || '—'}</span>
+                <span className="text-gray-500">الجوال</span>
+                <span dir="ltr" className="text-right">{contact.phone || '—'}</span>
+              </>
+            )}
           </div>
+
+          {!isEditingContact && emailProblem && (
+            <p role="alert" className="text-sm text-red-300 flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>الإيميل مكتوب بشكل غير صحيح، صحّحه قبل الإرسال.</span>
+            </p>
+          )}
+
+          {isEditingContact ? (
+            <div className="pt-2 space-y-2.5 border-t border-white/10">
+              <label className="block">
+                <span className="block text-xs text-gray-400 mb-1">الإيميل</span>
+                <input
+                  type="email"
+                  dir="ltr"
+                  value={draft.email}
+                  onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-sm text-left"
+                />
+              </label>
+              {suggestEmailFix(draft.email) && (
+                <button
+                  type="button"
+                  onClick={() => setDraft({ ...draft, email: suggestEmailFix(draft.email)! })}
+                  className="text-sm text-amber-300 hover:text-amber-200 underline underline-offset-4 cursor-pointer"
+                >
+                  هل تقصد <span dir="ltr">{suggestEmailFix(draft.email)}</span>؟
+                </button>
+              )}
+              <label className="block">
+                <span className="block text-xs text-gray-400 mb-1">الجوال</span>
+                <input
+                  type="tel"
+                  dir="ltr"
+                  value={draft.phone}
+                  onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-sm text-left"
+                />
+              </label>
+              {contactError && <p role="alert" className="text-sm text-red-300">{contactError}</p>}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={isSavingContact}
+                  onClick={() => void saveContact()}
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-bold text-sm cursor-pointer"
+                >
+                  {isSavingContact ? 'جاري الحفظ…' : 'حفظ'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingContact(false)}
+                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm cursor-pointer"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={startEditing}
+              className="text-sm text-cyan-300 hover:text-cyan-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>تعديل الإيميل أو الجوال</span>
+            </button>
+          )}
         </div>
 
         {/* Club email (primary) */}
@@ -128,13 +238,13 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
 
           <button
             type="button"
-            disabled={isSending || !app.email}
+            disabled={isSending || isEditingContact || Boolean(emailProblem)}
             onClick={handleSendEmail}
             className="w-full py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
             <span>
-              {isSending ? 'جاري الإرسال…' : lastSentAt ? 'إعادة إرسال الإيميل' : `إرسال الإيميل إلى ${app.email || 'الطالب'}`}
+              {isSending ? 'جاري الإرسال…' : lastSentAt ? 'إعادة إرسال الإيميل' : `إرسال الإيميل إلى ${contact.email || 'الطالب'}`}
             </span>
           </button>
         </div>
@@ -144,7 +254,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
         <div className="space-y-2">
           <button
             type="button"
-            onClick={() => emailService.openWhatsAppChat(app)}
+            onClick={() => emailService.openWhatsAppChat(current)}
             className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm cursor-pointer flex items-center justify-between transition-all"
           >
             <span className="flex items-center gap-2">
@@ -156,7 +266,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
 
           <button
             type="button"
-            onClick={() => emailService.openGmailWebmail(app)}
+            onClick={() => emailService.openGmailWebmail(current)}
             className="w-full py-3 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 text-white font-bold text-sm cursor-pointer flex items-center justify-between transition-all"
           >
             <span className="flex items-center gap-2">
@@ -190,7 +300,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
               type="button"
               onClick={() => {
                 onClose();
-                onViewBadge(app);
+                onViewBadge(current);
               }}
               className="w-full py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-sm cursor-pointer border border-white/10 flex items-center justify-center gap-1.5 transition-colors"
             >

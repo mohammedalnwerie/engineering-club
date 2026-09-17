@@ -57,6 +57,9 @@ Deno.serve(async (req) => {
   if (error || !app) return json({ error: 'لم يتم العثور على الطلب' }, 404);
   if (app.status !== 'تم القبول') return json({ error: 'لا يمكن إرسال إيميل القبول قبل قبول الطالب' }, 400);
   if (!app.email) return json({ error: 'لا يوجد بريد إلكتروني مسجل لهذا الطالب' }, 400);
+  if (!/^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.)+[A-Za-z]{2,}$/.test(app.email) || /\.\./.test(app.email)) {
+    return json({ error: `عنوان البريد (${app.email}) غير صحيح. صحّحه من زر "تعديل الإيميل" ثم أعد الإرسال.` }, 400);
+  }
 
   const gmailUser = Deno.env.get('GMAIL_USER');
   const gmailPassword = Deno.env.get('GMAIL_APP_PASSWORD')?.replace(/\s+/g, '');
@@ -150,7 +153,11 @@ Deno.serve(async (req) => {
     const message = err instanceof Error ? err.message : String(err);
     const hint = /Invalid login|Username and Password not accepted|535/i.test(message)
       ? 'Gmail رفض تسجيل الدخول. تأكد من GMAIL_USER ومن كلمة مرور التطبيق.'
-      : `فشل الإرسال: ${message}`;
+      : /5\.1\.[0-9]|recipient|not a valid|does not exist|user unknown/i.test(message)
+        ? `عنوان البريد (${app.email}) غير صحيح أو غير موجود. صحّحه من زر "تعديل الإيميل" ثم أعد الإرسال.`
+        : /quota|limit|4\.7\.0|5\.4\.5/i.test(message)
+          ? 'تجاوز إيميل النادي حد الإرسال اليومي في Gmail. حاول بعد ساعات.'
+          : `فشل الإرسال: ${message}`;
     return json({ error: hint }, 502);
   }
 

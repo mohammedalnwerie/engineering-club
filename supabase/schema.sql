@@ -115,6 +115,18 @@ as $$
   select translate(coalesce(value, ''), '٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹', '01234567890123456789');
 $$;
 
+-- صيغة بريد إلكتروني صحيحة (بدون نقطتين متتاليتين أو نطاق ناقص)
+create or replace function public.club_valid_email(value text)
+returns boolean
+language sql
+immutable
+as $$
+  select coalesce(value, '') ~ '^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.)+[A-Za-z]{2,}$'
+     and coalesce(value, '') !~ '\.\.'
+     and coalesce(value, '') !~ '^\.|\.@|@\.'
+     and length(coalesce(value, '')) <= 160;
+$$;
+
 -- آخر 9 أرقام من الجوال، لمقارنة 0599… مع 970599…
 create or replace function public.club_phone_key(value text)
 returns text
@@ -152,7 +164,7 @@ begin
   if length(v_full_name) < 6 or length(v_full_name) > 120 or v_full_name !~ '\S+\s+\S+' then
     raise exception 'يرجى كتابة الاسم الكامل (اسمان على الأقل)';
   end if;
-  if length(v_email) > 160 or v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+  if not public.club_valid_email(v_email) then
     raise exception 'البريد الإلكتروني غير صالح';
   end if;
   if length(regexp_replace(v_phone, '\D', '', 'g')) not between 9 and 15 then
@@ -361,7 +373,7 @@ as $$
 declare
   v_email text := lower(btrim(public.club_latin_digits(p_email)));
 begin
-  if length(v_email) > 160 or v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+  if not public.club_valid_email(v_email) then
     raise exception 'البريد الإلكتروني غير صالح';
   end if;
   insert into public.club_subscribers (email) values (v_email)

@@ -10,6 +10,7 @@ import {
   validateEmail,
   validateFullName,
   validatePhone,
+  suggestEmailFix,
   validateStudentId,
   validateUrl,
 } from '../utils/validation';
@@ -328,6 +329,15 @@ export const JoinClubSection: React.FC = () => {
                           dir="ltr"
                         />
                         <FieldError message={errors.email} />
+                        {suggestEmailFix(formData.email) && (
+                          <button
+                            type="button"
+                            onClick={() => updateField('email', suggestEmailFix(formData.email)!)}
+                            className="mt-1.5 text-sm text-amber-300 hover:text-amber-200 underline underline-offset-4 cursor-pointer text-right"
+                          >
+                            هل تقصد <span dir="ltr">{suggestEmailFix(formData.email)}</span>؟
+                          </button>
+                        )}
                         <p className="text-xs text-gray-400 mt-1">
                           يمكنك استخدام إيميل الجامعة الرسمي (@std.up.edu.ps) أو بريدك الشخصي (Gmail وغيره).
                         </p>

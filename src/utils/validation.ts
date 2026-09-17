@@ -33,11 +33,50 @@ export function validateStudentId(value: string): string | null {
   return null;
 }
 
+const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.)+[A-Za-z]{2,}$/;
+
 export function validateEmail(value: string, required = true): string | null {
   const email = toLatinDigits(value).trim();
   if (!email) return required ? 'البريد الإلكتروني مطلوب' : null;
-  if (email.length > 160 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return 'البريد الإلكتروني غير صحيح';
+  if (/\s/.test(email)) return 'البريد الإلكتروني لا يحتوي على مسافات';
+  if (email.length > 160 || !EMAIL_PATTERN.test(email) || /\.\./.test(email) || /^\.|\.@|@\./.test(email)) {
+    return 'البريد الإلكتروني غير صحيح، تأكد من كتابته (مثال: name@gmail.com)';
+  }
   return null;
+}
+
+// Common misspellings of popular email domains.
+const DOMAIN_FIXES: Record<string, string> = {
+  'gmail.co': 'gmail.com',
+  'gmail.con': 'gmail.com',
+  'gmail.cm': 'gmail.com',
+  'gmail.om': 'gmail.com',
+  'gmai.com': 'gmail.com',
+  'gmial.com': 'gmail.com',
+  'gamil.com': 'gmail.com',
+  'gmaill.com': 'gmail.com',
+  'gnail.com': 'gmail.com',
+  'hotmial.com': 'hotmail.com',
+  'hotmail.con': 'hotmail.com',
+  'hotmai.com': 'hotmail.com',
+  'yahoo.con': 'yahoo.com',
+  'yaho.com': 'yahoo.com',
+  'outlook.con': 'outlook.com',
+  'outlok.com': 'outlook.com',
+  'std.up.edu': 'std.up.edu.ps',
+  'up.edu.ps.com': 'up.edu.ps',
+};
+
+/** Suggests a corrected address for typical typos (e.g. gmail..com → gmail.com), or null. */
+export function suggestEmailFix(value: string): string | null {
+  const email = toLatinDigits(value).trim().toLowerCase().replace(/\s+/g, '');
+  const at = email.lastIndexOf('@');
+  if (at < 1) return null;
+  const local = email.slice(0, at).replace(/\.{2,}/g, '.').replace(/^\.|\.$/g, '');
+  let domain = email.slice(at + 1).replace(/\.{2,}/g, '.').replace(/^\.|\.$/g, '');
+  domain = DOMAIN_FIXES[domain] || domain;
+  const fixed = `${local}@${domain}`;
+  return fixed !== email && !validateEmail(fixed) ? fixed : null;
 }
 
 export function validatePhone(value: string, required = true): string | null {

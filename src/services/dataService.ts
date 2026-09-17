@@ -464,6 +464,21 @@ class DataService {
     );
   }
 
+  /** Admin: fix a student's email/phone. Awaited so a following email send reads the new address. */
+  public async updateApplicationContact(id: string, contact: { email: string; phone: string }): Promise<void> {
+    const app = this.applications.find((a) => a.id === id);
+    if (!app) throw new Error('لم يتم العثور على الطلب');
+    const updated: StoredApplication = { ...app, ...contact };
+    const { id: _id, studentId: _sid, fullName: _name, status: _status, submittedAt: _at, ...data } = updated;
+    const { error } = await (await getSupabase())
+      .from('club_applications')
+      .update({ email: contact.email, phone: contact.phone, data })
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+    this.applications = this.applications.map((a) => (a.id === id ? updated : a));
+    this.notify();
+  }
+
   public deleteApplication(id: string) {
     this.applications = this.applications.filter((a) => a.id !== id);
     this.notify();
