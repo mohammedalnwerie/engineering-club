@@ -2566,7 +2566,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           : 'text-gray-400 hover:text-gray-200'
                       }`}
                     >
-                      شكاوى رسمية ⚠️
+                      شكاوى رسمية
                     </button>
                     <button
                       onClick={() => setComplaintsCategoryFilter('suggestion')}
@@ -2576,7 +2576,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           : 'text-gray-400 hover:text-gray-200'
                       }`}
                     >
-                      مقترحات تطوير 💡
+                      مقترحات تطوير
                     </button>
                     <button
                       onClick={() => setComplaintsCategoryFilter('inquiry')}
@@ -2586,7 +2586,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           : 'text-gray-400 hover:text-gray-200'
                       }`}
                     >
-                      استفسارات عامة ❓
+                      استفسارات عامة
                     </button>
                   </div>
                 </div>
@@ -2686,7 +2686,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               {item.attachmentImage && (
                                 <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 font-mono">
                                   <Camera className="w-3 h-3 text-cyan-400" />
-                                  <span>مرفق صورة 📸</span>
+                                  <span>مرفق صورة</span>
                                 </span>
                               )}
                             </div>
@@ -2741,14 +2741,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                 <Edit3 className="w-3.5 h-3.5" />
                                 <span>معاينة والرد / تحديث الحالة</span>
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteComplaint(item.id, item.ticketNumber)}
-                                className="p-1.5 rounded-xl bg-red-950/40 hover:bg-red-950 border border-red-500/30 text-red-400 text-xs transition-all cursor-pointer"
-                                title="حذف البلاغ نهائياً"
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                icon={<Trash2 className="w-4 h-4" />}
+                                onClick={() => void handleDeleteComplaint(item.id, item.ticketNumber)}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                                حذف
+                              </Button>
                             </div>
                           </div>
 
