@@ -125,6 +125,10 @@ export const activateSemesterManually = (applicationId: string, semesterEndsAt: 
       .eq('id', applicationId)
   );
 
+/** Re-issues every first card with the currently configured end (fixed date or days). */
+export const applyTrialEndToMembers = () =>
+  run<number>((c) => c.rpc('apply_trial_end_to_members'));
+
 export const extendMembership = (applicationId: string, validUntil: string) =>
   run((c) => c.from('club_applications').update({ valid_until: validUntil }).eq('id', applicationId));
 

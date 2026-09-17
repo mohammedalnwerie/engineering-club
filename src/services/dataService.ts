@@ -26,12 +26,25 @@ import type {
 
 export const DEFAULT_MEMBERSHIP_SETTINGS: MembershipSettings = {
   trialDays: 14,
+  trialEndsAt: '',
   semesterFee: 20,
   currency: '₪',
   semesterLabel: 'الفصل الأول 2026/2027',
   semesterEndsAt: '2027-02-01',
   paymentMethods: ['نقداً لأمين الصندوق', 'تحويل بنكي', 'جوال باي / بال باي'],
   paymentInstructions: 'ادفع رسوم العضوية الفصلية بإحدى الطرق المتاحة، ثم اكتب رقم الحوالة أو اسم المستلم في الطلب.',
+};
+
+/** نص صلاحية البطاقة الأولى: تاريخ ثابت إن حُدّد، وإلا عدد الأيام. */
+export const trialValidityText = (settings: MembershipSettings): string => {
+  const fixed = (settings.trialEndsAt || '').trim();
+  if (fixed) {
+    const end = new Date(`${fixed}T23:59:59`);
+    if (!Number.isNaN(end.getTime()) && end.getTime() > Date.now()) {
+      return `صالحة حتى ${end.toLocaleDateString('ar', { day: 'numeric', month: 'long' })}`;
+    }
+  }
+  return `صالحة ${settings.trialDays} يوماً`;
 };
 
 const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettings = {

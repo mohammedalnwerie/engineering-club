@@ -238,7 +238,7 @@ export const formatArabicDate = (iso: string | null | undefined, withTime = fals
 export function membershipLabel(state: MembershipState | undefined, validUntil: string | null | undefined): string {
   const date = validUntil ? new Date(validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long' }) : '';
   if (state === 'semester') return date ? `فصلية حتى ${date}` : 'عضوية فصلية';
-  if (state === 'temporary') return date ? `مؤقتة حتى ${date}` : 'عضوية مؤقتة';
+  if (state === 'temporary') return date ? `صالحة حتى ${date}` : 'عضوية سارية';
   if (state === 'expired') return 'منتهية';
   return '';
 }

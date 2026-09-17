@@ -114,7 +114,7 @@ export function validityBadge(app: CardApplication): string | undefined {
   const expired = new Date(app.validUntil).getTime() < Date.now();
   if (expired) return 'عضوية منتهية';
   const date = new Date(app.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long' });
-  return app.membershipType === 'semester' ? `فصلية حتى ${date}` : `مؤقتة حتى ${date}`;
+  return app.membershipType === 'semester' ? `فصلية حتى ${date}` : `صالحة حتى ${date}`;
 }
 
 /** General club membership card. */

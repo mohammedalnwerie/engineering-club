@@ -188,7 +188,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                       <span>
                         عضوية صحيحة
                         {matchedApp.validUntil &&
-                          ` — ${matchedApp.membershipType === 'semester' ? 'فصلية' : 'مؤقتة'} حتى ${new Date(matchedApp.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                          ` — ${matchedApp.membershipType === 'semester' ? 'فصلية' : 'سارية'} حتى ${new Date(matchedApp.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })}`}
                       </span>
                     </div>
                   )}

@@ -272,7 +272,7 @@ const MembershipPanel: React.FC<{ profile: MemberProfile }> = ({ profile }) => {
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-lg font-bold text-white">العضوية</h3>
         <span className="text-sm font-bold text-white">
-          {state === 'semester' ? 'فصلية' : state === 'expired' ? 'منتهية' : 'مؤقتة'}
+          {state === 'semester' ? 'فصلية' : state === 'expired' ? 'منتهية' : 'سارية'}
         </span>
       </div>
 
@@ -280,7 +280,7 @@ const MembershipPanel: React.FC<{ profile: MemberProfile }> = ({ profile }) => {
         {state === 'expired' && <>انتهت عضويتك بتاريخ {formatArabicDate(profile.validUntil)}. جدّدها لتتمكن من التسجيل في الفعاليات.</>}
         {state === 'temporary' && (
           <>
-            بطاقتك مؤقتة حتى <strong className="text-white">{formatArabicDate(profile.validUntil)}</strong>
+            بطاقتك صالحة حتى <strong className="text-white">{formatArabicDate(profile.validUntil)}</strong>
             {remaining !== null && remaining >= 0 && <> (باقي {remaining} {remaining === 1 ? 'يوم' : 'أيام'})</>}. بعدها تحتاج
             العضوية الفصلية ({settings.semesterFee} {settings.currency}).
           </>

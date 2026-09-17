@@ -5,6 +5,7 @@ import {
   listPaymentRequests,
   reviewPaymentRequest,
   activateSemesterManually,
+  applyTrialEndToMembers,
   extendMembership,
   type MemberRow,
   type PaymentRequestRow,
@@ -64,7 +65,7 @@ export const MembersPanel: React.FC<{ showToast: (msg: string) => void }> = ({ s
     <div className="p-4 sm:p-6">
       <PageHeader
         title="العضويات والمدفوعات"
-        description="البطاقة المؤقتة تبدأ تلقائياً عند القبول، والعضوية الفصلية تتفعّل عند اعتماد الدفع."
+        description="البطاقة الأولى تبدأ تلقائياً عند القبول، والعضوية الفصلية تتفعّل عند اعتماد الدفع."
         actions={
           <Button icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />} onClick={() => void load()}>
             تحديث
@@ -76,7 +77,7 @@ export const MembersPanel: React.FC<{ showToast: (msg: string) => void }> = ({ s
         {[
           { label: 'طلبات دفع بانتظارك', value: pendingCount, tone: 'text-amber-300' },
           { label: 'عضوية فصلية', value: stats.semester, tone: 'text-emerald-300' },
-          { label: 'بطاقة مؤقتة', value: stats.temporary, tone: 'text-cyan-200', sub: stats.expiringSoon ? `${stats.expiringSoon} تنتهي خلال 3 أيام` : undefined },
+          { label: 'بطاقة أولى', value: stats.temporary, tone: 'text-cyan-200', sub: stats.expiringSoon ? `${stats.expiringSoon} تنتهي خلال 3 أيام` : undefined },
           { label: 'منتهية', value: stats.expired, tone: 'text-red-300' },
         ].map((s) => (
           <Panel key={s.label} className="p-4">
@@ -275,7 +276,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
         m.email || '',
         m.phone || '',
         m.data?.assignedCommittee || m.data?.targetCommittee || '',
-        { temporary: 'مؤقتة', semester: 'فصلية', expired: 'منتهية' }[stateOf(m)],
+        { temporary: 'أولى', semester: 'فصلية', expired: 'منتهية' }[stateOf(m)],
         formatDate(m.valid_until),
         m.member_code || '',
       ])
@@ -297,7 +298,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
         <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value as typeof stateFilter)} className={`${inputClass} sm:w-44`}>
           <option value="all">كل الأعضاء</option>
           <option value="semester">فصلية</option>
-          <option value="temporary">مؤقتة</option>
+          <option value="temporary">بطاقة أولى</option>
           <option value="expired">منتهية</option>
         </select>
         <Button icon={<Download className="w-4 h-4" />} onClick={exportCsv} disabled={shown.length === 0}>
@@ -320,7 +321,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-white">{m.full_name}</span>
                       {state === 'semester' && <Badge tone="green">فصلية</Badge>}
-                      {state === 'temporary' && <Badge tone="cyan">مؤقتة</Badge>}
+                      {state === 'temporary' && <Badge tone="cyan">سارية</Badge>}
                       {state === 'expired' && <Badge tone="red">منتهية</Badge>}
                     </div>
                     <div className="text-sm text-gray-400 mt-1 flex flex-wrap gap-x-4 gap-y-1">
@@ -379,6 +380,8 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
 const MembershipSettingsForm: React.FC<{ showToast: (m: string) => void }> = ({ showToast }) => {
   const [form, setForm] = useState<MembershipSettings>(dataService.getMembershipSettings());
   const [methodsText, setMethodsText] = useState(form.paymentMethods.join('\n'));
+  const [applying, setApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();
@@ -387,18 +390,34 @@ const MembershipSettingsForm: React.FC<{ showToast: (m: string) => void }> = ({ 
     showToast('تم حفظ إعدادات العضوية');
   };
 
+  // Re-issues the cards that were already sent, using the end date configured above.
+  const applyToIssued = async () => {
+    if (!window.confirm('تحديث صلاحية كل البطاقات الأولى الصادرة حسب الإعدادات المحفوظة؟')) return;
+    setApplying(true);
+    setApplyError(null);
+    try {
+      const changed = await applyTrialEndToMembers();
+      showToast(`تم تحديث ${changed} بطاقة`);
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : 'تعذر التحديث');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   return (
     <Panel className="p-5 max-w-2xl">
       <form onSubmit={save} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Field label="مدة البطاقة المؤقتة (أيام)">
+          <Field label="مدة البطاقة الأولى (أيام)" hint="تُحسب من تاريخ قبول الطالب">
             <input
               type="number"
               min={1}
-              max={90}
+              max={120}
               value={form.trialDays}
               onChange={(e) => setForm({ ...form, trialDays: Number(e.target.value) || 14 })}
               className={inputClass}
+              disabled={Boolean(form.trialEndsAt)}
             />
           </Field>
           <Field label="رسوم العضوية الفصلية">
@@ -423,6 +442,25 @@ const MembershipSettingsForm: React.FC<{ showToast: (m: string) => void }> = ({ 
               className={inputClass}
             />
           </Field>
+          <Field
+            label="تاريخ ثابت لنهاية البطاقة الأولى"
+            hint={form.trialEndsAt ? 'كل البطاقات الجديدة صالحة حتى نهاية هذا اليوم' : 'اتركه فارغاً لاستخدام عدد الأيام أعلاه'}
+            className="sm:col-span-2"
+          >
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={form.trialEndsAt || ''}
+                onChange={(e) => setForm({ ...form, trialEndsAt: e.target.value })}
+                className={inputClass}
+              />
+              {form.trialEndsAt && (
+                <Button onClick={() => setForm({ ...form, trialEndsAt: '' })}>مسح</Button>
+              )}
+            </div>
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="نهاية الفصل" hint="العضوية الفصلية تبقى صالحة حتى نهاية هذا اليوم">
             <input
               type="date"
@@ -443,9 +481,15 @@ const MembershipSettingsForm: React.FC<{ showToast: (m: string) => void }> = ({ 
             className={inputClass}
           />
         </Field>
-        <p className="text-xs text-gray-500">
-          تغيير مدة البطاقة المؤقتة يسري على الأعضاء المقبولين من الآن فصاعداً، ولا يغيّر البطاقات الصادرة.
-        </p>
+        <ErrorNote message={applyError} />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={() => void applyToIssued()} loading={applying} icon={<CalendarPlus className="w-4 h-4" />}>
+            تطبيق على البطاقات الصادرة
+          </Button>
+          <p className="text-xs text-gray-500 flex-1 min-w-[220px]">
+            الإعدادات تسري على الأعضاء الجدد تلقائياً. اضغط الزر بعد الحفظ لتحديث بطاقات الأعضاء الحاليين أيضاً.
+          </p>
+        </div>
         <Button type="submit" variant="primary" icon={<Save className="w-4 h-4" />}>
           حفظ الإعدادات
         </Button>

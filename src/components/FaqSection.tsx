@@ -1,4 +1,4 @@
-import { dataService } from '../services/dataService';
+import { dataService, trialValidityText } from '../services/dataService';
 import React, { useState } from 'react';
 import { ChevronDown, HelpCircle, MessageSquare, ArrowLeft } from 'lucide-react';
 
@@ -23,7 +23,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
       id: 'faq-1',
       category: 'العضوية والتسجيل',
       question: 'كيف تتم العضوية؟ وهل فيها رسوم؟',
-      answer: `بعد قبول طلبك تصلك على إيميلك بطاقة عضوية مؤقتة صالحة ${membership.trialDays} يوماً، مع رمز عضو سري تدخل به إلى «حسابي». بعدها تطلب العضوية الفصلية برسوم ${membership.semesterFee} ${membership.currency} من صفحة «حسابي»، وتبقى فعّالة حتى نهاية الفصل وتتيح لك التسجيل في الورش والدورات والهاكاثونات.`
+      answer: `بعد قبول طلبك تصلك على إيميلك بطاقة عضوية ${trialValidityText(membership)}، مع رمز عضو سري تدخل به إلى «حسابي». بعدها تطلب العضوية الفصلية برسوم ${membership.semesterFee} ${membership.currency} من صفحة «حسابي»، وتبقى فعّالة حتى نهاية الفصل وتتيح لك التسجيل في الورش والدورات والهاكاثونات.`
     },
     {
       id: 'faq-2',

@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     isGeneral ? 'نوع العضوية: عضوية عامة' : `اللجنة: ${committee}`,
     role ? `المسمى: ${role}` : '',
     `رمز العضو (سري): ${memberCode}`,
-    validUntil ? `بطاقتك مؤقتة وصالحة حتى ${validUntil}. بعدها اطلب العضوية الفصلية (${fee} ${currency}) من صفحة حسابي: ${accountUrl}` : '',
+    validUntil ? `بطاقتك صالحة حتى ${validUntil}. بعدها اطلب العضوية الفصلية (${fee} ${currency}) من صفحة حسابي: ${accountUrl}` : '',
     '',
     `بطاقة عضويتك الرقمية: ${verifyUrl}`,
     '',
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
         ${row('المسمى', role)}
         ${row('الرقم الجامعي', app.student_id)}
         ${row('رمز العضو', memberCode)}
-        ${row('صلاحية البطاقة', validUntil ? `مؤقتة حتى ${validUntil}` : '')}
+        ${row('صلاحية البطاقة', validUntil ? `صالحة حتى ${validUntil}` : '')}
       </table>
     </td></tr>
     <tr><td style="padding:24px 28px;text-align:center;">
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
       <div style="padding:16px;border-radius:14px;background:rgba(127,26,178,0.15);border:1px solid rgba(162,108,198,0.4);color:#E5E7EB;font-size:14px;line-height:1.9;">
         <strong style="color:#FFFFFF;">رمز العضو سري — لا تشاركه مع أحد.</strong><br>
         تستخدمه مع رقمك الجامعي لدخول <strong style="color:#FFFFFF;">حسابي</strong> والتسجيل في الورش والدورات والهاكاثونات.
-        ${validUntil ? `<br>بطاقتك الحالية <strong style="color:#FFFFFF;">مؤقتة حتى ${escapeHtml(validUntil)}</strong>، وبعدها يمكنك طلب <strong style="color:#FFFFFF;">العضوية الفصلية (${escapeHtml(fee)} ${escapeHtml(currency)})</strong> من صفحة حسابي.` : ''}
+        ${validUntil ? `<br>بطاقتك الحالية <strong style="color:#FFFFFF;">صالحة حتى ${escapeHtml(validUntil)}</strong>، وبعدها يمكنك طلب <strong style="color:#FFFFFF;">العضوية الفصلية (${escapeHtml(fee)} ${escapeHtml(currency)})</strong> من صفحة حسابي.` : ''}
         <div style="margin-top:12px;"><a href="${escapeHtml(accountUrl)}" style="color:#98F7F1;">الدخول إلى حسابي</a></div>
       </div>
     </td></tr>

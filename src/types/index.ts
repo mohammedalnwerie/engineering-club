@@ -220,6 +220,8 @@ export interface CommitteeRecruitmentStatus {
 
 export interface MembershipSettings {
   trialDays: number;
+  /** YYYY-MM-DD — تاريخ ثابت لنهاية البطاقة الأولى. فارغ = استخدم عدد الأيام */
+  trialEndsAt?: string;
   semesterFee: number;
   currency: string;
   semesterLabel: string;
