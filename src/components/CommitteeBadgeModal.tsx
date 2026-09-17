@@ -3,6 +3,7 @@ import type { StoredApplication } from '../types';
 import { X, Printer, Download, Copy, Users } from 'lucide-react';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import { MemberCard } from './MemberCard';
+import { effectiveCommittee, findCommittee } from '../data/committees';
 
 interface CommitteeBadgeModalProps {
   isOpen: boolean;
@@ -16,37 +17,10 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
 
   if (!isOpen || !app) return null;
 
-  const committeeRaw = app.targetCommittee || '';
-  const isTraining = committeeRaw.includes('تدريب') || committeeRaw.includes('علاقات') || committeeRaw.includes('training');
-  const isMedia = committeeRaw.includes('إعلام') || committeeRaw.includes('media');
-
-  let committeeName = 'لجنة الفعاليات والأنشطة';
-  let committeeCode = 'EVT';
-
-  if (isTraining) {
-    committeeName = 'لجنة العلاقات العامة والتدريب';
-    committeeCode = 'REL';
-  } else if (isMedia) {
-    committeeName = 'اللجنة الإعلامية والإنتاج المرئي';
-    committeeCode = 'MED';
-  }
-
-  const appAny = app as any;
-  let organizationalRole = appAny.organizationalRole || '';
-  if (!organizationalRole) {
-    const textToCheck = `${app.targetCommittee || ''} ${app.skills?.join(' ') || ''} ${app.personalStatement || ''}`.toLowerCase();
-    if (textToCheck.includes('تصوير') || textToCheck.includes('مصور') || textToCheck.includes('photo')) {
-      organizationalRole = 'مصور وموثق ميداني';
-    } else if (textToCheck.includes('تصميم') || textToCheck.includes('ديزاين') || textToCheck.includes('design')) {
-      organizationalRole = 'مصمم ومبدع محتوى';
-    } else if (textToCheck.includes('تنظيم') || textToCheck.includes('حشود') || textToCheck.includes('لوجست')) {
-      organizationalRole = 'مسؤول تنظيم وميدان';
-    } else if (textToCheck.includes('علاقات') || textToCheck.includes('تواصل')) {
-      organizationalRole = 'مسؤول علاقات وتنسيق';
-    } else {
-      organizationalRole = 'عضو فريق العمل التنفيذي';
-    }
-  }
+  const committeeName = effectiveCommittee(app);
+  const committee = findCommittee(committeeName);
+  const organizationalRole = app.organizationalRole || 'عضو في اللجنة';
+  const committeeCode = committee?.code || 'COM';
 
   const cleanMajor = (app.major || '').replace(/^(تخصص\s+|كلية\s+)/i, '').trim();
   const serialNumber = `UP-COMM-${committeeCode}-2026-${(app.studentId || app.id).slice(-4).toUpperCase()}`;
@@ -84,10 +58,10 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
           badge="عضو لجنة"
           accent="cyan"
           name={app.fullName}
-          subtitle={`الرقم الجامعي: ${app.studentId}`}
+          role={organizationalRole}
+          highlight={{ label: 'اللجنة', value: committeeName }}
           fields={[
-            { label: 'اللجنة', value: committeeName },
-            { label: 'المسمى', value: organizationalRole },
+            { label: 'الرقم الجامعي', value: app.studentId },
             { label: 'التخصص', value: cleanMajor },
           ]}
           qrValue={verifyUrl}

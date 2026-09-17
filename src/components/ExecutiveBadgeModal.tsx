@@ -50,12 +50,10 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
           badge={isExecutive ? 'الهيئة الإدارية' : 'رئاسة لجنة'}
           accent="green"
           name={leader.name || leader.role}
-          subtitle={leader.name ? leader.role : undefined}
+          role={leader.name ? leader.role : undefined}
           photoUrl={leader.avatar || undefined}
-          fields={[
-            { label: 'الجهة', value: leader.department },
-            { label: 'البريد', value: leader.email },
-          ]}
+          highlight={{ label: 'الجهة', value: leader.department }}
+          fields={[{ label: 'البريد', value: leader.email }]}
           qrValue={`${window.location.origin}/#leadership`}
           code={badgeSerial}
         />

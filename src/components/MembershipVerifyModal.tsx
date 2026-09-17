@@ -3,6 +3,7 @@ import { dataService } from '../services/dataService';
 import type { StoredApplication } from '../types';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import { MemberCard } from './MemberCard';
+import { effectiveCommittee, findCommittee } from '../data/committees';
 import {
   X,
   Search,
@@ -62,6 +63,8 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
               skills: found.skills || [],
               personalStatement: '',
               targetCommittee: found.targetCommittee || '',
+              assignedCommittee: found.assignedCommittee,
+              organizationalRole: found.organizationalRole,
               weeklyCommitmentHours: 0,
               id: found.id,
               status: found.status,
@@ -177,11 +180,12 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                     id="verified-member-card"
                     badge="عضو في النادي"
                     name={matchedApp.fullName}
-                    subtitle={`الرقم الجامعي: ${matchedApp.studentId}`}
+                    role={matchedApp.organizationalRole}
+                    highlight={{ label: 'اللجنة / المسار', value: effectiveCommittee(matchedApp) }}
                     fields={[
+                      { label: 'الرقم الجامعي', value: matchedApp.studentId },
                       { label: 'التخصص', value: (matchedApp.major || '').replace(/^(تخصص\s+|كلية\s+)/, '').trim() },
                       { label: 'السنة الدراسية', value: matchedApp.academicYear },
-                      { label: 'اللجنة / المسار', value: matchedApp.targetCommittee },
                     ]}
                     qrValue={verifyUrl}
                     code={authCode}
@@ -203,7 +207,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                       <span>{isExporting ? 'جاري تجهيز الصورة...' : 'تحميل البطاقة كصورة رسمية عالية الدقة (PNG) 🖼️'}</span>
                     </button>
 
-                    {matchedApp.targetCommittee && !matchedApp.targetCommittee.includes('عامة') && (
+                    {findCommittee(effectiveCommittee(matchedApp))?.id !== 'general' && effectiveCommittee(matchedApp) && (
                       <button
                         type="button"
                         onClick={() => {
@@ -212,7 +216,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                         className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500/20 via-cyan-500/20 to-blue-500/20 hover:from-purple-500/30 hover:to-blue-500/30 border border-cyan-400/50 text-cyan-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow transition-all"
                       >
                         <Award className="w-4 h-4 text-cyan-400" />
-                        <span>عرض كرت عضو اللجنة التنفيذية الرسمي ({matchedApp.targetCommittee}) 🪪</span>
+                        <span>عرض كرت عضو اللجنة ({effectiveCommittee(matchedApp)})</span>
                       </button>
                     )}
 

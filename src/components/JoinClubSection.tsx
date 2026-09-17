@@ -608,11 +608,11 @@ export const JoinClubSection: React.FC = () => {
                 id="live-club-badge-preview"
                 badge="قيد المراجعة"
                 name={formData.fullName || 'اسمك هنا'}
-                subtitle={`الرقم الجامعي: ${formData.studentId || '—'}`}
+                highlight={{ label: 'اللجنة / المسار', value: formData.targetCommittee }}
                 fields={[
+                  { label: 'الرقم الجامعي', value: formData.studentId || '—' },
                   { label: 'التخصص', value: formData.major },
                   { label: 'السنة الدراسية', value: formData.academicYear },
-                  { label: 'اللجنة / المسار', value: formData.targetCommittee },
                 ]}
                 qrValue={`${window.location.origin}/?verify=preview`}
                 code="UP-ENG-XXXXXXXX"

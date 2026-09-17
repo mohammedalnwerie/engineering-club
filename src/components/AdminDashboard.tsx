@@ -10,6 +10,7 @@ import {
 } from '../utils/security';
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
 import { CommitteeBadgeModal } from './CommitteeBadgeModal';
+import { COMMITTEES, effectiveCommittee, findCommittee } from '../data/committees';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import { AcceptanceDispatchModal } from './AcceptanceDispatchModal';
 import { emailService, type EmailConfig } from '../services/emailService';
@@ -273,6 +274,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
   // Selected application for detail modal
   const [inspectApp, setInspectApp] = useState<StoredApplication | null>(null);
+  const [assignCommittee, setAssignCommittee] = useState('');
+  const [assignRole, setAssignRole] = useState('');
+
+  useEffect(() => {
+    if (!inspectApp) return;
+    setAssignCommittee(findCommittee(effectiveCommittee(inspectApp))?.name || effectiveCommittee(inspectApp));
+    setAssignRole(inspectApp.organizationalRole || '');
+  }, [inspectApp?.id]);
   // Selected application for digital ID badge card modal
   const [viewingBadgeApp, setViewingBadgeApp] = useState<StoredApplication | null>(null);
 
@@ -1271,7 +1280,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <th className="p-3 w-[24%] text-right font-medium">اسم المتقدم</th>
                         <th className="p-3 w-[15%] text-right font-medium">الرقم الجامعي</th>
                         <th className="p-3 w-[22%] text-right font-medium">التخصص والكلية</th>
-                        <th className="p-3 w-[17%] text-right font-medium">اللجنة المستهدفة</th>
+                        <th className="p-3 w-[17%] text-right font-medium">اللجنة والمسمى</th>
                         <th className="p-3 w-[10%] text-center font-medium">حالة الطلب</th>
                         <th className="p-3 w-[12%] text-center font-medium">الإجراءات</th>
                       </tr>
@@ -1293,7 +1302,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             appStatusFilter === 'all' || app.status === appStatusFilter;
                           const matchesCommittee =
                             appCommitteeFilter === 'الكل' ||
-                            (app.targetCommittee && app.targetCommittee.includes(appCommitteeFilter));
+                            effectiveCommittee(app).includes(appCommitteeFilter);
                           return matchesSearch && matchesFilter && matchesCommittee;
                         })
                         .map((app) => (
@@ -1307,7 +1316,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               <div className="truncate text-gray-200">{app.major}</div>
                               <div className="text-[10px] text-gray-400">{app.academicYear}</div>
                             </td>
-                            <td className="p-3 w-[17%] text-right text-cyan-300 font-medium truncate">{app.targetCommittee}</td>
+                            <td className="p-3 w-[17%] text-right">
+                              <div className="text-cyan-300 font-medium truncate">{effectiveCommittee(app)}</div>
+                              <div className={`text-xs truncate ${app.organizationalRole ? 'text-emerald-300' : 'text-gray-500'}`}>
+                                {app.organizationalRole || 'بدون مسمى'}
+                              </div>
+                            </td>
                             <td className="p-3 w-[10%] text-center">
                               <span
                                 className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
@@ -3697,7 +3711,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         {/* Inspect Applicant Detail Modal */}
         {inspectApp && (
           <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-lg rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150">
+            <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150">
               <button
                 onClick={() => setInspectApp(null)}
                 className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white"
@@ -3757,6 +3771,85 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 )}
               </div>
 
+              {/* Assignment: committee + title printed on the committee card */}
+              <div className="mb-5 p-4 rounded-2xl bg-white/[0.03] border border-emerald-500/25 space-y-3">
+                <div>
+                  <div className="text-sm font-bold text-white">التعيين في النادي</div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    طلب الانضمام إلى: <span className="text-gray-200">{inspectApp.targetCommittee}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="block text-xs text-gray-300 mb-1">اللجنة</span>
+                    <select
+                      value={assignCommittee}
+                      onChange={(e) => setAssignCommittee(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-white/15 focus:border-emerald-400 focus:outline-none text-sm text-white"
+                    >
+                      {!findCommittee(assignCommittee) && assignCommittee && <option value={assignCommittee}>{assignCommittee}</option>}
+                      {COMMITTEES.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-xs text-gray-300 mb-1">المسمى على الكرت</span>
+                    <input
+                      type="text"
+                      list="committee-role-suggestions"
+                      value={assignRole}
+                      maxLength={40}
+                      onChange={(e) => setAssignRole(e.target.value)}
+                      placeholder="اختر أو اكتب مسمى..."
+                      className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-white/15 focus:border-emerald-400 focus:outline-none text-sm text-white"
+                    />
+                    <datalist id="committee-role-suggestions">
+                      {(findCommittee(assignCommittee)?.roles || []).map((r) => (
+                        <option key={r} value={r} />
+                      ))}
+                    </datalist>
+                  </label>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {(findCommittee(assignCommittee)?.roles || []).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setAssignRole(r)}
+                      className={`px-2.5 py-1 rounded-lg text-xs border transition-colors cursor-pointer ${
+                        assignRole === r
+                          ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-200'
+                          : 'bg-white/[0.03] border-white/10 text-gray-300 hover:border-emerald-400/40'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={
+                    assignCommittee === effectiveCommittee(inspectApp) && assignRole.trim() === (inspectApp.organizationalRole || '')
+                  }
+                  onClick={() => {
+                    const assignment = { assignedCommittee: assignCommittee, organizationalRole: assignRole.trim() };
+                    dataService.updateApplicationAssignment(inspectApp.id, assignment);
+                    setInspectApp({ ...inspectApp, ...assignment });
+                    showToast(`تم حفظ تعيين (${inspectApp.fullName})`);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  حفظ التعيين
+                </button>
+              </div>
+
               {/* Direct access to Digital Member ID Card */}
               <div className="mb-4">
                 <button
@@ -3770,7 +3863,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <span>معاينة وإصدار بطاقة العضوية الإلكترونية الرسمية (Digital ID Badge)</span>
                 </button>
 
-                {inspectApp.targetCommittee && !inspectApp.targetCommittee.includes('عامة') && (
+                {findCommittee(effectiveCommittee(inspectApp))?.id !== 'general' && effectiveCommittee(inspectApp) && (
                   <button
                     type="button"
                     onClick={() => {
@@ -3779,7 +3872,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     className="w-full mt-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 hover:from-cyan-500/30 hover:to-purple-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow-lg transition-all"
                   >
                     <Award className="w-4 h-4 text-cyan-400" />
-                    <span>إصدار بطاقة عضو اللجنة التنفيذية الرسمية ({inspectApp.targetCommittee}) 🪪</span>
+                    <span>بطاقة عضو اللجنة ({effectiveCommittee(inspectApp)})</span>
                   </button>
                 )}
               </div>

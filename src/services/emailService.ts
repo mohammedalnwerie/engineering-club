@@ -1,5 +1,6 @@
 import { safeStorage } from './safeStorage';
 import { dataService } from './dataService';
+import { effectiveCommittee } from '../data/committees';
 import type { StoredApplication } from '../types';
 
 export interface EmailConfig {
@@ -42,7 +43,7 @@ export const emailService = {
 الزميل المهندس / الزميلة المهندسة: ${app.fullName} المحترمـ/ـة
 تحية طيبة وبعد،،
 
-يسر مجلس إدارة النادي الهندسي في جامعة فلسطين أن يهنئك بقبول طلب انضمامك رسمياً لعضوية النادي ضمن "${app.targetCommittee}" للعام الجامعي 2026.
+يسر مجلس إدارة النادي الهندسي في جامعة فلسطين أن يهنئك بقبول طلب انضمامك رسمياً لعضوية النادي ضمن "${effectiveCommittee(app)}" للعام الجامعي 2026.
 
 لقد تم اعتماد وإصدار بطاقة عضويتك الرقمية الرسمية وتوثيقها في سجلات النادي بكود توثيق فريد:
 • كود الاعتماد الرسمي: ${authCode}
@@ -70,7 +71,7 @@ ${origin}
     const authCode = `UP-ENG-${(app.id || 'VALID').slice(-8).toUpperCase()}`;
 
     const message = `🎉 *تهانينا يا م. ${app.fullName}!*
-يسر إدارة *النادي الهندسي بجامعة فلسطين* إعلامك بقبول عضويتك رسمياً ضمن *${app.targetCommittee}*.
+يسر إدارة *النادي الهندسي بجامعة فلسطين* إعلامك بقبول عضويتك رسمياً ضمن *${effectiveCommittee(app)}*.
 
 🪪 *تم إصدار بطاقة عضويتك الرقمية المعتمدة رسمياً:*
 • كود التوثيق: ${authCode}
@@ -139,7 +140,8 @@ ${verifyUrl}
             student_id: app.studentId,
             college: app.college,
             major: app.major,
-            committee: app.targetCommittee,
+            committee: effectiveCommittee(app),
+            role: app.organizationalRole || '',
             auth_code: authCode,
             verify_url: verifyUrl,
             subject: subject,

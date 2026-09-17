@@ -117,7 +117,8 @@ declare
   v_full_name  text := btrim(coalesce(payload->>'fullName', ''));
   v_email      text := btrim(coalesce(payload->>'email', ''));
   v_phone      text := btrim(coalesce(payload->>'phone', ''));
-  v_data       jsonb := payload - 'id' - 'status' - 'submittedAt';
+  -- الطالب لا يستطيع تعيين لجنته أو مسماه بنفسه
+  v_data       jsonb := payload - 'id' - 'status' - 'submittedAt' - 'assignedCommittee' - 'organizationalRole';
   v_row        public.club_applications;
 begin
   if v_student_id = '' or v_full_name = '' then
@@ -139,7 +140,10 @@ begin
     set full_name    = excluded.full_name,
         email        = excluded.email,
         phone        = excluded.phone,
-        data         = excluded.data,
+        -- الحفاظ على تعيين الإدارة (اللجنة والمسمى) عند إعادة التقديم
+        data         = excluded.data || jsonb_strip_nulls(jsonb_build_object(
+                         'assignedCommittee', public.club_applications.data->'assignedCommittee',
+                         'organizationalRole', public.club_applications.data->'organizationalRole')),
         submitted_at = now(),
         -- العضو المقبول يبقى مقبولاً، غير ذلك يرجع للمراجعة
         status = case when public.club_applications.status = 'تم القبول'
@@ -197,6 +201,8 @@ begin
     'major', v_row.data->>'major',
     'academicYear', v_row.data->>'academicYear',
     'targetCommittee', v_row.data->>'targetCommittee',
+    'assignedCommittee', v_row.data->>'assignedCommittee',
+    'organizationalRole', v_row.data->>'organizationalRole',
     'skills', coalesce(v_row.data->'skills', '[]'::jsonb)
   );
 end;

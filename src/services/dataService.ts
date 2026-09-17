@@ -140,6 +140,8 @@ export type NewComplaint = Omit<ComplaintItem, 'id' | 'ticketNumber' | 'status' 
 
 export interface MemberLookup {
   id: string;
+  assignedCommittee?: string;
+  organizationalRole?: string;
   fullName: string;
   studentId: string;
   status: StoredApplication['status'];
@@ -444,6 +446,20 @@ class DataService {
     this.notify();
     void this.runAdminWrite('فشل تحديث حالة الطلب', (client) =>
       client.from('club_applications').update({ status }).eq('id', id)
+    );
+  }
+
+  /** Admin: place a member in a committee and give them a title. Stored inside the application's data. */
+  public updateApplicationAssignment(id: string, assignment: { assignedCommittee: string; organizationalRole: string }) {
+    const app = this.applications.find((a) => a.id === id);
+    if (!app) return;
+    const updated: StoredApplication = { ...app, ...assignment };
+    this.applications = this.applications.map((a) => (a.id === id ? updated : a));
+    this.notify();
+
+    const { id: _id, studentId: _sid, fullName: _name, email: _email, phone: _phone, status: _status, submittedAt: _at, ...data } = updated;
+    void this.runAdminWrite('فشل حفظ التعيين', (client) =>
+      client.from('club_applications').update({ data }).eq('id', id)
     );
   }
 

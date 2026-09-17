@@ -124,6 +124,10 @@ export interface ClubApplication {
 
 export interface StoredApplication extends ClubApplication {
   id: string;
+  /** Set by an admin: committee the member was placed in (may differ from the requested one) */
+  assignedCommittee?: string;
+  /** Set by an admin: title printed on the committee card */
+  organizationalRole?: string;
   status: 'قيد المراجعة' | 'مقابلة مجدولة' | 'تم القبول' | 'مرفوض';
   submittedAt: string;
 }
