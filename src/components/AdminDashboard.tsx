@@ -16,7 +16,7 @@ import { TeamPanel } from './admin/TeamPanel';
 import { ActivityPanel } from './admin/ActivityPanel';
 import { TrashPanel } from './admin/TrashPanel';
 import { Button, SidebarNavItem } from './admin/ui';
-import { useConfirm } from './admin/controls';
+import { ActionMenu, useConfirm } from './admin/controls';
 import { ApplicationsTable } from './admin/ApplicationsTable';
 import { QuickNav, type QuickNavItem } from './admin/QuickNav';
 import { LeadershipPanel } from './admin/LeadershipPanel';
@@ -76,6 +76,9 @@ import {
   Upload,
   Link as LinkIcon,
   LogOut,
+  ChevronDown,
+  ChevronUp,
+  ArrowLeft,
   Printer,
   ShieldCheck,
   ShieldAlert,
@@ -331,6 +334,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [appSearch, setAppSearch] = useState('');
   const [appStatusFilter, setAppStatusFilter] = useState<string>('all');
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
+  const [showRecruitmentControls, setShowRecruitmentControls] = useState(false);
   const [interviewApp, setInterviewApp] = useState<StoredApplication | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [quickNavOpen, setQuickNavOpen] = useState(false);
@@ -1019,7 +1023,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         className="relative w-full h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header Bar */}
+        {/* Branding header — only before signing in; the workspace has its own bar */}
+        {!isAuthenticated && (
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-[#08041D]/95 shrink-0">
           <div className="flex items-center gap-3.5">
             <ClubLogo variant="emblem" size="md" />
@@ -1065,6 +1070,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             </button>
           </div>
         </div>
+        )}
 
         {confirmDialog}
 
@@ -1628,11 +1634,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     type="button"
                     disabled={isRefreshingData}
                     onClick={() => void handleRefreshData()}
-                    className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer"
+                    aria-label="مزامنة البيانات"
+                    title="مزامنة البيانات"
+                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white transition-all cursor-pointer"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isRefreshingData ? 'animate-spin' : ''}`} />
-                    <span className="hidden sm:inline">{isRefreshingData ? 'جاري التحديث...' : 'مزامنة البيانات'}</span>
+                    <RefreshCw className={`w-4 h-4 text-cyan-400 ${isRefreshingData ? 'animate-spin' : ''}`} />
                   </button>
+
+                  {/* Account actions moved up here so the workspace has one bar, not two */}
+                  <ActionMenu
+                    label="حسابي وإجراءات اللوحة"
+                    align="end"
+                    items={[
+                      {
+                        label: 'العودة إلى الموقع',
+                        icon: <ArrowLeft className="w-4 h-4 text-cyan-300" />,
+                        onClick: onClose,
+                      },
+                      {
+                        label: 'تسجيل الخروج',
+                        icon: <LogOut className="w-4 h-4" />,
+                        onClick: () => void handleLogout(),
+                        danger: true,
+                      },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -1980,8 +2006,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 {/* Tab 1: Applications */}
                 {activeTab === 'applications' && (
-              <div className="flex-1 overflow-y-auto p-6">
-                {/* Committee Recruitment & Intake Controls (إدارة استقطاب اللجان) */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                {/* Recruitment switches, folded away so the list of applicants comes first */}
+                <div className="mb-5">
+                  <button
+                    type="button"
+                    onClick={() => setShowRecruitmentControls((v) => !v)}
+                    aria-expanded={showRecruitmentControls}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-black/40 border border-white/10 hover:border-white/20 text-right transition-colors cursor-pointer"
+                  >
+                    <span
+                      className={`p-2 rounded-xl border shrink-0 ${
+                        recruitmentSettings.isGlobalRecruitmentOpen
+                          ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400'
+                          : 'bg-red-950/60 border-red-500/30 text-red-400'
+                      }`}
+                    >
+                      <Sliders className="w-4 h-4" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-bold text-white">إعدادات الاستقطاب</span>
+                      <span className="block text-xs text-gray-400 mt-0.5">
+                        {recruitmentSettings.isGlobalRecruitmentOpen ? 'باب الانضمام مفتوح' : 'باب الانضمام مغلق'}
+                        {' · '}
+                        {COMMITTEES.filter((c) => recruitmentSettings.committees?.[c.id]?.isOpen === false).length} لجنة مغلقة
+                      </span>
+                    </span>
+                    {showRecruitmentControls ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                    )}
+                  </button>
+                </div>
+
+                {showRecruitmentControls && (
                 <div className="p-5 rounded-2xl bg-black/40 border border-white/10 mb-6 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-white/5">
                     <div className="flex items-center gap-3">
@@ -2086,6 +2145,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     })}
                   </div>
                 </div>
+                )}
 
                 {/* Search & Actions Header */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
