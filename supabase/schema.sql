@@ -1244,22 +1244,29 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_row   jsonb := to_jsonb(old);
+  v_type  text;
+  v_title text;
 begin
   if auth.uid() is null then
     return old;
   end if;
+
+  v_type := case tg_table_name
+    when 'club_applications' then 'application'
+    when 'club_complaints'   then 'complaint'
+    else 'event' end;
+
+  -- القراءة من نسخة JSON: التعبير الواحد لا يستطيع ذكر أعمدة غير موجودة في الجدول
+  v_title := case tg_table_name
+    when 'club_applications' then 'طلب: '   || coalesce(v_row->>'full_name', '')
+    when 'club_complaints'   then 'شكوى: '  || coalesce(v_row->>'ticket_number', '')
+    else                          'فعالية: ' || coalesce(v_row->>'title', '') end;
+
   insert into public.club_trash (entity_type, entity_id, title, payload, deleted_by, deleted_by_email)
-  values (
-    case tg_table_name when 'club_applications' then 'application' when 'club_complaints' then 'complaint' else 'event' end,
-    old.id::text,
-    case tg_table_name
-      when 'club_applications' then 'طلب: ' || old.full_name
-      when 'club_complaints' then 'شكوى: ' || old.ticket_number
-      else 'فعالية: ' || (to_jsonb(old)->>'title') end,
-    to_jsonb(old),
-    auth.uid(),
-    auth.jwt()->>'email'
-  );
+  values (v_type, v_row->>'id', v_title, v_row, auth.uid(), auth.jwt()->>'email');
+
   return old;
 end;
 $$;
