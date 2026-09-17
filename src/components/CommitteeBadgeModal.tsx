@@ -22,19 +22,13 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
 
   let committeeName = 'لجنة الفعاليات والأنشطة';
   let committeeCode = 'EVT';
-  let committeeSubtitle = 'EVENTS & ACTIVITIES TASKFORCE';
-  let committeeDuty = 'تنظيم وإدارة الفعاليات والورش الهندسية، الهاكاثونات وإدارة الحشود الميدانية.';
 
   if (isTraining) {
     committeeName = 'لجنة العلاقات العامة والتدريب';
     committeeCode = 'REL';
-    committeeSubtitle = 'PARTNERSHIPS & TRAINING TASKFORCE';
-    committeeDuty = 'التنسيق مع المدربين والمؤسسات الهندسية الشريكة وتطوير المسارات التدريبية.';
   } else if (isMedia) {
     committeeName = 'اللجنة الإعلامية والإنتاج المرئي';
     committeeCode = 'MED';
-    committeeSubtitle = 'MEDIA & PRODUCTION TASKFORCE';
-    committeeDuty = 'صناعة المحتوى الرقمي، التصميم والمونتاج، والتغطيات الإعلامية لكافة الأنشطة.';
   }
 
   const appAny = app as any;
@@ -93,7 +87,10 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
           <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
 
-          {/* Top Header: Prominent Enlarged Emblem & Official Club Identity (No extra years or cadres) */}
+          {/* Lanyard Clip Slot for Realistic Printable Badge */}
+          <div className="w-16 h-1.5 rounded-full bg-white/20 mx-auto mb-4 shadow-inner" />
+
+          {/* Top Header: Prominent Club Logo, University Identity & Smart IC Microchip */}
           <div className="flex items-center justify-between pb-4 border-b border-white/15 mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-2xl bg-white shadow-md border border-white/90 flex items-center justify-center shrink-0">
@@ -115,64 +112,56 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
                 </div>
               </div>
             </div>
-            <div className="text-left">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#7F1AB2]/25 text-[#D1B5E3] border border-[#7F1AB2]/40 font-sans shadow-sm">
-                <Sparkles className="w-3 h-3 text-[#3FE7E3]" />
+
+            {/* Smart IC Microchip & Accreditation Badge */}
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-400 via-yellow-200 to-amber-500 p-0.5 shadow-md border border-amber-300/60 flex items-center justify-center relative overflow-hidden shrink-0" title="Smart IC Pass">
+                <div className="w-full h-full border border-amber-800/40 rounded-[2px] flex items-center justify-around">
+                  <div className="w-[1px] h-full bg-amber-800/30" />
+                  <div className="w-2 h-2 rounded-full border border-amber-800/40" />
+                  <div className="w-[1px] h-full bg-amber-800/30" />
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#7F1AB2]/30 text-[#D1B5E3] border border-[#7F1AB2]/40 font-sans shadow-sm">
+                <Sparkles className="w-2.5 h-2.5 text-[#3FE7E3]" />
                 <span>اعتماد رسمي</span>
               </span>
             </div>
           </div>
 
-          {/* Committee Name & Organizational Role Ribbon */}
-          <div className="mb-4 p-3 rounded-2xl bg-black/60 border border-[#7F1AB2]/30 text-center">
-            <div className="text-[10px] text-gray-400 uppercase font-sans">اللجنة التنفيذية:</div>
-            <div className="text-sm sm:text-base font-black text-[#3FE7E3] font-sans mt-0.5">
-              {committeeName}
+          {/* Member Name (Prominent & Executive) */}
+          <div className="mb-4">
+            <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
+            <div className="text-xl sm:text-2xl font-black text-white font-sans tracking-wide mt-0.5 leading-snug">
+              {app.fullName}
             </div>
-            <div className="text-[9px] text-gray-400 font-mono mt-0.5">{committeeSubtitle}</div>
-            
-            {/* Organizational Role Under Committee */}
-            <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-center gap-2">
-              <span className="text-[10px] text-gray-400 font-sans">المسمى التنظيمي:</span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#35BC2B] px-2.5 py-0.5 rounded-full bg-[#35BC2B]/10 border border-[#35BC2B]/30 font-sans">
+            <div className="text-xs font-mono text-gray-400 mt-0.5">
+              الرقم الجامعي: <span className="text-[#3FE7E3] font-bold">{app.studentId || 'UP-STUDENT'}</span>
+            </div>
+          </div>
+
+          {/* Clean Executive Metadata (2 Core Rows: Major & Committee Role) */}
+          <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 mb-5 text-xs font-sans">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-gray-400">التخصص الهندسي:</span>
+              <span className="font-bold text-[#3FE7E3]">{app.major}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
+              <span className="text-gray-400">اللجنة التنفيذية:</span>
+              <span className="font-bold text-gray-200">{committeeName}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
+              <span className="text-gray-400">المسمى التنظيمي:</span>
+              <span className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
                 {organizationalRole}
               </span>
             </div>
           </div>
 
-          {/* Member Identity & Details */}
-          <div className="mb-4">
-            <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
-            <div className="text-lg font-black text-white font-sans leading-snug mt-0.5">
-              {app.fullName}
-            </div>
-            <div className="text-xs text-[#3FE7E3] font-bold mt-1">
-              الرقم الجامعي: {app.studentId || 'UP-STUDENT'}
-            </div>
-          </div>
-
-          {/* Academic Specialization & Scope (Cleaned: No College, No Academic Year) */}
-          <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 mb-4 text-xs font-sans">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-400">التخصص الهندسي:</span>
-              <span className="font-bold text-[#3FE7E3]">{app.major}</span>
-            </div>
-            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
-              <span className="text-gray-400">المسمى التنظيمي:</span>
-              <span className="font-bold text-[#35BC2B]">{organizationalRole}</span>
-            </div>
-          </div>
-
-          {/* Committee Taskforce Mission */}
-          <div className="mb-4 p-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] font-sans">
-            <div className="text-gray-400 text-[10px] mb-1 font-mono">طبيعة المهام والمسؤوليات:</div>
-            <div className="text-gray-200 leading-relaxed font-light">{committeeDuty}</div>
-          </div>
-
           {/* Verification Barcode, Serial & QR */}
           <div className="pt-3 border-t border-dashed border-white/20 flex items-center justify-between">
-            <div className="text-[9px] text-gray-400 leading-tight">
+            <div className="text-[9px] text-gray-400 leading-tight font-mono">
               <div className="text-white font-bold mb-0.5">TASKFORCE PASS ID:</div>
               <div className="text-[#3FE7E3] font-bold">{serialNumber}</div>
               <div className="text-[8px] text-gray-500 mt-1">OFFICIALLY ACCREDITED BY ENGINEERING CLUB</div>
@@ -182,7 +171,7 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(verifyUrl)}`}
                 alt="Verification QR"
-                className="w-11 h-11 object-contain"
+                className="w-12 h-12 object-contain"
               />
             </div>
           </div>

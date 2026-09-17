@@ -53,8 +53,11 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
           <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
 
-          {/* Badge Top Header: Prominent Enlarged Logo */}
-          <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
+          {/* Lanyard Clip Slot for Realistic Printable Badge */}
+          <div className="w-16 h-1.5 rounded-full bg-white/20 mx-auto mb-4 shadow-inner" />
+
+          {/* Badge Top Header: Prominent Club Logo, University Identity & Smart IC Microchip */}
+          <div className="flex items-center justify-between pb-4 border-b border-white/15 mb-5">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-2xl bg-white shadow-md border border-white/90 flex items-center justify-center shrink-0">
                 <img
@@ -75,29 +78,38 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
                 </div>
               </div>
             </div>
-            <div className="text-left">
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#D1B5E3] px-2.5 py-1 rounded-full bg-[#7F1AB2]/25 border border-[#7F1AB2]/40 font-sans shadow-sm">
-                <Sparkles className="w-3 h-3 text-[#3FE7E3]" />
+
+            {/* Smart IC Microchip & Executive Badge */}
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-400 via-yellow-200 to-amber-500 p-0.5 shadow-md border border-amber-300/60 flex items-center justify-center relative overflow-hidden shrink-0" title="Smart IC Pass">
+                <div className="w-full h-full border border-amber-800/40 rounded-[2px] flex items-center justify-around">
+                  <div className="w-[1px] h-full bg-amber-800/30" />
+                  <div className="w-2 h-2 rounded-full border border-amber-800/40" />
+                  <div className="w-[1px] h-full bg-amber-800/30" />
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#D1B5E3] px-2 py-0.5 rounded-full bg-[#7F1AB2]/30 border border-[#7F1AB2]/40 font-sans shadow-sm">
+                <Sparkles className="w-2.5 h-2.5 text-[#3FE7E3]" />
                 <span>تكليف رسمي</span>
               </span>
             </div>
           </div>
 
           {/* Leader Photo & Identity */}
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-4 mb-5">
             <div className="relative shrink-0">
               <img
                 src={leader.avatar}
                 alt={leader.name}
-                className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-[#7F1AB2]/60 shadow-md"
+                className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover border-2 border-[#7F1AB2]/60 shadow-lg"
               />
               <div className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-full bg-[#7F1AB2] text-white shadow">
                 <Award className="w-3.5 h-3.5" />
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] text-gray-400 font-sans">الاسم الكريم:</div>
-              <div className="text-base sm:text-lg font-black text-white font-sans leading-snug">
+              <div className="text-[10px] text-gray-400 font-sans">اسم القيادي/ـة:</div>
+              <div className="text-lg sm:text-xl font-black text-white font-sans leading-snug">
                 {leader.name}
               </div>
               <div className="text-xs sm:text-sm font-bold text-[#3FE7E3] font-sans mt-0.5 leading-tight">
@@ -109,49 +121,25 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
             </div>
           </div>
 
-          {/* Leader Quote / Pledge */}
-          {leader.quote && (
-            <div className="p-3 rounded-xl bg-black/40 border border-white/5 text-[11px] text-gray-300 italic font-sans mb-4 leading-relaxed">
-              "{leader.quote}"
-            </div>
-          )}
-
-          {/* Official Email & Scope */}
-          <div className="space-y-1.5 p-3 rounded-2xl bg-black/40 border border-white/10 mb-4 text-xs font-sans">
-            <div className="flex justify-between items-center text-[11px]">
-              <span className="text-gray-400">البريد الرسمي:</span>
-              <span className="font-bold text-[#3FE7E3] font-mono">{leader.email}</span>
-            </div>
-            <div className="flex justify-between items-center text-[11px]">
+          {/* Clean Executive Metadata (2 Core Rows) */}
+          <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 mb-5 text-xs font-sans">
+            <div className="flex justify-between items-center text-xs">
               <span className="text-gray-400">المستوى القيادي:</span>
               <span className="font-bold text-gray-200">
                 {isExecutive ? 'الهيئة الإدارية والتنفيذية' : 'رئاسة اللجان المتخصصة'}
               </span>
             </div>
+            <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
+              <span className="text-gray-400">البريد الرسمي:</span>
+              <span className="font-bold text-[#3FE7E3] font-mono">{leader.email}</span>
+            </div>
           </div>
 
-          {/* Skills / Portfolios */}
-          {leader.skills && leader.skills.length > 0 && (
-            <div className="mb-4">
-              <div className="text-[10px] text-gray-400 font-sans mb-1.5">مجالات الإشراف والمسؤولية:</div>
-              <div className="flex flex-wrap gap-1">
-                {leader.skills.map((skill, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30 text-[10px] text-cyan-200 font-sans"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Verification Barcode, Serial & Official Stamp */}
-          <div className="pt-3 border-t border-dashed border-white/15 flex items-center justify-between">
+          <div className="pt-3 border-t border-dashed border-white/20 flex items-center justify-between">
             <div className="text-[9px] text-gray-400 leading-tight font-mono">
               <div className="text-white font-bold mb-0.5">CREDENTIAL ID:</div>
-              <div className="text-cyan-400 font-bold">{badgeSerial}</div>
+              <div className="text-[#3FE7E3] font-bold">{badgeSerial}</div>
               <div className="text-[8px] text-gray-500 mt-1">OFFICIAL BOARD ACCREDITATION</div>
             </div>
             {/* Scannable Verification QR Code */}
@@ -161,7 +149,7 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
                   `${window.location.origin}/?verifyLeader=${encodeURIComponent(leader.id)}`
                 )}`}
                 alt="Verification QR"
-                className="w-11 h-11 object-contain"
+                className="w-12 h-12 object-contain"
               />
             </div>
           </div>

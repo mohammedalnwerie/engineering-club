@@ -168,7 +168,10 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                     id="verified-member-card"
                     className="rounded-3xl p-5 sm:p-6 bg-gradient-to-b from-[#140C38] via-[#0E082C] to-[#08041D] border-2 border-[#7F1AB2]/50 shadow-[0_0_35px_rgba(127,26,178,0.25)] font-mono text-right relative overflow-hidden"
                   >
-                    {/* Header with Prominent Enlarged Logo */}
+                    {/* Lanyard Clip Slot for Realistic Printable Badge */}
+                    <div className="w-16 h-1.5 rounded-full bg-white/20 mx-auto mb-4 shadow-inner" />
+
+                    {/* Header with Prominent Logo & Smart IC Microchip */}
                     <div className="flex items-center justify-between pb-3.5 border-b border-white/10 mb-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-2xl bg-white shadow-md border border-white/90 flex items-center justify-center shrink-0">
@@ -190,23 +193,32 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                           </div>
                         </div>
                       </div>
-                      <div className="text-left text-[9px] font-mono text-[#3FE7E3] font-bold">
-                        <div>{authCode}</div>
+
+                      {/* Smart IC Microchip & Auth Code */}
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-400 via-yellow-200 to-amber-500 p-0.5 shadow-md border border-amber-300/60 flex items-center justify-center relative overflow-hidden shrink-0" title="Smart IC Pass">
+                          <div className="w-full h-full border border-amber-800/40 rounded-[2px] flex items-center justify-around">
+                            <div className="w-[1px] h-full bg-amber-800/30" />
+                            <div className="w-2 h-2 rounded-full border border-amber-800/40" />
+                            <div className="w-[1px] h-full bg-amber-800/30" />
+                          </div>
+                        </div>
+                        <span className="text-[8px] font-mono text-[#3FE7E3] font-bold">{authCode}</span>
                       </div>
                     </div>
 
                     {/* Member Details */}
                     <div className="mb-4">
                       <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
-                      <div className="text-lg font-extrabold text-white font-sans mt-0.5 tracking-wide">
+                      <div className="text-xl sm:text-2xl font-black text-white font-sans mt-0.5 tracking-wide leading-snug">
                         {matchedApp.fullName}
                       </div>
-                      <div className="text-xs text-[#3FE7E3] mt-0.5">
-                        الرقم الجامعي: <span className="font-bold">{matchedApp.studentId || 'مسجل'}</span>
+                      <div className="text-xs font-mono text-gray-400 mt-0.5">
+                        الرقم الجامعي: <span className="font-bold text-[#3FE7E3]">{matchedApp.studentId || 'UP-STUDENT'}</span>
                       </div>
                     </div>
 
-                    {/* Academic Information (Cleaned: No College, No Academic Year) */}
+                    {/* Academic Information (Clean & Minimal) */}
                     <div className="space-y-2 p-3.5 rounded-2xl bg-black/50 border border-white/10 text-xs font-sans mb-4">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-gray-400">التخصص الهندسي:</span>
@@ -214,18 +226,21 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                       </div>
                       <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
                         <span className="text-gray-400">نوع العضوية / اللجنة:</span>
-                        <span className="font-bold text-[#35BC2B]">{matchedApp.targetCommittee}</span>
+                        <span className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
+                          {matchedApp.targetCommittee}
+                        </span>
                       </div>
                     </div>
 
                     {/* Scannable Verification QR Code */}
                     <div className="pt-3 border-t border-dashed border-white/10 flex items-center justify-between">
-                      <div className="text-[9px] text-gray-400 leading-tight">
+                      <div className="text-[9px] text-gray-400 leading-tight font-mono">
                         <div className="text-white font-bold mb-0.5">DIGITAL SIGNATURE:</div>
                         <div className="text-emerald-400 font-bold">OFFICIALLY REGISTERED</div>
                         <div className="text-[8px] text-gray-500 mt-1">مسجل في قاعدة بيانات النادي الهندسي</div>
                       </div>
-                      <div className="p-1 rounded-xl bg-white flex items-center justify-center">
+                      <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow">
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(verifyUrl)}`}
                           alt="Verification QR"
