@@ -9,17 +9,19 @@ import { effectiveCommittee } from '../data/committees';
 interface CommitteeBadgeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  app: StoredApplication | null;
+  app: (StoredApplication & { codeHint?: string }) | null;
+  /** Admins see the full member code; the public verify page only sees the last 4 characters. */
+  revealCode?: boolean;
 }
 
-export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen, onClose, app }) => {
+export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen, onClose, app, revealCode = false }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !app) return null;
 
   const committeeName = effectiveCommittee(app);
-  const card = committeeCardFor(app);
+  const card = committeeCardFor(app, { revealCode });
   const serialNumber = card.code;
 
   return (

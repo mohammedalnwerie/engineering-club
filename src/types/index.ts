@@ -130,6 +130,11 @@ export interface StoredApplication extends ClubApplication {
   organizationalRole?: string;
   /** Set by the send-acceptance-email function */
   acceptanceEmailSentAt?: string;
+  /** Private code issued on acceptance (database update-005) */
+  memberCode?: string;
+  acceptedAt?: string;
+  membershipType?: 'temporary' | 'semester';
+  validUntil?: string;
   status: 'قيد المراجعة' | 'مقابلة مجدولة' | 'تم القبول' | 'مرفوض';
   submittedAt: string;
 }
@@ -211,6 +216,17 @@ export interface CommitteeRecruitmentStatus {
   isOpen: boolean;
   closedNotice?: string;
   maxSeats?: number;
+}
+
+export interface MembershipSettings {
+  trialDays: number;
+  semesterFee: number;
+  currency: string;
+  semesterLabel: string;
+  /** YYYY-MM-DD — semester memberships stay valid until the end of this day */
+  semesterEndsAt: string;
+  paymentMethods: string[];
+  paymentInstructions: string;
 }
 
 export interface RecruitmentSettings {

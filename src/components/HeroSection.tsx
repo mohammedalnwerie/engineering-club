@@ -21,6 +21,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
     };
   }, []);
 
+  const membership = dataService.getMembershipSettings();
   const collegesCount = dataService.getColleges().length;
   const majorsCount = dataService.getMajors().length;
   const committeesCount = Object.keys(dataService.getRecruitmentSettings().committees).filter((id) => id !== 'general').length;
@@ -29,7 +30,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
     { number: String(collegesCount), label: 'كليات مشاركة', sub: 'برمجيات، تكنولوجيا معلومات، هندسة تطبيقية' },
     { number: String(majorsCount), label: 'تخصصات', sub: 'من البرمجة والذكاء الاصطناعي إلى العمارة والمدني' },
     { number: String(committeesCount), label: 'لجان عمل', sub: 'فعاليات، علاقات وتدريب، إعلام' },
-    { number: 'مجاناً', label: 'العضوية', sub: 'مفتوحة لكل طلبة الكليات الهندسية والتقنية' },
+    { number: `${membership.semesterFee} ${membership.currency}`, label: 'العضوية الفصلية', sub: `بعد بطاقة مؤقتة لمدة ${membership.trialDays} يوماً` },
   ];
 
   const renderTitle = () => {

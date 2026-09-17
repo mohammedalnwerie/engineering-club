@@ -4403,7 +4403,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               </div>
 
               {/* The Actual Digital Badge Card (Vertical Portrait Ratio) */}
-              <MemberCard {...memberCardFor(viewingBadgeApp)} />
+              <MemberCard {...memberCardFor(viewingBadgeApp, { revealCode: true })} />
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-2.5 mt-6">
@@ -4412,7 +4412,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   type="button"
                   onClick={() => {
                     const sId = viewingBadgeApp.studentId || 'ID';
-                    void downloadCardPng(memberCardFor(viewingBadgeApp), `UP-Member-Card-${sId}.png`);
+                    void downloadCardPng(memberCardFor(viewingBadgeApp, { revealCode: true }), `UP-Member-Card-${sId}.png`);
                   }}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(22,163,74,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
                 >
@@ -4424,7 +4424,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <button
                   type="button"
                   onClick={() => {
-                    void printCard(memberCardFor(viewingBadgeApp));
+                    void printCard(memberCardFor(viewingBadgeApp, { revealCode: true }));
                   }}
                   className="w-full py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2 transition-all"
                 >
@@ -5622,6 +5622,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         {/* Committee Member Credential Badge Modal */}
         {viewingCommitteeApp && (
           <CommitteeBadgeModal
+            revealCode
             isOpen={Boolean(viewingCommitteeApp)}
             app={viewingCommitteeApp}
             onClose={() => setViewingCommitteeApp(null)}

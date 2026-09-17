@@ -21,6 +21,16 @@ const MembershipVerifyModal = lazy(() =>
   import('./components/MembershipVerifyModal').then((m) => ({ default: m.MembershipVerifyModal }))
 );
 const ComplaintsModal = lazy(() => import('./components/ComplaintsModal').then((m) => ({ default: m.ComplaintsModal })));
+const MemberPortal = lazy(() => import('./components/member/MemberPortal').then((m) => ({ default: m.MemberPortal })));
+
+// Invite / password-reset links land on ?admin=1&setup=password; remember it before Supabase consumes the URL tokens.
+if (new URLSearchParams(window.location.search).get('setup') === 'password') {
+  try {
+    sessionStorage.setItem('eng_club_admin_setup_password', '1');
+  } catch {
+    // storage unavailable: the admin can still set a password from the security tab
+  }
+}
 
 const clearRouteHash = (route: string) => {
   if (window.location.hash === route) {
@@ -39,6 +49,7 @@ export function App() {
     () => initialHash === '#/complaints' || params.get('complaints') === '1'
   );
   const [showAboutPage, setShowAboutPage] = useState(() => initialHash === '#/about' || params.get('about') === '1');
+  const [showMemberPortal, setShowMemberPortal] = useState(() => initialHash === '#/member' || params.get('member') === '1');
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -47,7 +58,8 @@ export function App() {
       if (hash === '#/about') window.scrollTo({ top: 0, behavior: 'smooth' });
       // Browser back/forward closes overlays whose route is gone
       setShowComplaintsModal(hash === '#/complaints');
-      setShowAdminModal(hash === '#/admin');
+      setShowAdminModal((open) => hash === '#/admin' || (open && !hash));
+      setShowMemberPortal(hash === '#/member');
     };
 
     window.addEventListener('hashchange', handleHashChange);
@@ -84,6 +96,16 @@ export function App() {
     clearRouteHash('#/complaints');
   };
 
+  const handleOpenMember = () => {
+    setShowMemberPortal(true);
+    window.location.hash = '#/member';
+  };
+
+  const handleCloseMember = () => {
+    setShowMemberPortal(false);
+    clearRouteHash('#/member');
+  };
+
   const handleOpenVerify = () => {
     setVerifyCode('');
     setShowVerifyModal(true);
@@ -113,6 +135,7 @@ export function App() {
         )}
         {showComplaintsModal && <ComplaintsModal isOpen onClose={handleCloseComplaints} />}
         {showAdminModal && <AdminDashboard isOpen onClose={handleCloseAdmin} />}
+        {showMemberPortal && <MemberPortal onClose={handleCloseMember} onJoin={handleJoinClick} />}
       </Suspense>
 
       {showAboutPage ? (
@@ -126,6 +149,7 @@ export function App() {
             onOpenAbout={handleOpenAbout}
             onOpenComplaints={handleOpenComplaints}
             onOpenVerify={handleOpenVerify}
+            onOpenMember={handleOpenMember}
           />
 
           <main className="relative z-10">
@@ -133,7 +157,7 @@ export function App() {
             <BrandIdentitySection onOpenAboutPage={handleOpenAbout} />
             <CollegesSection />
             <MajorsSection />
-            <EventsSection />
+            <EventsSection onOpenMemberPortal={handleOpenMember} />
             <ProjectsSection />
             <JoinClubSection />
             <LeadershipSection />

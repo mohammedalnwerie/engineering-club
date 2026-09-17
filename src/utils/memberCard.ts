@@ -86,18 +86,39 @@ export function cardQrDataUrl(value: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 type CardApplication = Pick<StoredApplication, 'id' | 'fullName' | 'studentId' | 'major' | 'targetCommittee'> &
-  Partial<Pick<StoredApplication, 'assignedCommittee' | 'organizationalRole'>>;
+  Partial<Pick<StoredApplication, 'assignedCommittee' | 'organizationalRole' | 'memberCode' | 'validUntil' | 'membershipType'>> & {
+    /** Last 4 characters of the member code, when the full code must stay private (public verify page) */
+    codeHint?: string;
+  };
+
+interface CardOptions {
+  /** Show the full private member code (member's own account / admins). Otherwise it is masked. */
+  revealCode?: boolean;
+}
 
 const cleanMajor = (major?: string) => (major || '').replace(/^(تخصص\s+|كلية\s+)/, '').trim();
 
 export const memberVerifyUrl = (app: Pick<StoredApplication, 'id' | 'studentId'>) =>
   `${window.location.origin}/?verify=${encodeURIComponent(app.studentId || app.id)}`;
 
-export const memberAuthCode = (app: Pick<StoredApplication, 'id'>) =>
-  `UP-ENG-${(app.id || '').slice(-8).toUpperCase()}`;
+/** The printed code: full for the member, masked (UP-••••-C21D) everywhere public. */
+export function memberCodeFor(app: CardApplication, reveal = false): string {
+  if (app.memberCode) return reveal ? app.memberCode : `UP-••••-${app.memberCode.slice(-4)}`;
+  if (app.codeHint) return `UP-••••-${app.codeHint}`;
+  return `UP-ENG-${(app.id || '').slice(-8).toUpperCase()}`;
+}
+
+/** Pill text: membership validity when known, otherwise the academic year. */
+export function validityBadge(app: CardApplication): string | undefined {
+  if (!app.validUntil) return undefined;
+  const expired = new Date(app.validUntil).getTime() < Date.now();
+  if (expired) return 'عضوية منتهية';
+  const date = new Date(app.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long' });
+  return app.membershipType === 'semester' ? `فصلية حتى ${date}` : `مؤقتة حتى ${date}`;
+}
 
 /** General club membership card. */
-export function memberCardFor(app: CardApplication): CardData {
+export function memberCardFor(app: CardApplication, options: CardOptions = {}): CardData {
   const committeeName = effectiveCommittee(app);
   const committee = findCommittee(committeeName);
   const isGeneral = !committee || committee.id === 'general';
@@ -112,16 +133,15 @@ export function memberCardFor(app: CardApplication): CardData {
       { label: 'التخصص', value: cleanMajor(app.major) },
     ],
     qrValue: memberVerifyUrl(app),
-    code: memberAuthCode(app),
+    code: memberCodeFor(app, options.revealCode),
+    badge: validityBadge(app),
     accent: 'purple',
   };
 }
 
 /** Committee member card (uses the admin's committee/title assignment). */
-export function committeeCardFor(app: CardApplication): CardData {
+export function committeeCardFor(app: CardApplication, options: CardOptions = {}): CardData {
   const committeeName = effectiveCommittee(app);
-  const committee = findCommittee(committeeName);
-  const year = new Date().getFullYear();
   return {
     name: app.fullName,
     role: app.organizationalRole || 'عضو في اللجنة',
@@ -131,7 +151,8 @@ export function committeeCardFor(app: CardApplication): CardData {
       { label: 'التخصص', value: cleanMajor(app.major) },
     ],
     qrValue: memberVerifyUrl(app),
-    code: `UP-COMM-${committee?.code || 'COM'}-${year}-${(app.studentId || app.id).slice(-4).toUpperCase()}`,
+    code: memberCodeFor(app, options.revealCode),
+    badge: validityBadge(app),
     accent: 'cyan',
   };
 }

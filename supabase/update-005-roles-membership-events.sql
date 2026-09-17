@@ -940,3 +940,11 @@ grant execute on function public.verify_member(text)                       to an
 grant execute on function public.review_payment_request(uuid, boolean, text) to authenticated;
 grant execute on function public.restore_from_trash(uuid)                  to authenticated;
 grant execute on function public.purge_old_trash()                         to authenticated;
+
+
+-- =====================================================================
+-- 11) إزالة وصف «غير ربحي» من نص «من نحن» المحفوظ
+-- =====================================================================
+update public.club_content
+set value = jsonb_set(value, '{aboutUs}', to_jsonb(replace(value->>'aboutUs', 'إطار طلابي تطوعي، غير ربحي، وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية، ولا يهدف إلى تحقيق أي مكاسب مادية.', 'إطار طلابي تطوعي وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية.')))
+where key = 'settings' and value->>'aboutUs' like '%غير ربحي%';

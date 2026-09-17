@@ -230,7 +230,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
           {/* Official Core Badges */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs font-medium">
             <span className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
-              🌱 إطار طلابي تطوعي غير ربحي
+              🌱 إطار طلابي تطوعي
             </span>
             <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300">
               ⚖️ مستقل وغير مسيّس
@@ -268,7 +268,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
             <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
             <p className="border-r-4 border-emerald-400 pr-4 font-normal text-white">
-              <strong className="text-emerald-400 font-bold">النادي الهندسي</strong> هو إطار طلابي تطوعي، غير ربحي، وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية، ولا يهدف إلى تحقيق أي مكاسب مادية. تأسس النادي بمبادرة من طلبة كلية هندسة البرمجيات والذكاء الاصطناعي في جامعة فلسطين، ليكون منصة طلابية جامعة تجمع طلبة التخصصات الهندسية والتقنية في الجامعة تحت مظلة واحدة، بهدف تنمية مهاراتهم الأكاديمية والعملية والتقنية، وتعزيز روح التعاون والإبداع بينهم.
+              <strong className="text-emerald-400 font-bold">النادي الهندسي</strong> هو إطار طلابي تطوعي وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية. تأسس النادي بمبادرة من طلبة كلية هندسة البرمجيات والذكاء الاصطناعي في جامعة فلسطين، ليكون منصة طلابية جامعة تجمع طلبة التخصصات الهندسية والتقنية في الجامعة تحت مظلة واحدة، بهدف تنمية مهاراتهم الأكاديمية والعملية والتقنية، وتعزيز روح التعاون والإبداع بينهم.
             </p>
 
             <p>

@@ -1,3 +1,4 @@
+import { dataService } from '../services/dataService';
 import React, { useState } from 'react';
 import { ChevronDown, HelpCircle, MessageSquare, ArrowLeft } from 'lucide-react';
 
@@ -16,12 +17,13 @@ interface FaqSectionProps {
 export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpenJoin }) => {
   const [openId, setOpenId] = useState<string | null>('faq-1');
 
+  const membership = dataService.getMembershipSettings();
   const faqs: FaqItem[] = [
     {
       id: 'faq-1',
       category: 'العضوية والتسجيل',
-      question: 'هل الانضمام للنادي الهندسي مجاني؟ وما هي شروط العضوية؟',
-      answer: 'نعم، النادي الهندسي هو إطار طلابي تطوعي وغير ربحي بالكامل. الانضمام والمشاركة في الفعاليات والبرامج وورش العمل مجاني تماماً وبدون أي رسوم لكافة طلبة الكليات الهندسية والتقنية وتكنولوجيا المعلومات في جامعة فلسطين.'
+      question: 'كيف تتم العضوية؟ وهل فيها رسوم؟',
+      answer: `بعد قبول طلبك تصلك على إيميلك بطاقة عضوية مؤقتة صالحة ${membership.trialDays} يوماً، مع رمز عضو سري تدخل به إلى «حسابي». بعدها تطلب العضوية الفصلية برسوم ${membership.semesterFee} ${membership.currency} من صفحة «حسابي»، وتبقى فعّالة حتى نهاية الفصل وتتيح لك التسجيل في الورش والدورات والهاكاثونات.`
     },
     {
       id: 'faq-2',

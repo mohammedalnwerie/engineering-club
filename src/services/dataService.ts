@@ -17,11 +17,22 @@ import type {
   SiteSettings,
   StudentSpotlightData,
   ComplaintItem,
-  RecruitmentSettings
+  RecruitmentSettings,
+  MembershipSettings
 } from '../types';
 
 
 
+
+export const DEFAULT_MEMBERSHIP_SETTINGS: MembershipSettings = {
+  trialDays: 14,
+  semesterFee: 20,
+  currency: '₪',
+  semesterLabel: 'الفصل الأول 2026/2027',
+  semesterEndsAt: '2027-02-01',
+  paymentMethods: ['نقداً لأمين الصندوق', 'تحويل بنكي', 'جوال باي / بال باي'],
+  paymentInstructions: 'ادفع رسوم العضوية الفصلية بإحدى الطرق المتاحة، ثم اكتب رقم الحوالة أو اسم المستلم في الطلب.',
+};
 
 const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettings = {
   isGlobalRecruitmentOpen: true,
@@ -46,7 +57,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   universityNameEn: 'University of Palestine',
   sloganAr: 'هندسة اليوم .. تصنع أثر الغد',
   sloganEn: 'ENGINEERING TODAY .. IMPACT TOMORROW',
-  aboutUs: 'النادي الهندسي هو إطار طلابي تطوعي، غير ربحي، وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية، ولا يهدف إلى تحقيق أي مكاسب مادية. تأسس النادي بمبادرة من طلبة كلية هندسة البرمجيات والذكاء الاصطناعي في جامعة فلسطين، ليكون منصة طلابية جامعة تجمع طلبة التخصصات الهندسية والتقنية في الجامعة تحت مظلة واحدة، بهدف تنمية مهاراتهم الأكاديمية والعملية والتقنية، وتعزيز روح التعاون والإبداع بينهم.',
+  aboutUs: 'النادي الهندسي هو إطار طلابي تطوعي وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية. تأسس النادي بمبادرة من طلبة كلية هندسة البرمجيات والذكاء الاصطناعي في جامعة فلسطين، ليكون منصة طلابية جامعة تجمع طلبة التخصصات الهندسية والتقنية في الجامعة تحت مظلة واحدة، بهدف تنمية مهاراتهم الأكاديمية والعملية والتقنية، وتعزيز روح التعاون والإبداع بينهم.',
   vision: 'أن يكون النادي الهندسي مجتمعًا طلابيًا فاعلًا يجمع طلبة الكليات والتخصصات الهندسية والتقنية في جامعة فلسطين، ويسهم في بناء طالب يمتلك المعرفة والمهارة والقدرة على الابتكار والقيادة، ويكون أكثر استعدادًا للمستقبل وسوق العمل، وقادرًا على صناعة أثر حقيقي في مجتمعه.',
   mission: 'نعمل على تطوير الطلبة أكاديميًا وعمليًا وشخصيًا من خلال التدريب، والورش، والمشاريع، والمسابقات، والمبادرات، وتبادل الخبرات، وبناء الشراكات مع الخبراء والمؤسسات وسوق العمل، مع توفير بيئة طلابية تعزز التعاون وتمثّل احتياجات الطلبة وتمنحهم فرصًا حقيقية للتعلم والتجربة والمشاركة وصناعة الفرص.',
   values: [
@@ -76,6 +87,7 @@ const CONTENT_KEYS = {
   majors: 'majors',
   spotlight: 'spotlight',
   recruitment: 'recruitment',
+  membership: 'membership',
   tickets: 'tickets',
 } as const;
 
@@ -96,6 +108,7 @@ interface ContentCache {
   majors: Major[];
   spotlight: StudentSpotlightData;
   recruitment: RecruitmentSettings;
+  membership: MembershipSettings;
   tickets: EventTicket[];
 }
 
@@ -109,6 +122,7 @@ const defaultContent = (): ContentCache => ({
   majors: MAJORS,
   spotlight: STUDENT_SPOTLIGHT,
   recruitment: DEFAULT_RECRUITMENT_SETTINGS,
+  membership: DEFAULT_MEMBERSHIP_SETTINGS,
   tickets: [],
 });
 
@@ -121,6 +135,10 @@ interface ApplicationRow {
   status: StoredApplication['status'];
   data: Partial<ClubApplication> | null;
   submitted_at: string;
+  member_code?: string | null;
+  accepted_at?: string | null;
+  membership_type?: 'temporary' | 'semester' | null;
+  valid_until?: string | null;
 }
 
 interface ComplaintRow {
@@ -148,6 +166,11 @@ export interface MemberLookup {
   academicYear?: string;
   targetCommittee?: string;
   skills?: string[];
+  /** Last 4 characters of the private member code */
+  codeHint?: string;
+  membershipType?: 'temporary' | 'semester';
+  validUntil?: string;
+  membershipState?: 'temporary' | 'semester' | 'expired' | 'not_member';
 }
 
 const rowToApplication = (row: ApplicationRow): StoredApplication => ({
@@ -160,6 +183,10 @@ const rowToApplication = (row: ApplicationRow): StoredApplication => ({
   skills: row.data?.skills || [],
   status: row.status,
   submittedAt: row.submitted_at,
+  memberCode: row.member_code || undefined,
+  acceptedAt: row.accepted_at || undefined,
+  membershipType: row.membership_type || undefined,
+  validUntil: row.valid_until || undefined,
 });
 
 const rowToComplaint = (row: ComplaintRow): ComplaintItem => ({
@@ -664,6 +691,15 @@ class DataService {
     } catch {
       return false;
     }
+  }
+
+  // --- MEMBERSHIP SETTINGS ---
+  public getMembershipSettings(): MembershipSettings {
+    return { ...DEFAULT_MEMBERSHIP_SETTINGS, ...(this.content.membership || {}) };
+  }
+
+  public saveMembershipSettings(settings: MembershipSettings) {
+    this.setContent('membership', settings);
   }
 
   // --- RECRUITMENT & COMMITTEE STATUS ---

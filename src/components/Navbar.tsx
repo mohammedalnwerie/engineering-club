@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ArrowUpRight, ShieldCheck, MessageSquare, FileText } from 'lucide-react';
+import { Menu, X, ArrowUpRight, ShieldCheck, MessageSquare, FileText, UserRound } from 'lucide-react';
 import { ClubLogo } from './ClubLogo';
 import { dataService } from '../services/dataService';
 
@@ -8,9 +8,10 @@ interface NavbarProps {
   onOpenVerify?: () => void;
   onOpenComplaints?: () => void;
   onOpenAbout?: () => void;
+  onOpenMember?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, onOpenComplaints, onOpenAbout }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, onOpenComplaints, onOpenAbout, onOpenMember }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showEvents, setShowEvents] = useState<boolean>(() => dataService.getSettings().showEventsSection !== false);
@@ -95,6 +96,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, o
           {/* Student services */}
           <div className="hidden md:flex items-center p-1 bg-white/[0.03] border border-white/10 rounded-xl gap-0.5">
             <button
+              onClick={() => onOpenMember?.()}
+              title="حساب العضو"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-cyan-500/10 text-sm text-gray-300 hover:text-cyan-200 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <UserRound className="w-4 h-4 text-cyan-300 shrink-0" />
+              <span>حسابي</span>
+            </button>
+            <button
               onClick={() => onOpenVerify?.()}
               title="التحقق من بطاقة العضوية"
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-gray-300 hover:text-emerald-300 transition-all cursor-pointer whitespace-nowrap"
@@ -146,7 +155,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, o
             </button>
           ))}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 mt-2 border-t border-white/10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 mt-2 border-t border-white/10">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenMember?.();
+              }}
+              className="py-3 rounded-xl text-sm text-gray-200 bg-white/5 border border-white/10 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <UserRound className="w-4 h-4 text-cyan-300" />
+              <span>حسابي</span>
+            </button>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);

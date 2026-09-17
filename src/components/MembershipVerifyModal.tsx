@@ -34,7 +34,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState(initialCode);
   const [searched, setSearched] = useState(false);
-  const [matchedApp, setMatchedApp] = useState<StoredApplication | null>(null);
+  const [matchedApp, setMatchedApp] = useState<(StoredApplication & { codeHint?: string }) | null>(null);
   const [copied, setCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showCommitteeBadge, setShowCommitteeBadge] = useState(false);
@@ -69,6 +69,9 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
               targetCommittee: found.targetCommittee || '',
               assignedCommittee: found.assignedCommittee,
               organizationalRole: found.organizationalRole,
+              codeHint: found.codeHint,
+              membershipType: found.membershipType,
+              validUntil: found.validUntil,
               weeklyCommitmentHours: 0,
               id: found.id,
               status: found.status,
@@ -170,10 +173,25 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                 /* Verified Active Member Card */
                 <div className="space-y-4">
                   {/* Status Banner */}
-                  <div className="flex items-center justify-center gap-2 text-sm font-bold text-emerald-300">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                    <span>عضوية صحيحة ومفعّلة</span>
-                  </div>
+                  {matchedApp.validUntil && new Date(matchedApp.validUntil).getTime() < Date.now() ? (
+                    <div role="alert" className="p-3 rounded-xl bg-amber-950/50 border border-amber-500/40 text-amber-200 text-sm flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 shrink-0" />
+                      <span>
+                        هذه العضوية <strong className="text-white">منتهية</strong> منذ{' '}
+                        {new Date(matchedApp.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })}.
+                        يستطيع العضو تجديدها من صفحة «حسابي».
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 text-sm font-bold text-emerald-300">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <span>
+                        عضوية صحيحة
+                        {matchedApp.validUntil &&
+                          ` — ${matchedApp.membershipType === 'semester' ? 'فصلية' : 'مؤقتة'} حتى ${new Date(matchedApp.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                      </span>
+                    </div>
+                  )}
 
                   {/* The Official Card (Vertical Portrait Ratio) */}
                   <MemberCard {...memberCardFor(matchedApp)} />
