@@ -15,6 +15,7 @@ import {
   Award,
 } from 'lucide-react';
 import { MemberLoginForm } from './MemberLoginForm';
+import { PasswordCard } from './PasswordCard';
 import { MemberCard } from '../MemberCard';
 import { CommitteeBadgeModal } from '../CommitteeBadgeModal';
 import {
@@ -169,6 +170,8 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                 </p>
               )}
 
+              <PasswordCard passwordSet={Boolean(profile.passwordSet)} />
+
               <MembershipPanel profile={profile} />
 
               {/* Card */}
@@ -205,7 +208,9 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 text-center">رمز العضو سري، لا تنشر صورة البطاقة في مكان عام.</p>
+                <p className="text-xs text-gray-500 text-center">
+                  البطاقة للتحقق من عضويتك. الدخول إلى حسابك بكلمة المرور، فلا تشارك كلمة المرور مع أحد.
+                </p>
               </section>
 
               <RegistrationsPanel profile={profile} onBrowseEvents={onClose} />

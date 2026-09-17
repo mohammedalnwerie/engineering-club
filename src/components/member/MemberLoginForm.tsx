@@ -21,8 +21,8 @@ export const MemberLoginForm: React.FC<MemberLoginFormProps> = ({ onSuccess, sub
       setError(idProblem);
       return;
     }
-    if (normalizeCode(code).replace(/-/g, '').length < 8) {
-      setError('اكتب رمز العضو كاملاً كما وصلك في إيميل القبول (مثال: UP-3F9A-C21D)');
+    if (code.trim().length < 8) {
+      setError('اكتب كلمة المرور، أو رمز البطاقة كاملاً إذا لسه ما عيّنت كلمة مرور (مثال: UP-3F9A-C21D)');
       return;
     }
     setIsLoading(true);
@@ -60,25 +60,28 @@ export const MemberLoginForm: React.FC<MemberLoginFormProps> = ({ onSuccess, sub
 
       <div>
         <label htmlFor="member-code" className="block text-sm text-gray-300 mb-1.5">
-          رمز العضو
+          كلمة المرور أو رمز البطاقة
         </label>
         <input
           id="member-code"
           type="password"
           autoComplete="current-password"
           autoCapitalize="characters"
-          placeholder="UP-XXXX-XXXX"
+          placeholder="كلمة المرور أو UP-XXXX-XXXX"
           value={code}
           onChange={(e) => {
-            setCode(normalizeCode(e.target.value).toUpperCase());
+            setCode(e.target.value);
             setError(null);
           }}
-          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-base text-left font-mono tracking-wider"
+          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-base text-left"
           dir="ltr"
         />
         <p className="text-xs text-gray-400 mt-1.5 flex items-start gap-1.5 leading-relaxed">
           <KeyRound className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>الرمز سري ووصلك في إيميل قبول العضوية. إذا لم يصلك تواصل مع إدارة النادي.</span>
+          <span>
+            أول مرة؟ ادخل برمز البطاقة اللي وصلك في إيميل القبول، وبعدها عيّن كلمة مرور خاصة فيك — لأن الرمز مطبوع على
+            البطاقة ويقدر يشوفه غيرك.
+          </span>
         </p>
       </div>
 

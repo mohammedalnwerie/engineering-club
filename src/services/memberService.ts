@@ -2,7 +2,9 @@ import { publicRpc } from './supabaseClient';
 import { normalizeCode } from '../utils/validation';
 import { safeStorage } from './safeStorage';
 
-// Members sign in with their student ID + private member code (issued on acceptance).
+// Members sign in with their student ID and a secret: the card code the first
+// time, then the password they choose. The code is printed on the card, so once
+// a password exists the database stops accepting the code.
 // There is no server session: every call sends the credentials, and the database checks them.
 
 export type MembershipState = 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member';
@@ -14,7 +16,8 @@ export interface MemberRegistration {
   status: 'registered' | 'waitlisted' | 'cancelled';
   checkedInAt: string | null;
   title: string;
-  startsAt: string;
+  startsAt: string | null;
+  timeTbd?: boolean;
   location: string | null;
   eventType: EventType;
 }
@@ -44,6 +47,8 @@ export interface MemberProfile {
   membershipType: 'temporary' | 'semester' | null;
   validUntil: string | null;
   membershipState: MembershipState;
+  /** false = العضو لسه ما عيّن كلمة مرور، وبيدخل برمز البطاقة */
+  passwordSet?: boolean;
   registrations: MemberRegistration[];
   paymentRequest: MemberPaymentRequest | null;
 }
@@ -129,8 +134,15 @@ class MemberService {
     return { p_student_id: this.credentials.studentId, p_code: this.credentials.code };
   }
 
-  async login(studentId: string, code: string): Promise<MemberProfile> {
-    const credentials = { studentId: normalizeCode(studentId), code: normalizeCode(code).toUpperCase() };
+  /** The secret is the card code on the first login, the password afterwards. */
+  async login(studentId: string, secret: string): Promise<MemberProfile> {
+    const trimmed = secret.trim();
+    // A card code is normalised (Arabic digits, upper case); a password is used as typed.
+    const looksLikeCode = /^up[-\s]?[0-9a-z]{4}[-\s]?[0-9a-z]{4}$/i.test(trimmed);
+    const credentials = {
+      studentId: normalizeCode(studentId),
+      code: looksLikeCode ? normalizeCode(trimmed).toUpperCase() : trimmed,
+    };
     try {
       const profile = unwrap(
         await publicRpc<MemberProfile | { error: string }>('member_login', {
@@ -159,6 +171,25 @@ class MemberService {
       const e = friendly(err);
       if (/غير صحيح/.test(e.message)) this.logout();
       throw e;
+    }
+  }
+
+  /** First-time setup or a later change; the member stays signed in with the new password. */
+  async setPassword(newPassword: string): Promise<void> {
+    if (!this.credentials) throw new Error('سجّل الدخول أولاً');
+    try {
+      unwrap(
+        await publicRpc<{ ok: boolean } | { error: string }>('member_set_password', {
+          ...this.args(),
+          p_new_password: newPassword,
+        })
+      );
+      this.credentials = { ...this.credentials, code: newPassword };
+      safeStorage.set(SESSION_KEY, this.credentials);
+      await this.refresh().catch(() => undefined);
+      this.notify();
+    } catch (err) {
+      throw friendly(err);
     }
   }
 
