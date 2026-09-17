@@ -182,7 +182,7 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                 <th className="p-3 text-right font-medium">التخصص والكلية</th>
                 <th className="p-3 text-right font-medium">اللجنة والمسمى</th>
                 <th className="p-3 text-center font-medium w-[120px]">حالة الطلب</th>
-                <th className="p-3 text-center font-medium w-[230px]">الإجراءات</th>
+                <th className="p-3 text-center font-medium w-[270px]">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-gray-300">

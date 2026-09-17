@@ -62,6 +62,7 @@ export const QuickNav: React.FC<{
           <Search className="w-4 h-4 text-cyan-400 shrink-0" />
           <input
             ref={inputRef}
+            autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {

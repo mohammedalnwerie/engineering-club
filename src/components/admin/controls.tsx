@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertCircle, MoreVertical } from 'lucide-react';
 import { Button } from './ui';
 
@@ -19,13 +20,41 @@ export const ActionMenu: React.FC<{ items: ActionItem[]; label?: string; align?:
   align = 'start',
 }) => {
   const [open, setOpen] = React.useState(false);
+  const [pos, setPos] = React.useState({ top: 0, left: 0 });
   const boxRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
   const visible = items.filter((i) => !i.hidden);
+
+  // The menu is portalled to the body: inside the table it would be clipped by
+  // the scrolling container.
+  const place = () => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const width = 230;
+    const left = align === 'end' ? rect.left : rect.right - width;
+    setPos({
+      top: Math.min(rect.bottom + 4, window.innerHeight - 40),
+      left: Math.max(8, Math.min(left, window.innerWidth - width - 8)),
+    });
+  };
+
+  React.useEffect(() => {
+    if (!open) return;
+    const reposition = () => place();
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
     const onPointer = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      const inside = boxRef.current?.contains(target) || triggerRef.current?.contains(target);
+      if (!inside) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
@@ -41,23 +70,28 @@ export const ActionMenu: React.FC<{ items: ActionItem[]; label?: string; align?:
   if (!visible.length) return null;
 
   return (
-    <div className="relative" ref={boxRef}>
+    <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          place();
+          setOpen((v) => !v);
+        }}
         className="w-10 h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-gray-200 inline-flex items-center justify-center transition-colors cursor-pointer"
       >
         <MoreVertical className="w-4 h-4" />
       </button>
-      {open && (
+      {open &&
+        createPortal(
         <div
+          ref={boxRef}
           role="menu"
-          className={`absolute z-40 mt-1 min-w-[230px] rounded-xl border border-white/10 bg-[#120A36] shadow-2xl overflow-hidden ${
-            align === 'end' ? 'left-0' : 'right-0'
-          }`}
+          style={{ top: pos.top, left: pos.left }}
+          className="fixed z-[70] w-[230px] max-h-[70vh] overflow-y-auto rounded-xl border border-white/10 bg-[#120A36] shadow-2xl"
         >
           {visible.map((item) => (
             <button
@@ -76,8 +110,9 @@ export const ActionMenu: React.FC<{ items: ActionItem[]; label?: string; align?:
               <span className="flex-1">{item.label}</span>
             </button>
           ))}
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
     </div>
   );
 };

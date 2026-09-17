@@ -41,7 +41,7 @@ export const Button = React.forwardRef<
     disabled={disabled || loading}
     className={`${BUTTON_STYLES[variant]} ${
       size === 'sm' ? 'px-3 py-2 text-xs' : 'px-4 py-2.5 text-sm'
-    } rounded-xl font-bold inline-flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+    } rounded-xl font-bold whitespace-nowrap inline-flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     {...rest}
   >
     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : icon}
