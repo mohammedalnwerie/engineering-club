@@ -3,6 +3,7 @@ import { dataService } from '../services/dataService';
 import type { ComplaintItem } from '../types';
 import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check, Camera, Upload, Trash2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { normalizeCode } from '../utils/validation';
 import { checkRateLimit } from '../utils/security';
 
 interface ComplaintsModalProps {
@@ -35,10 +36,12 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const [trackSearched, setTrackSearched] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [trackError, setTrackError] = useState<string | null>(null);
 
   const handleImageUpload = (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('الرجاء اختيار ملف صورة مدعوم (JPG, PNG, WebP)');
+      setSubmitError('الرجاء اختيار ملف صورة (JPG أو PNG أو WebP).');
       return;
     }
     const reader = new FileReader();
@@ -84,18 +87,19 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
     if (!subject.trim()) {
-      alert('يرجى كتابة عنوان الشكوى أو المقترح قبل الإرسال.');
+      setSubmitError('اكتب عنوان الشكوى أو المقترح.');
       return;
     }
     if (!message.trim()) {
-      alert('يرجى كتابة تفاصيل وموضوع الشكوى أو المقترح بالتفصيل.');
+      setSubmitError('اكتب تفاصيل الشكوى أو المقترح.');
       return;
     }
 
     const rateCheck = checkRateLimit('complaint_submission', 4000);
     if (!rateCheck.allowed) {
-      alert(`يرجى الانتظار ${rateCheck.waitSeconds} ثوانٍ قبل إرسال بلاغ آخر لحماية النظام من الضغط.`);
+      setSubmitError(`انتظر ${rateCheck.waitSeconds} ثوانٍ ثم حاول مرة أخرى.`);
       return;
     }
 
@@ -116,7 +120,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
       attachmentImage: attachmentImage || undefined,
       });
     } catch (err) {
-      alert(`تعذر إرسال الشكوى: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+      setSubmitError(`تعذر إرسال الشكوى: ${err instanceof Error ? (err.message.includes('Failed to fetch') ? 'تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.' : err.message) : 'خطأ غير معروف'}`);
       return;
     } finally {
       setIsSending(false);
@@ -133,12 +137,13 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanQuery = trackQuery.trim();
+    const cleanQuery = normalizeCode(trackQuery);
+    setTrackError(null);
     if (!cleanQuery) return;
 
     // Strict Privacy: If student enters numeric student ID (any digits), guide them to use ticket number
     if (!cleanQuery.toUpperCase().includes('UP-CMP') && /^\d+$/.test(cleanQuery)) {
-      alert('🔒 لدواعي الأمان وحماية خصوصية الشكاوى، تم حظر الاستعلام بالرقم الجامعي. الاستعلام متاح حصرياً عبر رمز التذكرة السري الفريد (مثال: UP-CMP-2026-A1B2C3D4E5) الذي استلمته عند تقديم الطلب لحفظ سرية الملاحظات.');
+      setTrackError('للحفاظ على خصوصية الشكاوى، المتابعة تتم برقم التذكرة فقط (مثال: UP-CMP-2026-A1B2C3D4E5)، وليس بالرقم الجامعي.');
       return;
     }
 
@@ -147,7 +152,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
       setFoundTicket(await dataService.trackComplaint(cleanQuery));
       setTrackSearched(true);
     } catch (err) {
-      alert(`تعذر الاستعلام: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+      setTrackError(`تعذر الاستعلام: ${err instanceof Error ? (err.message.includes('Failed to fetch') ? 'تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.' : err.message) : 'خطأ غير معروف'}`);
     } finally {
       setIsTracking(false);
     }
@@ -467,7 +472,13 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                 </div>
 
                 {/* Submit Action */}
-                <div className="pt-2">
+                <div className="pt-2 space-y-3">
+                  {submitError && (
+                    <div role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm leading-relaxed">
+                      {submitError}
+                    </div>
+                  )}
+                  
                   <button
                     type="submit"
                     disabled={isSending}
@@ -511,6 +522,11 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                   <span>استعلام سري</span>
                 </button>
               </form>
+              {trackError && (
+                <div role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm leading-relaxed">
+                  {trackError}
+                </div>
+              )}
             </div>
 
             {trackSearched && (

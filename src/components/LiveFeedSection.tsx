@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LIVE_ACTIVITY_STREAM } from '../data/clubData';
 import { dataService } from '../services/dataService';
+import { normalizeCode } from '../utils/validation';
 import { Award, Send, Check, X, Lightbulb, Users, Trophy, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -29,11 +30,13 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
   const [membershipStatus, setMembershipStatus] = useState<'idle' | 'verified' | 'pending' | 'manual' | 'rejected'>('idle');
   const [isMemberConfirmed, setIsMemberConfirmed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [nominateError, setNominateError] = useState<string | null>(null);
 
   const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lookupSeq = useRef(0);
 
   const handleStudentIdChange = (idVal: string) => {
+    idVal = normalizeCode(idVal);
     setNomineeStudentId(idVal);
     if (lookupTimer.current) clearTimeout(lookupTimer.current);
     const q = idVal.trim();
@@ -72,6 +75,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
 
   const handleNominateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNominateError(null);
     if (!nomineeName.trim() || !projectTitle.trim() || !nomineeStudentId.trim()) return;
     if (membershipStatus === 'rejected') return;
     if (!isMemberConfirmed && membershipStatus !== 'verified') return;
@@ -89,7 +93,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
         isAnonymous: false,
       });
     } catch (err) {
-      alert(`تعذر إرسال الترشيح: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+      setNominateError(`تعذر إرسال الترشيح: ${err instanceof Error ? (err.message.includes('Failed to fetch') ? 'تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.' : err.message) : 'خطأ غير معروف'}`);
       return;
     }
 
@@ -420,6 +424,11 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                   </label>
                 )}
 
+                {nominateError && (
+                  <div role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm leading-relaxed">
+                    {nominateError}
+                  </div>
+                )}
                 <div className="pt-3 flex items-center justify-end gap-3">
                   <button
                     type="button"

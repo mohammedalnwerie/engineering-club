@@ -4,6 +4,28 @@ import { MemberCard } from './MemberCard';
 import { memberCardFor } from '../utils/memberCard';
 import type { ClubApplication } from '../types';
 import { checkRateLimit } from '../utils/security';
+import {
+  normalizeCode,
+  normalizePhone,
+  validateEmail,
+  validateFullName,
+  validatePhone,
+  validateStudentId,
+  validateUrl,
+} from '../utils/validation';
+
+const FieldError: React.FC<{ message?: string }> = ({ message }) =>
+  message ? (
+    <p role="alert" className="text-sm text-red-300 mt-1.5 flex items-center gap-1.5">
+      <AlertCircle className="w-4 h-4 shrink-0" />
+      <span>{message}</span>
+    </p>
+  ) : null;
+
+const inputClass = (hasError?: string) =>
+  `w-full px-4 py-3 rounded-xl bg-black/40 border focus:outline-none text-white text-sm ${
+    hasError ? 'border-red-400/70 focus:border-red-300' : 'border-white/10 focus:border-cyan-400'
+  }`;
 
 import { Sparkles, ArrowLeft, ArrowRight, Check, ShieldCheck, Lock, AlertCircle, Ban } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -13,6 +35,8 @@ export const JoinClubSection: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<'fullName' | 'studentId' | 'email' | 'phone' | 'portfolioUrl', string>>>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [recruitment, setRecruitment] = useState(() => dataService.getRecruitmentSettings());
 
@@ -83,7 +107,31 @@ export const JoinClubSection: React.FC = () => {
     },
   ];
 
+  const validateStep = (step: number): boolean => {
+    const next: typeof errors = {};
+    if (step === 1) {
+      next.fullName = validateFullName(formData.fullName) || undefined;
+      next.studentId = validateStudentId(formData.studentId) || undefined;
+      next.email = validateEmail(formData.email) || undefined;
+      next.phone = validatePhone(formData.phone) || undefined;
+    }
+    if (step === 4) {
+      next.portfolioUrl = validateUrl(formData.portfolioUrl || '') || undefined;
+    }
+    const clean = Object.fromEntries(Object.entries(next).filter(([, v]) => v)) as typeof errors;
+    setErrors(clean);
+    return Object.keys(clean).length === 0;
+  };
+
+  const updateField = <K extends keyof ClubApplication>(key: K, value: ClubApplication[K]) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+    if (key in errors) setErrors((prev) => ({ ...prev, [key]: undefined }));
+    if (formError) setFormError(null);
+  };
+
   const handleNext = () => {
+    setFormError(null);
+    if (!validateStep(currentStep)) return;
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -96,7 +144,7 @@ export const JoinClubSection: React.FC = () => {
         const notice = !recruitment.isGlobalRecruitmentOpen
           ? (recruitment.globalClosedMessage || 'باب استقطاب اللجان متوقف مؤقتاً')
           : (recruitment.committees[selectedCommId]?.closedNotice || 'اكتملت المقاعد المتاحة لهذه اللجنة');
-        alert(`عذراً، التقديم لهذه اللجنة مغلق حالياً: ${notice}. يرجى اختيار لجنة مفتوحة للاستقطاب.`);
+        setFormError(`التقديم مغلق حالياً: ${notice}`);
         return;
       }
 
@@ -105,6 +153,7 @@ export const JoinClubSection: React.FC = () => {
   };
 
   const handlePrev = () => {
+    setFormError(null);
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
@@ -124,7 +173,7 @@ export const JoinClubSection: React.FC = () => {
     if (isSending) return;
     const rateCheck = checkRateLimit('join_submission', 4000);
     if (!rateCheck.allowed) {
-      alert(`يرجى الانتظار ${rateCheck.waitSeconds} ثوانٍ قبل إعادة الإرسال لحماية الخادم.`);
+      setFormError(`انتظر ${rateCheck.waitSeconds} ثوانٍ ثم حاول مرة أخرى.`);
       return;
     }
 
@@ -132,7 +181,10 @@ export const JoinClubSection: React.FC = () => {
     try {
       await dataService.submitApplication(formData);
     } catch (err) {
-      alert(`تعذر إرسال طلب الانضمام: ${err instanceof Error ? err.message : 'خطأ غير معروف'}. يرجى المحاولة مرة أخرى.`);
+      const message = err instanceof Error ? err.message : 'خطأ غير معروف';
+      // Problems with personal details are fixed on step 1
+      if (/الاسم|الرقم الجامعي|البريد|الجوال/.test(message)) setCurrentStep(1);
+      setFormError(message.includes('Failed to fetch') ? 'تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.' : message);
       return;
     } finally {
       setIsSending(false);
@@ -208,26 +260,35 @@ export const JoinClubSection: React.FC = () => {
                 {currentStep === 1 && (
                   <div className="space-y-4 animate-in fade-in duration-200">
                     <div>
-                      <label className="block text-xs text-gray-300 mb-1.5">الاسم الرباعي الكامل:</label>
+                      <label htmlFor="join-name" className="block text-sm text-gray-300 mb-1.5">الاسم الرباعي الكامل</label>
                       <input
+                        id="join-name"
                         type="text"
+                        autoComplete="name"
                         placeholder="مثال: أحمد محمد خليل العمري"
                         value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
+                        aria-invalid={Boolean(errors.fullName)}
+                        onChange={(e) => updateField('fullName', e.target.value)}
+                        className={inputClass(errors.fullName)}
                       />
+                      <FieldError message={errors.fullName} />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs text-gray-300 mb-1.5">الرقم الجامعي (Student ID):</label>
+                        <label htmlFor="join-student-id" className="block text-sm text-gray-300 mb-1.5">الرقم الجامعي</label>
                         <input
+                          id="join-student-id"
                           type="text"
-                          placeholder="مثال: 120220145 (أو الرقم السابق للخريجين)"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          placeholder="مثال: 120220145"
                           value={formData.studentId}
-                          onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
+                          aria-invalid={Boolean(errors.studentId)}
+                          onChange={(e) => updateField('studentId', normalizeCode(e.target.value))}
+                          className={inputClass(errors.studentId)}
                         />
+                        <FieldError message={errors.studentId} />
                       </div>
                       <div>
                         <label className="block text-xs text-gray-300 mb-1.5">السنة الدراسية:</label>
@@ -249,33 +310,43 @@ export const JoinClubSection: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <label className="block text-xs text-gray-300">البريد الإلكتروني:</label>
+                          <label htmlFor="join-email" className="block text-sm text-gray-300">البريد الإلكتروني</label>
                           <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
                             يفضل الجامعي (@std.up.edu.ps)
                           </span>
                         </div>
                         <input
+                          id="join-email"
                           type="email"
-                          placeholder="120220000@std.up.edu.ps أو بريدك الشخصي"
+                          inputMode="email"
+                          autoComplete="email"
+                          placeholder="120220000@std.up.edu.ps"
                           value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm font-mono text-left"
+                          aria-invalid={Boolean(errors.email)}
+                          onChange={(e) => updateField('email', e.target.value.trim())}
+                          className={`${inputClass(errors.email)} text-left`}
                           dir="ltr"
                         />
+                        <FieldError message={errors.email} />
                         <p className="text-xs text-gray-400 mt-1">
                           يمكنك استخدام إيميل الجامعة الرسمي (@std.up.edu.ps) أو بريدك الشخصي (Gmail وغيره).
                         </p>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-300 mb-1.5">رقم الهاتف الجوال (واتساب):</label>
+                        <label htmlFor="join-phone" className="block text-sm text-gray-300 mb-1.5">رقم الجوال (واتساب)</label>
                         <input
+                          id="join-phone"
                           type="tel"
-                          placeholder="059XXXXXXX أو 056XXXXXXX"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="0599123456"
                           value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm font-mono text-left"
+                          aria-invalid={Boolean(errors.phone)}
+                          onChange={(e) => updateField('phone', normalizePhone(e.target.value))}
+                          className={`${inputClass(errors.phone)} text-left`}
                           dir="ltr"
                         />
+                        <FieldError message={errors.phone} />
                         <p className="text-xs text-gray-400 mt-1">
                           سيتم إرسال بطاقة العضوية وإشعار القبول عبر هذا الرقم مباشرة.
                         </p>
@@ -429,11 +500,15 @@ export const JoinClubSection: React.FC = () => {
                       </label>
                       <input
                         type="url"
+                        inputMode="url"
                         placeholder="https://github.com/your-username"
                         value={formData.portfolioUrl || ''}
-                        onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
+                        aria-invalid={Boolean(errors.portfolioUrl)}
+                        onChange={(e) => updateField('portfolioUrl', e.target.value.trim())}
+                        className={`${inputClass(errors.portfolioUrl)} text-left`}
+                        dir="ltr"
                       />
+                      <FieldError message={errors.portfolioUrl} />
                     </div>
                   </div>
                 )}
@@ -478,10 +553,10 @@ export const JoinClubSection: React.FC = () => {
                               key={comm.id}
                               onClick={() => {
                                 if (isClosed) {
-                                  alert(`عذراً، الاستقطاب لهذه اللجنة مغلق حالياً: ${closedNotice}. يرجى اختيار لجنة أخرى أو العضوية العامة.`);
+                                  setFormError(`التقديم لهذه اللجنة مغلق حالياً: ${closedNotice}. اختر لجنة أخرى أو العضوية العامة.`);
                                   return;
                                 }
-                                setFormData({ ...formData, targetCommittee: comm.name });
+                                updateField('targetCommittee', comm.name);
                               }}
                               className={`p-4 rounded-2xl border transition-all relative ${
                                 isClosed
@@ -542,6 +617,13 @@ export const JoinClubSection: React.FC = () => {
                         <span>15 ساعة (قيادي/نشط)</span>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {formError && (
+                  <div role="alert" className="mt-6 p-4 rounded-2xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm flex items-start gap-2.5">
+                    <AlertCircle className="w-5 h-5 text-red-300 shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{formError}</span>
                   </div>
                 )}
 

@@ -4,6 +4,7 @@ import type { StoredApplication } from '../types';
 import { downloadCardPng, printCard } from '../utils/cardRenderer';
 import { memberCardFor } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
+import { normalizeCode } from '../utils/validation';
 import { effectiveCommittee, findCommittee } from '../data/committees';
 import {
   X,
@@ -39,6 +40,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
   const [showCommitteeBadge, setShowCommitteeBadge] = useState(false);
 
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   async function performSearch(query: string) {
     const q = query.trim();
@@ -49,6 +51,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
     }
 
     setIsSearching(true);
+    setSearchError(null);
     try {
       const found = await dataService.verifyMember(q);
       setMatchedApp(
@@ -75,7 +78,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
       );
       setSearched(true);
     } catch (err) {
-      alert(`تعذر التحقق حالياً: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+      setSearchError(`تعذر التحقق حالياً: ${err instanceof Error ? (err.message.includes('Failed to fetch') ? 'تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.' : err.message) : 'خطأ غير معروف'}`);
     } finally {
       setIsSearching(false);
     }
@@ -140,7 +143,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
               inputMode="text"
               placeholder="مثال: 120200456 أو UP-ENG-…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(normalizeCode(e.target.value))}
               className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-black/50 border border-white/10 focus:border-emerald-400 focus:outline-none text-white text-base text-right"
             />
             <button
@@ -153,6 +156,11 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
             </button>
           </div>
         </form>
+        {searchError && (
+          <div role="alert" className="-mt-3 mb-6 p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm leading-relaxed">
+            {searchError}
+          </div>
+        )}
 
         {/* Search Results */}
         {searched && (

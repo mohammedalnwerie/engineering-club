@@ -2,6 +2,7 @@ import { safeStorage } from './safeStorage';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getSupabase, isSupabaseConfigured, publicRpc, publicSelect } from './supabaseClient';
 import { sanitizeText, sanitizeUrl } from '../utils/security';
+import { normalizeCode, normalizePhone, toLatinDigits } from '../utils/validation';
 import { FLAGSHIP_PROJECTS, CLUB_EVENTS, TRAINING_COURSES, LEADERSHIP_MEMBERS, COLLEGES, MAJORS, STUDENT_SPOTLIGHT } from '../data/clubData';
 import type {
   ProjectCaseStudy,
@@ -186,6 +187,7 @@ class DataService {
   private content: ContentCache = defaultContent();
   private applications: StoredApplication[] = [];
   private complaints: ComplaintItem[] = [];
+  private subscribers: { email: string; created_at: string }[] = [];
 
   constructor() {
     this.readPublicCache();
@@ -267,10 +269,13 @@ class DataService {
   /** Loads private data (applications, complaints, private content). Requires an admin session. */
   public async loadAdminData(): Promise<void> {
     const client = await getSupabase();
-    const [apps, complaints] = await Promise.all([
+    const [apps, complaints, subscribers] = await Promise.all([
       client.from('club_applications').select('*').order('submitted_at', { ascending: false }),
       client.from('club_complaints').select('*').order('created_at', { ascending: false }),
+      client.from('club_subscribers').select('email, created_at').order('created_at', { ascending: false }),
     ]);
+    // Missing table just means update-003 hasn't been applied yet; not worth an error toast.
+    this.subscribers = subscribers.error ? [] : (subscribers.data as { email: string; created_at: string }[]);
     if (apps.error) this.reportError('تعذر تحميل طلبات الانضمام', apps.error);
     if (complaints.error) this.reportError('تعذر تحميل الشكاوى', complaints.error);
     this.applications = ((apps.data || []) as ApplicationRow[]).map(rowToApplication);
@@ -283,6 +288,7 @@ class DataService {
   public clearAdminData() {
     this.applications = [];
     this.complaints = [];
+    this.subscribers = [];
     this.content.tickets = [];
     this.content.emailConfig = null;
     this.notify();
@@ -432,9 +438,9 @@ class DataService {
     const payload: ClubApplication = {
       ...app,
       fullName: sanitizeText(app.fullName),
-      studentId: sanitizeText(app.studentId),
-      email: sanitizeText(app.email),
-      phone: sanitizeText(app.phone),
+      studentId: normalizeCode(app.studentId),
+      email: toLatinDigits(sanitizeText(app.email)).trim().toLowerCase(),
+      phone: normalizePhone(app.phone),
       personalStatement: sanitizeText(app.personalStatement || ''),
       portfolioUrl: sanitizeUrl(app.portfolioUrl),
     };
@@ -481,7 +487,7 @@ class DataService {
 
   /** Public, exact-match lookup by student ID or UP-ENG code. Never returns email/phone. */
   public async verifyMember(code: string): Promise<MemberLookup | null> {
-    const clean = code.trim();
+    const clean = normalizeCode(code);
     if (!clean) return null;
     return (await publicRpc<MemberLookup | null>('verify_member', { code: clean })) || null;
   }
@@ -579,9 +585,19 @@ class DataService {
 
   /** Public tracking by the secret ticket number only. */
   public async trackComplaint(ticketNumber: string): Promise<ComplaintItem | null> {
-    const clean = ticketNumber.trim();
+    const clean = normalizeCode(ticketNumber);
     if (!clean) return null;
     return (await publicRpc<ComplaintItem | null>('track_complaint', { ticket: clean })) || null;
+  }
+
+  // --- NEWSLETTER ---
+  public async subscribeNewsletter(email: string): Promise<void> {
+    await publicRpc('subscribe_newsletter', { p_email: toLatinDigits(email).trim() });
+  }
+
+  /** Admin only — populated by loadAdminData(). */
+  public getSubscribers(): { email: string; created_at: string }[] {
+    return this.subscribers;
   }
 
   public importDatabaseJSON(jsonStr: string): boolean {

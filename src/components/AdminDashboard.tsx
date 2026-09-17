@@ -327,6 +327,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [showCollegeUrlInput, setShowCollegeUrlInput] = useState(false);
 
   const [isRefreshingData, setIsRefreshingData] = useState(false);
+  const [subscribers, setSubscribers] = useState<{ email: string; created_at: string }[]>([]);
 
   const loadData = () => {
     setApplications(dataService.getApplications());
@@ -340,6 +341,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setSpotlight(dataService.getSpotlight());
     setComplaints(dataService.getComplaints());
     setRecruitmentSettings(dataService.getRecruitmentSettings());
+    setSubscribers(dataService.getSubscribers());
     const savedEmailConfig = dataService.getEmailConfig();
     if (savedEmailConfig && savedEmailConfig !== lastEmailConfig.current) {
       lastEmailConfig.current = savedEmailConfig;
@@ -3509,6 +3511,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingData ? 'animate-spin' : ''}`} />
                     <span>تحديث البيانات من قاعدة البيانات</span>
                   </button>
+                </div>
+
+                {/* Newsletter subscribers */}
+                <div className="p-6 rounded-2xl bg-black/40 border border-white/10 max-w-xl space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="text-sm font-bold text-white">المشتركون في النشرة البريدية ({subscribers.length})</h4>
+                    <button
+                      type="button"
+                      disabled={subscribers.length === 0}
+                      onClick={() =>
+                        downloadCsv(
+                          `newsletter_subscribers_${new Date().toISOString().split('T')[0]}`,
+                          ['البريد الإلكتروني', 'تاريخ الاشتراك'],
+                          subscribers.map((s) => [s.email, new Date(s.created_at).toLocaleString('ar')])
+                        )
+                      }
+                      className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-white flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>تصدير CSV</span>
+                    </button>
+                  </div>
+                  {subscribers.length === 0 ? (
+                    <p className="text-sm text-gray-400">لا يوجد مشتركون بعد.</p>
+                  ) : (
+                    <ul className="max-h-60 overflow-y-auto divide-y divide-white/5 text-sm">
+                      {subscribers.map((s) => (
+                        <li key={s.email} className="py-2 flex items-center justify-between gap-3">
+                          <span className="text-gray-200 truncate" dir="ltr">{s.email}</span>
+                          <span className="text-xs text-gray-500 shrink-0">{new Date(s.created_at).toLocaleDateString('ar')}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 {/* Local Backup Section */}

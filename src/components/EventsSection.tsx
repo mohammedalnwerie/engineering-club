@@ -23,9 +23,11 @@ export const EventsSection: React.FC = () => {
   const [suggestDetails, setSuggestDetails] = useState('');
   const [suggestContact, setSuggestContact] = useState('');
   const [suggestSubmitted, setSuggestSubmitted] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
 
   const handleSuggestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSuggestError(null);
     if (!suggestTopic.trim()) return;
 
     try {
@@ -41,7 +43,7 @@ export const EventsSection: React.FC = () => {
         isAnonymous: false,
       });
     } catch (err) {
-      alert(`تعذر إرسال المقترح: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
+      setSuggestError(`تعذر إرسال المقترح: ${err instanceof Error ? (err.message.includes('Failed to fetch') ? 'تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.' : err.message) : 'خطأ غير معروف'}`);
       return;
     }
 
@@ -251,6 +253,11 @@ export const EventsSection: React.FC = () => {
                   />
                 </div>
 
+                {suggestError && (
+                  <div role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm leading-relaxed">
+                    {suggestError}
+                  </div>
+                )}
                 <div className="pt-3 flex items-center justify-end gap-3">
                   <button
                     type="button"
