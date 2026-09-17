@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CARD_ACCENTS, CARD_COLORS, cardQrDataUrl, currentAcademicYear, type CardData } from '../utils/memberCard';
+import { CARD_ACCENTS, CARD_COLORS, cardNameFontSize, cardQrDataUrl, currentAcademicYear, type CardData } from '../utils/memberCard';
 
 export type { CardData, CardField } from '../utils/memberCard';
 
@@ -68,12 +68,17 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
         {/* Identity */}
         <div className="flex items-stretch gap-4">
           {photoUrl && (
-            <img src={photoUrl} alt={name} className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-white/15" />
+            <img src={photoUrl} alt={name} className="w-[88px] h-[88px] rounded-2xl object-cover shrink-0 border border-white/15" />
           )}
           <div className="flex gap-3 min-w-0 flex-1">
             <span className="w-1 rounded-full shrink-0" style={{ background: colors.bar }} />
             <div className="min-w-0 flex-1">
-              <div className="text-[22px] leading-7 font-black text-white break-words">{name}</div>
+              <div
+                className="font-black text-white break-words"
+                style={{ fontSize: cardNameFontSize(name), lineHeight: `${cardNameFontSize(name) + 6}px` }}
+              >
+                {name}
+              </div>
               {role && (
                 <div className="text-sm leading-5 font-bold mt-1.5" style={{ color: colors.role }}>
                   {role}
@@ -98,11 +103,19 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
         {details.length > 0 && (
           <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4">
             {details.map((f, i) => (
-              <div key={f.label} className={details.length % 2 === 1 && i === details.length - 1 ? 'col-span-2' : ''}>
+              <div
+                key={f.label}
+                className={f.small || (details.length % 2 === 1 && i === details.length - 1) ? 'col-span-2' : ''}
+              >
                 <div className="text-xs leading-4" style={{ color: CARD_COLORS.muted }}>
                   {f.label}
                 </div>
-                <div className="text-sm leading-5 font-bold text-white mt-1 break-words">{f.value}</div>
+                <div
+                  className={`font-bold text-white mt-1 break-words ${f.small ? 'text-xs leading-4' : 'text-sm leading-5'}`}
+                  dir={f.small ? 'ltr' : undefined}
+                >
+                  {f.value}
+                </div>
               </div>
             ))}
           </div>

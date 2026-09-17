@@ -1,4 +1,4 @@
-import { CARD_ACCENTS, CARD_COLORS, cardQrDataUrl, currentAcademicYear, type CardData } from './memberCard';
+import { CARD_ACCENTS, CARD_COLORS, cardNameFontSize, cardQrDataUrl, currentAcademicYear, type CardData } from './memberCard';
 
 /*
  * Draws the club ID card directly on a canvas. This replaces DOM screenshots
@@ -100,23 +100,33 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   // Identity
   const identityTop = y;
   let textRight = right;
+  const PHOTO = 88;
   if (card.photoUrl && assets.photo) {
     if (draw) {
       ctx.save();
-      roundRect(ctx, right - 64, identityTop, 64, 64, 16);
+      roundRect(ctx, right - PHOTO, identityTop, PHOTO, PHOTO, 16);
       ctx.clip();
       const img = assets.photo;
-      const s = Math.max(64 / img.width, 64 / img.height);
-      ctx.drawImage(img, right - 64 + (64 - img.width * s) / 2, identityTop + (64 - img.height * s) / 2, img.width * s, img.height * s);
+      const s = Math.max(PHOTO / img.width, PHOTO / img.height);
+      ctx.drawImage(
+        img,
+        right - PHOTO + (PHOTO - img.width * s) / 2,
+        identityTop + (PHOTO - img.height * s) / 2,
+        img.width * s,
+        img.height * s
+      );
       ctx.restore();
     }
-    textRight = right - 64 - 16;
+    textRight = right - PHOTO - 16;
   }
   const nameRight = textRight - 4 - 12;
-  ctx.font = `900 22px ${SANS}`;
+  const nameSize = cardNameFontSize(card.name);
+  const nameFont = `900 ${nameSize}px ${SANS}`;
+  const nameLine = nameSize + 6;
+  ctx.font = nameFont;
   const nameLines = wrapLines(ctx, card.name, nameRight - P);
-  nameLines.forEach((line, i) => text(line, nameRight, identityTop + i * 28 + 2, `900 22px ${SANS}`, CARD_COLORS.text));
-  let blockBottom = identityTop + nameLines.length * 28;
+  nameLines.forEach((line, i) => text(line, nameRight, identityTop + i * nameLine + 2, nameFont, CARD_COLORS.text));
+  let blockBottom = identityTop + nameLines.length * nameLine;
   if (card.role) {
     text(card.role, nameRight, blockBottom + 6 + 2, `700 14px ${SANS}`, colors.role);
     blockBottom += 6 + 20;
@@ -126,7 +136,7 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
     ctx.fillStyle = colors.bar;
     ctx.fill();
   }
-  y = Math.max(blockBottom, card.photoUrl && assets.photo ? identityTop + 64 : 0);
+  y = Math.max(blockBottom, card.photoUrl && assets.photo ? identityTop + PHOTO : 0);
 
   // Committee band
   if (card.highlight?.value) {
@@ -154,7 +164,7 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
     let rowTop = y;
     let rowHeight = 0;
     details.forEach((f, i) => {
-      const wide = details.length % 2 === 1 && i === details.length - 1;
+      const wide = f.small || (details.length % 2 === 1 && i === details.length - 1);
       const col = wide ? 0 : i % 2;
       if (col === 0 && i > 0) {
         rowTop += rowHeight + 16;
@@ -162,11 +172,15 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
       }
       const cellRight = col === 0 ? right : right - colW - 24;
       const cellWidth = wide ? W - 2 * P : colW;
-      ctx.font = `700 14px ${SANS}`;
+      const valueFont = f.small ? `700 12px ${SANS}` : `700 14px ${SANS}`;
+      const valueLine = f.small ? 16 : 20;
+      ctx.font = valueFont;
       const lines = wrapLines(ctx, f.value, cellWidth);
       text(f.label, cellRight, rowTop + 1, `400 12px ${SANS}`, CARD_COLORS.muted);
-      lines.forEach((line, li) => text(line, cellRight, rowTop + 20 + li * 20 + 2, `700 14px ${SANS}`, CARD_COLORS.text));
-      rowHeight = Math.max(rowHeight, 20 + lines.length * 20);
+      lines.forEach((line, li) =>
+        text(line, cellRight, rowTop + 20 + li * valueLine + 2, valueFont, CARD_COLORS.text, f.small ? 'ltr' : 'rtl')
+      );
+      rowHeight = Math.max(rowHeight, 20 + lines.length * valueLine);
     });
     y = rowTop + rowHeight;
   }

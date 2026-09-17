@@ -5,7 +5,12 @@ import type { StoredApplication } from '../types';
 export interface CardField {
   label: string;
   value: string;
+  /** Long, low-priority values (an email) render smaller and full width. */
+  small?: boolean;
 }
+
+/** Long names drop a size instead of wrapping into three lines. */
+export const cardNameFontSize = (name: string) => (name.trim().length > 24 ? 18 : name.trim().length > 18 ? 20 : 22);
 
 /** Everything a club ID card shows. Rendered on screen by <MemberCard> and to PNG by renderCardPng(). */
 export interface CardData {

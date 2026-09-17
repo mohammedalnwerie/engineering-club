@@ -2,7 +2,7 @@ import React from 'react';
 import type { LeaderMember } from '../types';
 import { X, ShieldCheck, Printer, Download } from 'lucide-react';
 import { downloadCardPng, printCard } from '../utils/cardRenderer';
-import type { CardData } from '../utils/memberCard';
+import { currentAcademicYear, type CardData } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
 
 interface ExecutiveBadgeModalProps {
@@ -26,8 +26,9 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
     photoUrl: leader.avatar || undefined,
     highlight: department && !roleSaysDepartment ? { label: 'الجهة', value: department } : undefined,
     fields: [
-      ...(leader.email ? [{ label: 'البريد', value: leader.email }] : []),
+      ...(leader.email ? [{ label: 'البريد', value: leader.email, small: true }] : []),
     ],
+    badge: `تكليف ${currentAcademicYear()}`,
     qrValue: `${window.location.origin}/#leadership`,
     code: badgeSerial,
     accent: 'green',
