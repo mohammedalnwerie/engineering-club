@@ -11,6 +11,7 @@ import {
   validateFullName,
   validatePhone,
   validateStudentId,
+  universityEmailFor,
 } from '../utils/validation';
 import { checkRateLimit } from '../utils/security';
 import { COMPLAINT_CATEGORIES } from '../data/complaints';
@@ -70,6 +71,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const [attachmentImage, setAttachmentImage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [emailHint, setEmailHint] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   // Submission result state
   const [submittedTicket, setSubmittedTicket] = useState<ComplaintItem | null>(null);
@@ -366,7 +368,12 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                     <FieldError message={fieldErrors.studentName} />
                   </div>
                   <div>
-                    <label className="block text-gray-300 mb-1 font-mono">الرقم الجامعي *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-gray-300 font-mono">الرقم الجامعي *</label>
+                      <span className="text-xs font-mono text-gray-500" dir="ltr">
+                        {normalizeCode(studentId).replace(/\D/g, '').length}/9
+                      </span>
+                    </div>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -399,6 +406,15 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                       dir="ltr"
                     />
                     <FieldError message={fieldErrors.email} />
+                    {!email.trim() && universityEmailFor(studentId) && (
+                      <button
+                        type="button"
+                        onClick={() => setEmail(universityEmailFor(studentId) as string)}
+                        className="mt-1.5 text-xs text-emerald-300 hover:text-white underline underline-offset-4 cursor-pointer"
+                      >
+                        استخدم بريدك الجامعي: <span dir="ltr">{universityEmailFor(studentId)}</span>
+                      </button>
+                    )}
                     {emailHint && !fieldErrors.email && (
                       <button
                         type="button"
@@ -547,10 +563,25 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                       </div>
                     </div>
                   ) : (
-                    <label className="border-2 border-dashed border-white/15 hover:border-cyan-400/50 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all bg-white/[0.01] hover:bg-white/[0.03] group">
+                    <label
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOver(true);
+                      }}
+                      onDragLeave={() => setDragOver(false)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragOver(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) handleImageUpload(file);
+                      }}
+                      className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all group ${
+                        dragOver ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/15 hover:border-cyan-400/50 bg-white/[0.01] hover:bg-white/[0.03]'
+                      }`}
+                    >
                       <Upload className="w-5 h-5 text-gray-400 group-hover:text-cyan-400 mb-1.5 transition-colors" />
                       <span className="text-xs text-gray-300 font-sans font-medium">
-                        اضغط لرفع لقطة شاشة أو صورة من جهازك
+                        اسحب الصورة هنا أو اضغط لاختيارها من جهازك
                       </span>
                       <span className="text-xs text-gray-500 font-mono mt-0.5">
                         PNG, JPG, WebP — يتم تحسين الحجم تلقائياً

@@ -86,6 +86,15 @@ export function validatePhone(value: string, required = true): string | null {
   return null;
 }
 
+/** بريد الجامعة المشتق من الرقم الجامعي — اقتراح فقط، والطالب حر يغيّره. */
+export const UNIVERSITY_EMAIL_DOMAIN = 'std.up.edu.ps';
+
+export function universityEmailFor(studentId: string): string | null {
+  const id = normalizeCode(studentId);
+  if (!/^\d{8,10}$/.test(id)) return null;
+  return `${id}@${UNIVERSITY_EMAIL_DOMAIN}`;
+}
+
 export function validateUrl(value: string): string | null {
   const url = value.trim();
   if (!url) return null;

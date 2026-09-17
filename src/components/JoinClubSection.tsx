@@ -13,6 +13,7 @@ import {
   suggestEmailFix,
   validateStudentId,
   validateUrl,
+  universityEmailFor,
 } from '../utils/validation';
 
 const FieldError: React.FC<{ message?: string }> = ({ message }) =>
@@ -277,7 +278,12 @@ export const JoinClubSection: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="join-student-id" className="block text-sm text-gray-300 mb-1.5">الرقم الجامعي</label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label htmlFor="join-student-id" className="block text-sm text-gray-300">الرقم الجامعي</label>
+                          <span className="text-xs font-mono text-gray-400" dir="ltr">
+                            {formData.studentId.replace(/\D/g, '').length}/9
+                          </span>
+                        </div>
                         <input
                           id="join-student-id"
                           type="text"
@@ -329,6 +335,15 @@ export const JoinClubSection: React.FC = () => {
                           dir="ltr"
                         />
                         <FieldError message={errors.email} />
+                        {!formData.email.trim() && universityEmailFor(formData.studentId) && (
+                          <button
+                            type="button"
+                            onClick={() => updateField('email', universityEmailFor(formData.studentId) as string)}
+                            className="mt-1.5 text-sm text-emerald-300 hover:text-white underline underline-offset-4 cursor-pointer text-right"
+                          >
+                            استخدم بريدك الجامعي: <span dir="ltr">{universityEmailFor(formData.studentId)}</span>
+                          </button>
+                        )}
                         {suggestEmailFix(formData.email) && (
                           <button
                             type="button"
