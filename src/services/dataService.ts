@@ -18,11 +18,20 @@ import type {
   StudentSpotlightData,
   ComplaintItem,
   RecruitmentSettings,
-  MembershipSettings
+  MembershipSettings,
+  ContactSettings
 } from '../types';
+import { SOCIAL_ORDER, type SocialLink } from '../data/socials';
 
 
 
+
+export const DEFAULT_CONTACT_SETTINGS: ContactSettings = {
+  email: 'eng.club@up.edu.ps',
+  phone: '',
+  addressAr: 'جامعة فلسطين — غزة',
+  links: SOCIAL_ORDER.map((platform) => ({ platform, url: '', visible: false })),
+};
 
 export const DEFAULT_MEMBERSHIP_SETTINGS: MembershipSettings = {
   trialDays: 14,
@@ -101,6 +110,7 @@ const CONTENT_KEYS = {
   spotlight: 'spotlight',
   recruitment: 'recruitment',
   membership: 'membership',
+  contact: 'contact',
   tickets: 'tickets',
 } as const;
 
@@ -122,6 +132,7 @@ interface ContentCache {
   spotlight: StudentSpotlightData;
   recruitment: RecruitmentSettings;
   membership: MembershipSettings;
+  contact: ContactSettings;
   tickets: EventTicket[];
 }
 
@@ -136,6 +147,7 @@ const defaultContent = (): ContentCache => ({
   spotlight: STUDENT_SPOTLIGHT,
   recruitment: DEFAULT_RECRUITMENT_SETTINGS,
   membership: DEFAULT_MEMBERSHIP_SETTINGS,
+  contact: DEFAULT_CONTACT_SETTINGS,
   tickets: [],
 });
 
@@ -704,6 +716,29 @@ class DataService {
     } catch {
       return false;
     }
+  }
+
+  // --- CONTACT & OFFICIAL LINKS ---
+  public getContactSettings(): ContactSettings {
+    const stored = this.content.contact;
+    const saved: ContactSettings = { ...DEFAULT_CONTACT_SETTINGS, ...(stored || {}) };
+    // Keep every known platform in the list so the dashboard can show them all.
+    const byPlatform = new Map((saved.links || []).map((l) => [l.platform, l]));
+    return {
+      ...saved,
+      links: SOCIAL_ORDER.map(
+        (platform) => byPlatform.get(platform) || { platform, url: '', visible: false }
+      ),
+    };
+  }
+
+  public saveContactSettings(settings: ContactSettings) {
+    this.setContent('contact', settings);
+  }
+
+  /** Only the links an admin filled in and left visible. */
+  public getVisibleSocialLinks(): SocialLink[] {
+    return this.getContactSettings().links.filter((l) => l.visible && l.url.trim());
   }
 
   // --- MEMBERSHIP SETTINGS ---

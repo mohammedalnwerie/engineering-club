@@ -182,6 +182,14 @@ export interface SiteSettings {
   showLiveFeedSection?: boolean;
 }
 
+/** بيانات التواصل والروابط الرسمية التي تظهر في تذييل الموقع */
+export interface ContactSettings {
+  email: string;
+  phone?: string;
+  addressAr?: string;
+  links: import('../data/socials').SocialLink[];
+}
+
 export interface StudentSpotlightData {
   name: string;
   major: string;

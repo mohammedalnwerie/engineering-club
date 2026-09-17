@@ -21,6 +21,7 @@ import { ApplicationsTable } from './admin/ApplicationsTable';
 import { QuickNav, type QuickNavItem } from './admin/QuickNav';
 import { LeadershipPanel } from './admin/LeadershipPanel';
 import { CollegesPanel } from './admin/CollegesPanel';
+import { ContactPanel } from './admin/ContactPanel';
 import { complaintCategoryLabel, COMPLAINT_CATEGORIES, PRIORITY_LABELS } from '../data/complaints';
 import {
   fetchMyRole,
@@ -257,6 +258,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     | 'team'
     | 'activity'
     | 'trash'
+    | 'contact'
     | 'security';
 
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -785,6 +787,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       { id: 'colleges', label: 'الكليات والتخصصات', group: 'محتوى الموقع', needsFullAccess: true },
       { id: 'settings', label: 'الهوية وإعدادات العرض', group: 'الإعدادات', needsFullAccess: true },
       { id: 'cloud', label: 'السحابة والمشتركون', group: 'الإعدادات', needsFullAccess: true },
+      { id: 'contact', label: 'روابط التواصل الرسمية', group: 'الإعدادات', needsFullAccess: true },
       { id: 'team', label: 'فريق الإدارة والصلاحيات', group: 'الإعدادات', needsFullAccess: true },
       { id: 'activity', label: 'سجل النشاط', group: 'الإعدادات', needsFullAccess: true },
       { id: 'trash', label: 'سلة المحذوفات', group: 'الإعدادات', needsFullAccess: true },
@@ -1463,6 +1466,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </button>
 
                     <SidebarNavItem
+                        active={activeTab === 'contact'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<LinkIcon className="w-4 h-4" />}
+                        label="روابط التواصل"
+                        onClick={() => setActiveTab('contact')}
+                      />
+                    <SidebarNavItem
                         active={activeTab === 'team'}
                         collapsed={isSidebarCollapsed}
                         icon={<Users className="w-4 h-4" />}
@@ -1576,6 +1586,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     {activeTab === 'colleges' && 'الكليات والتخصصات الهندسية'}
                     {activeTab === 'settings' && 'هوية الموقع وإعدادات العرض'}
                     {activeTab === 'cloud' && 'السحابة والمشتركون والنسخ الاحتياطي'}
+                    {activeTab === 'contact' && 'روابط التواصل الرسمية'}
                     {activeTab === 'security' && 'الأمان وتغيير كلمة المرور وسجل التدقيق'}
                   </h2>
                 </div>
@@ -3543,6 +3554,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             {activeTab === 'members' && fullAccess && (
               <div className="flex-1 overflow-y-auto">
                 <MembersPanel showToast={showToast} />
+              </div>
+            )}
+
+            {activeTab === 'contact' && fullAccess && (
+              <div className="flex-1 overflow-y-auto">
+                <ContactPanel showToast={showToast} />
               </div>
             )}
 
