@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import type { StoredApplication } from '../types';
-import { X, Printer, Download, Copy, Users } from 'lucide-react';
-import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
+import { X, Printer, Download, Copy } from 'lucide-react';
+import { downloadCardPng, printCard } from '../utils/cardRenderer';
+import { committeeCardFor } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
-import { effectiveCommittee, findCommittee } from '../data/committees';
+import { effectiveCommittee } from '../data/committees';
 
 interface CommitteeBadgeModalProps {
   isOpen: boolean;
@@ -18,13 +19,8 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
   if (!isOpen || !app) return null;
 
   const committeeName = effectiveCommittee(app);
-  const committee = findCommittee(committeeName);
-  const organizationalRole = app.organizationalRole || 'عضو في اللجنة';
-  const committeeCode = committee?.code || 'COM';
-
-  const cleanMajor = (app.major || '').replace(/^(تخصص\s+|كلية\s+)/i, '').trim();
-  const serialNumber = `UP-COMM-${committeeCode}-2026-${(app.studentId || app.id).slice(-4).toUpperCase()}`;
-  const verifyUrl = `${window.location.origin}/?verify=${encodeURIComponent(app.studentId || app.id)}`;
+  const card = committeeCardFor(app);
+  const serialNumber = card.code;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
@@ -44,29 +40,12 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
 
         {/* Modal Top Header */}
         <div className="text-center mb-5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#381C4A]/80 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs mb-1.5 shadow-sm">
-            <Users className="w-3.5 h-3.5 text-[#3FE7E3]" />
-            <span>بطاقة عضو اللجنة</span>
-          </div>
-          <h3 className="text-lg sm:text-xl font-black text-white">بطاقة عضو اللجنة الرسمية</h3>
+          <h3 className="text-lg sm:text-xl font-black text-white">بطاقة عضو اللجنة</h3>
           <p className="text-xs text-gray-400 mt-0.5">النادي الهندسي — جامعة فلسطين</p>
         </div>
 
         {/* The Official Printable Committee Member Badge (Vertical Portrait Ratio) */}
-        <MemberCard
-          id="printable-committee-badge"
-          badge="عضو لجنة"
-          accent="cyan"
-          name={app.fullName}
-          role={organizationalRole}
-          highlight={{ label: 'اللجنة', value: committeeName }}
-          fields={[
-            { label: 'الرقم الجامعي', value: app.studentId },
-            { label: 'التخصص', value: cleanMajor },
-          ]}
-          qrValue={verifyUrl}
-          code={serialNumber}
-        />
+        <MemberCard {...card} />
         {/* Action Buttons: Export PNG & Print PDF */}
         <div className="flex flex-col gap-2.5 mt-6">
           <button
@@ -75,23 +54,23 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
             onClick={async () => {
               setIsExporting(true);
               const cleanName = app.fullName.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '-');
-              await exportCardAsImage('printable-committee-badge', `UP-Committee-Badge-${cleanName}.png`);
+              await downloadCardPng(card, `UP-Committee-Card-${cleanName}.png`);
               setIsExporting(false);
             }}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <Download className="w-4 h-4" />
-            <span>{isExporting ? 'جاري تجهيز الصورة...' : 'تحميل كرت عضو اللجنة كصورة رسمية (PNG) 🖼️'}</span>
+            <span>{isExporting ? 'جاري تجهيز الصورة...' : 'حفظ الكرت كصورة'}</span>
           </button>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => printCardAsPdf()}
+              onClick={() => void printCard(card)}
               className="flex-1 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2 transition-all"
             >
               <Printer className="w-4 h-4 text-cyan-400" />
-              <span>طباعة / حفظ كـ PDF 📄</span>
+              <span>طباعة / PDF</span>
             </button>
 
             <button

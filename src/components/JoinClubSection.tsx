@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import { MemberCard } from './MemberCard';
+import { memberCardFor } from '../utils/memberCard';
 import type { ClubApplication } from '../types';
 import { checkRateLimit } from '../utils/security';
 
@@ -605,16 +606,14 @@ export const JoinClubSection: React.FC = () => {
 
             <div className="w-full opacity-95">
               <MemberCard
-                id="live-club-badge-preview"
+                {...memberCardFor({
+                  id: 'preview-00000000',
+                  fullName: formData.fullName || 'اسمك هنا',
+                  studentId: formData.studentId || '—',
+                  major: formData.major,
+                  targetCommittee: formData.targetCommittee,
+                })}
                 badge="قيد المراجعة"
-                name={formData.fullName || 'اسمك هنا'}
-                highlight={{ label: 'اللجنة / المسار', value: formData.targetCommittee }}
-                fields={[
-                  { label: 'الرقم الجامعي', value: formData.studentId || '—' },
-                  { label: 'التخصص', value: formData.major },
-                  { label: 'السنة الدراسية', value: formData.academicYear },
-                ]}
-                qrValue={`${window.location.origin}/?verify=preview`}
                 code="UP-ENG-XXXXXXXX"
               />
             </div>

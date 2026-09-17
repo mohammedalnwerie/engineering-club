@@ -11,7 +11,9 @@ import {
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
 import { CommitteeBadgeModal } from './CommitteeBadgeModal';
 import { COMMITTEES, effectiveCommittee, findCommittee } from '../data/committees';
-import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
+import { downloadCardPng, printCard } from '../utils/cardRenderer';
+import { memberCardFor } from '../utils/memberCard';
+import { MemberCard } from './MemberCard';
 import { AcceptanceDispatchModal } from './AcceptanceDispatchModal';
 import { emailService, type EmailConfig } from '../services/emailService';
 import type {
@@ -3959,89 +3961,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               </div>
 
               {/* The Actual Digital Badge Card (Vertical Portrait Ratio) */}
-              <div
-                id="printable-member-badge"
-                className="w-full max-w-[340px] sm:max-w-[350px] mx-auto rounded-3xl p-5 bg-gradient-to-b from-[#160E3D] via-[#0D0727] to-[#070319] border-2 border-[#7F1AB2]/50 shadow-[0_12px_45px_rgba(127,26,178,0.3)] relative overflow-hidden font-mono text-right flex flex-col justify-between"
-              >
-                {/* Decorative Tech Elements */}
-                <div className="absolute -top-12 -right-12 w-36 h-36 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
-
-                <div>
-                  {/* Lanyard Clip Slot for Realistic Printable Badge */}
-                  <div className="w-14 h-1.5 rounded-full bg-white/20 mx-auto mb-3.5 shadow-inner" />
-
-                  {/* Top Brand Banner: Dedicated 100% to Showcasing the Engineering Club & University */}
-                  <div className="bg-white rounded-2xl p-2.5 sm:p-3 shadow-md border border-white/90 mb-4 text-center">
-                    <img
-                      src="/brand/logo-horizontal.png"
-                      alt="النادي الهندسي"
-                      className="h-10 sm:h-11 w-auto mx-auto object-contain drop-shadow-sm"
-                    />
-                    <div className="text-[10px] font-bold text-gray-700 tracking-wider mt-1 font-sans border-t border-gray-200/80 pt-1 flex items-center justify-center gap-1.5">
-                      <span>جامعة فلسطين</span>
-                      <span className="text-gray-300">•</span>
-                      <span className="font-mono text-[9px] text-gray-500 uppercase tracking-wider font-semibold">University of Palestine</span>
-                    </div>
-                  </div>
-
-                  {/* Member Info */}
-                  <div className="mb-3.5 text-right">
-                    <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
-                    <div className="text-xl sm:text-2xl font-black text-white font-sans mt-0.5 tracking-wide leading-tight">
-                      {viewingBadgeApp.fullName}
-                    </div>
-                    <div className="text-xs font-mono text-gray-400 mt-1 flex items-center gap-1.5 justify-start">
-                      <span className="text-gray-500">الرقم الجامعي:</span>
-                      <span className="text-[#3FE7E3] font-bold">{viewingBadgeApp.studentId || 'UP-STUDENT'}</span>
-                    </div>
-                  </div>
-
-                  {/* Academic Fields (Cleaned: No College, No Academic Year, No redundant words) */}
-                  <div className="space-y-2 p-3 rounded-2xl bg-black/50 border border-white/10 mb-4 text-xs font-sans">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-400">التخصص:</span>
-                      <span className="font-bold text-[#3FE7E3]">
-                        {(viewingBadgeApp.major || '').replace(/^(تخصص\s+|كلية\s+)/i, '').trim()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
-                      <span className="text-gray-400">اللجنة / المسار:</span>
-                      <span className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
-                        {viewingBadgeApp.targetCommittee}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Verification Barcode & Seal */}
-                <div className="pt-3 border-t border-dashed border-white/15 flex items-center justify-between gap-3">
-                  <div className="text-left flex-1 min-w-0" dir="ltr">
-                    <div className="text-[9px] text-gray-400 font-mono tracking-wider font-bold">
-                      PASS ID: <span className="text-cyan-400 font-mono">UP-ENG-{(viewingBadgeApp.id || 'VALID').slice(-8).toUpperCase()}</span>
-                    </div>
-                    <div className="text-[8px] text-gray-500 font-mono tracking-tight mt-0.5 uppercase">
-                      OFFICIALLY REGISTERED PASS
-                    </div>
-                    <div className="inline-flex items-center gap-1 mt-1 text-[9px] text-[#35BC2B] font-sans font-bold" dir="rtl">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B]" />
-                      <span>عضوية معتمدة ومفعلة • 2026</span>
-                    </div>
-                  </div>
-
-                  {/* Scannable Verification QR Code */}
-                  <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow shrink-0 border border-white/90">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(
-                        `${window.location.origin}/?verify=${encodeURIComponent(viewingBadgeApp.studentId || viewingBadgeApp.id)}`
-                      )}`}
-                      alt="Verification QR"
-                      className="w-11 h-11 object-contain"
-                    />
-                  </div>
-                </div>
-              </div>
+              <MemberCard {...memberCardFor(viewingBadgeApp)} />
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-2.5 mt-6">
@@ -4050,24 +3970,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   type="button"
                   onClick={() => {
                     const sId = viewingBadgeApp.studentId || 'ID';
-                    exportCardAsImage('printable-member-badge', `UP-Member-Badge-${sId}.png`);
+                    void downloadCardPng(memberCardFor(viewingBadgeApp), `UP-Member-Card-${sId}.png`);
                   }}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_20px_rgba(22,163,74,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
                 >
                   <Download className="w-4 h-4" />
-                  <span>تحميل البطاقة كصورة رسمية عالية الدقة (PNG) 🖼️</span>
+                  <span>حفظ البطاقة كصورة</span>
                 </button>
 
                 {/* Print or Save as PDF */}
                 <button
                   type="button"
                   onClick={() => {
-                    printCardAsPdf();
+                    void printCard(memberCardFor(viewingBadgeApp));
                   }}
                   className="w-full py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2 transition-all"
                 >
                   <Printer className="w-4 h-4 text-emerald-400" />
-                  <span>طباعة أو حفظ البطاقة كـ PDF 📄</span>
+                  <span>طباعة / PDF</span>
                 </button>
 
                 <button

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { StoredApplication } from '../types';
-import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
+import { downloadCardPng, printCard } from '../utils/cardRenderer';
+import { memberCardFor } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
 import { effectiveCommittee, findCommittee } from '../data/committees';
 import {
@@ -94,9 +95,6 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
     void performSearch(searchQuery);
   };
 
-  const authCode = matchedApp
-    ? `UP-ENG-${(matchedApp.id || 'VERIFIED').slice(-8).toUpperCase()}`
-    : '';
 
   const verifyUrl = matchedApp
     ? `${window.location.origin}/?verify=${encodeURIComponent(matchedApp.studentId || matchedApp.id)}`
@@ -125,34 +123,33 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <div className="font-mono text-[11px] text-emerald-400 font-bold">
-              VERIFICATION PORTAL // بوابة الاعتماد
-            </div>
-            <h3 className="text-xl font-extrabold text-white">التحقق من بطاقة العضوية الرسمية</h3>
+            <h3 className="text-xl font-extrabold text-white">التحقق من العضوية</h3>
+            <p className="text-sm text-gray-400 mt-0.5">النادي الهندسي — جامعة فلسطين</p>
           </div>
         </div>
 
         {/* Search Bar */}
         <form onSubmit={handleFormSubmit} className="mb-6">
-          <label className="block text-xs font-mono text-gray-300 mb-2">
-            ابحث بالرقم الجامعي أو كود التحقق (UP-ENG-XXXX):
+          <label htmlFor="verify-code" className="block text-sm text-gray-300 mb-2">
+            الرقم الجامعي أو كود التحقق
           </label>
-          <div className="relative flex items-center">
+          <div className="flex items-stretch gap-2">
             <input
+              id="verify-code"
               type="text"
-              placeholder="مثال: 120200456 أو كود الاعتماد..."
+              inputMode="text"
+              placeholder="مثال: 120200456 أو UP-ENG-…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-16 rounded-xl bg-black/50 border border-white/10 focus:border-emerald-400 focus:outline-none text-white text-sm"
-              dir="auto"
+              className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-black/50 border border-white/10 focus:border-emerald-400 focus:outline-none text-white text-base text-right"
             />
             <button
               type="submit"
               disabled={isSearching}
-              className="disabled:opacity-60 absolute left-1.5 px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer transition-all flex items-center gap-1 shadow"
+              className="disabled:opacity-60 px-5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-sm cursor-pointer transition-all flex items-center gap-1.5 shrink-0"
             >
-              <Search className="w-3.5 h-3.5" />
-              <span>{isSearching ? '...' : 'تحقق'}</span>
+              <Search className="w-4 h-4" />
+              <span>{isSearching ? 'جاري…' : 'تحقق'}</span>
             </button>
           </div>
         </form>
@@ -165,31 +162,13 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                 /* Verified Active Member Card */
                 <div className="space-y-4">
                   {/* Status Banner */}
-                  <div className="p-3.5 rounded-2xl bg-[#7F1AB2]/20 border border-[#7F1AB2]/40 text-[#3FE7E3] flex items-center justify-between shadow-lg">
-                    <div className="flex items-center gap-2 text-xs font-bold">
-                      <CheckCircle2 className="w-5 h-5 text-[#35BC2B] shrink-0" />
-                      <span>عضوية مقبولة ومفعّلة</span>
-                    </div>
-                    <span className="font-mono text-[10px] text-[#35BC2B] px-2.5 py-0.5 rounded-full bg-[#35BC2B]/10 border border-[#35BC2B]/30 font-bold">
-                      نشطة
-                    </span>
+                  <div className="flex items-center justify-center gap-2 text-sm font-bold text-emerald-300">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <span>عضوية صحيحة ومفعّلة</span>
                   </div>
 
                   {/* The Official Card (Vertical Portrait Ratio) */}
-                  <MemberCard
-                    id="verified-member-card"
-                    badge="عضو في النادي"
-                    name={matchedApp.fullName}
-                    role={matchedApp.organizationalRole}
-                    highlight={{ label: 'اللجنة / المسار', value: effectiveCommittee(matchedApp) }}
-                    fields={[
-                      { label: 'الرقم الجامعي', value: matchedApp.studentId },
-                      { label: 'التخصص', value: (matchedApp.major || '').replace(/^(تخصص\s+|كلية\s+)/, '').trim() },
-                      { label: 'السنة الدراسية', value: matchedApp.academicYear },
-                    ]}
-                    qrValue={verifyUrl}
-                    code={authCode}
-                  />
+                  <MemberCard {...memberCardFor(matchedApp)} />
                   {/* Actions: Export PNG & Print PDF */}
                   <div className="flex flex-col gap-2 pt-2">
                     <button
@@ -198,13 +177,13 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                       onClick={async () => {
                         setIsExporting(true);
                         const cleanId = matchedApp.studentId || 'PASS';
-                        await exportCardAsImage('verified-member-card', `UP-Member-Pass-${cleanId}.png`);
+                        await downloadCardPng(memberCardFor(matchedApp), `UP-Member-Card-${cleanId}.png`);
                         setIsExporting(false);
                       }}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-black font-extrabold text-xs cursor-pointer shadow flex items-center justify-center gap-1.5 transition-all active:scale-[0.99]"
+                      className="w-full py-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 disabled:opacity-60 text-black font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
                     >
                       <Download className="w-4 h-4" />
-                      <span>{isExporting ? 'جاري تجهيز الصورة...' : 'تحميل البطاقة كصورة رسمية عالية الدقة (PNG) 🖼️'}</span>
+                      <span>{isExporting ? 'جاري تجهيز الصورة…' : 'حفظ البطاقة كصورة'}</span>
                     </button>
 
                     {findCommittee(effectiveCommittee(matchedApp))?.id !== 'general' && effectiveCommittee(matchedApp) && (
@@ -213,21 +192,21 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                         onClick={() => {
                           setShowCommitteeBadge(true);
                         }}
-                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500/20 via-cyan-500/20 to-blue-500/20 hover:from-purple-500/30 hover:to-blue-500/30 border border-cyan-400/50 text-cyan-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow transition-all"
+                        className="w-full py-3 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/40 text-cyan-200 font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
                       >
-                        <Award className="w-4 h-4 text-cyan-400" />
-                        <span>عرض كرت عضو اللجنة ({effectiveCommittee(matchedApp)})</span>
+                        <Award className="w-4 h-4 text-cyan-300" />
+                        <span>كرت عضو اللجنة</span>
                       </button>
                     )}
 
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => printCardAsPdf()}
-                        className="flex-1 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                        onClick={() => void printCard(memberCardFor(matchedApp))}
+                        className="flex-1 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
                       >
-                        <Printer className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>طباعة / حفظ كـ PDF 📄</span>
+                        <Printer className="w-4 h-4 text-emerald-400" />
+                        <span>طباعة / PDF</span>
                       </button>
 
                       <button
@@ -237,7 +216,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                           setCopied(true);
                           setTimeout(() => setCopied(false), 3000);
                         }}
-                        className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-300 text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5"
+                        className="px-4 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-200 text-sm font-medium cursor-pointer transition-all flex items-center gap-2"
                         title="نسخ رابط التحقق المباشر"
                       >
                         <Copy className="w-3.5 h-3.5 text-cyan-400" />
@@ -292,7 +271,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
         {/* Footer info */}
         {!searched && (
           <div className="text-center p-4 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-gray-400">
-            💡 يمكن لأي جهة أو مشرف مسح رمز الاستجابة السريعة (QR Code) الموجود على البطاقة بكاميرا الهاتف للتحقق المباشر من صحة وسريان العضوية.
+            يمكن لأي جهة أو مشرف مسح رمز الاستجابة السريعة (QR Code) الموجود على البطاقة بكاميرا الهاتف للتحقق المباشر من صحة وسريان العضوية.
           </div>
         )}
       </div>

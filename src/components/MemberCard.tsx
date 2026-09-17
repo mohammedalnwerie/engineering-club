@@ -1,46 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
+import { CARD_ACCENTS, CARD_COLORS, cardQrDataUrl, currentAcademicYear, type CardData } from '../utils/memberCard';
 
-export interface MemberCardField {
-  label: string;
-  value: string;
-}
+export type { CardData, CardField } from '../utils/memberCard';
 
-interface MemberCardProps {
-  /** DOM id used by the PNG exporter */
-  id: string;
-  /** Card type shown in the header pill, e.g. "عضو لجنة" */
-  badge: string;
-  name: string;
-  /** Title printed right under the name (e.g. "مصمم جرافيك") */
-  role?: string;
-  /** Main detail, shown first across the full width (e.g. the committee) */
-  highlight?: MemberCardField;
-  /** Secondary details, laid out in two columns */
-  fields?: MemberCardField[];
-  photoUrl?: string;
-  qrValue: string;
-  code: string;
-  accent?: 'purple' | 'cyan' | 'green';
-}
-
-const ACCENTS = {
-  purple: { pill: 'bg-[#7F1AB2]/25 text-[#D1B5E3] border-[#7F1AB2]/60', role: 'text-[#D1B5E3]', bar: 'bg-[#A26CC6]' },
-  cyan: { pill: 'bg-[#3FE7E3]/15 text-[#98F7F1] border-[#3FE7E3]/45', role: 'text-[#98F7F1]', bar: 'bg-[#3FE7E3]' },
-  green: { pill: 'bg-[#35BC2B]/15 text-[#92E98C] border-[#35BC2B]/45', role: 'text-[#92E98C]', bar: 'bg-[#5CD653]' },
-};
-
-const Detail: React.FC<{ field: MemberCardField; wide?: boolean }> = ({ field, wide }) => (
-  <div className={wide ? 'col-span-2' : ''}>
-    <div className="text-xs text-gray-400">{field.label}</div>
-    <div className="text-sm font-bold text-white leading-snug mt-1 break-words">{field.value}</div>
-  </div>
-);
-
-/** Printable club ID card shared by member, committee and leadership passes. */
-export const MemberCard: React.FC<MemberCardProps> = ({
-  id,
-  badge,
+/**
+ * On-screen club ID card. The PNG/print version is drawn by utils/cardRenderer.ts
+ * with the same measurements (360px wide, 24px padding), so keep both in sync.
+ */
+export const MemberCard: React.FC<CardData & { className?: string }> = ({
   name,
   role,
   highlight,
@@ -49,18 +16,16 @@ export const MemberCard: React.FC<MemberCardProps> = ({
   qrValue,
   code,
   accent = 'purple',
+  badge,
+  className = '',
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState('');
-  const colors = ACCENTS[accent];
-  const details = [...(highlight?.value ? [highlight] : []), ...fields.filter((f) => f.value)];
-  // Highlight takes a full row; an odd last item also stretches so the grid never looks ragged.
-  const isWide = (index: number) =>
-    (index === 0 && Boolean(highlight?.value)) ||
-    (index === details.length - 1 && (details.length - (highlight?.value ? 1 : 0)) % 2 === 1);
+  const colors = CARD_ACCENTS[accent];
+  const details = fields.filter((f) => f.value);
 
   useEffect(() => {
     let cancelled = false;
-    QRCode.toDataURL(qrValue, { margin: 0, width: 240, color: { dark: '#08041D', light: '#FFFFFF' } })
+    cardQrDataUrl(qrValue)
       .then((url) => !cancelled && setQrDataUrl(url))
       .catch(() => !cancelled && setQrDataUrl(''));
     return () => {
@@ -70,61 +35,95 @@ export const MemberCard: React.FC<MemberCardProps> = ({
 
   return (
     <div
-      id={id}
       dir="rtl"
-      className="w-full max-w-[360px] mx-auto rounded-3xl overflow-hidden text-right bg-[#120A36] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+      className={`w-[360px] max-w-full mx-auto rounded-3xl overflow-hidden text-right shadow-[0_20px_50px_rgba(0,0,0,0.55)] ${className}`}
+      style={{ background: CARD_COLORS.background, border: `1px solid ${CARD_COLORS.border}` }}
     >
-      <div className="h-1.5 bg-gradient-to-l from-[#7F1AB2] via-[#3FE7E3] to-[#35BC2B]" />
+      <div
+        className="h-1.5"
+        style={{ background: `linear-gradient(to left, ${CARD_COLORS.strip[2]}, ${CARD_COLORS.strip[1]}, ${CARD_COLORS.strip[0]})` }}
+      />
 
       {/* Header */}
-      <div className="px-6 pt-5 pb-4 flex items-center justify-between gap-3 border-b border-white/10">
+      <div className="px-6 pt-5 pb-4 flex items-center justify-between gap-3" style={{ borderBottom: `1px solid ${CARD_COLORS.divider}` }}>
         <div className="flex items-center gap-3 min-w-0">
           <img src="/brand/emblem-on-dark.png" alt="" className="w-11 h-11 object-contain shrink-0" />
           <div className="min-w-0">
-            <div className="text-base font-black text-white leading-tight">النادي الهندسي</div>
-            <div className="text-xs text-gray-400 leading-tight mt-1">جامعة فلسطين</div>
+            <div className="text-base font-black text-white leading-5">النادي الهندسي</div>
+            <div className="text-xs leading-4 mt-1" style={{ color: CARD_COLORS.muted }}>
+              جامعة فلسطين
+            </div>
           </div>
         </div>
-        <span className={`shrink-0 text-xs font-bold px-3 py-1 rounded-full border ${colors.pill}`}>{badge}</span>
+        <span
+          dir="auto"
+          className="shrink-0 text-xs font-bold h-[26px] px-3 inline-flex items-center rounded-full"
+          style={{ background: colors.pillBg, border: `1px solid ${colors.pillBorder}`, color: colors.pillText }}
+        >
+          {badge || currentAcademicYear()}
+        </span>
       </div>
 
-      {/* Identity + details share one right edge */}
       <div className="px-6 py-6">
-        <div className="flex items-center gap-4">
+        {/* Identity */}
+        <div className="flex items-stretch gap-4">
           {photoUrl && (
-            <img
-              src={photoUrl}
-              alt={name}
-              crossOrigin="anonymous"
-              className="w-16 h-16 rounded-2xl object-cover border border-white/15 shrink-0"
-            />
+            <img src={photoUrl} alt={name} className="w-16 h-16 rounded-2xl object-cover shrink-0 border border-white/15" />
           )}
-          <div className="min-w-0 flex-1 flex gap-3">
-            <span className={`w-1 rounded-full shrink-0 ${colors.bar}`} />
+          <div className="flex gap-3 min-w-0 flex-1">
+            <span className="w-1 rounded-full shrink-0" style={{ background: colors.bar }} />
             <div className="min-w-0 flex-1">
-              <div className="text-[22px] font-black text-white leading-tight text-balance">{name}</div>
-              {role && <div className={`text-sm font-bold mt-1.5 ${colors.role}`}>{role}</div>}
+              <div className="text-[22px] leading-7 font-black text-white break-words">{name}</div>
+              {role && (
+                <div className="text-sm leading-5 font-bold mt-1.5" style={{ color: colors.role }}>
+                  {role}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
+        {/* Committee band */}
+        {highlight?.value && (
+          <div
+            className="mt-5 rounded-2xl px-4 py-3.5"
+            style={{ background: colors.bandBg, border: `1px solid ${colors.bandBorder}` }}
+          >
+            <div className="text-xs leading-4 text-gray-300">{highlight.label}</div>
+            <div className="text-base leading-[22px] font-bold text-white mt-1">{highlight.value}</div>
+          </div>
+        )}
+
+        {/* Details */}
         {details.length > 0 && (
-          <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4">
             {details.map((f, i) => (
-              <Detail key={f.label} field={f} wide={isWide(i)} />
+              <div key={f.label} className={details.length % 2 === 1 && i === details.length - 1 ? 'col-span-2' : ''}>
+                <div className="text-xs leading-4" style={{ color: CARD_COLORS.muted }}>
+                  {f.label}
+                </div>
+                <div className="text-sm leading-5 font-bold text-white mt-1 break-words">{f.value}</div>
+              </div>
             ))}
           </div>
         )}
       </div>
 
       {/* Verification strip */}
-      <div className="px-6 py-4 bg-black/25 border-t border-white/10 flex items-center justify-between gap-4">
+      <div
+        className="px-6 py-4 flex items-center justify-between gap-4"
+        style={{ background: CARD_COLORS.footerBg, borderTop: `1px solid ${CARD_COLORS.divider}` }}
+      >
         <div className="min-w-0">
-          <div className="text-xs text-gray-400">كود التحقق</div>
-          <div className="text-sm font-bold text-[#3FE7E3] font-mono mt-1 whitespace-nowrap" dir="ltr">
+          <div className="text-xs leading-4" style={{ color: CARD_COLORS.muted }}>
+            كود التحقق
+          </div>
+          <div className="text-sm leading-5 font-bold font-mono mt-1 whitespace-nowrap" dir="ltr" style={{ color: CARD_COLORS.code }}>
             {code}
           </div>
-          <div className="text-xs text-gray-400 mt-1">امسح الرمز للتحقق من البطاقة</div>
+          <div className="text-xs leading-4 mt-1" style={{ color: CARD_COLORS.muted }}>
+            امسح الرمز للتحقق من البطاقة
+          </div>
         </div>
         <div className="w-[72px] h-[72px] rounded-xl bg-white p-1.5 shrink-0">
           {qrDataUrl && <img src={qrDataUrl} alt="رمز التحقق" className="w-full h-full" />}

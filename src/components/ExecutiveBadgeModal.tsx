@@ -1,7 +1,8 @@
 import React from 'react';
 import type { LeaderMember } from '../types';
 import { X, ShieldCheck, Printer, Download } from 'lucide-react';
-import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
+import { downloadCardPng, printCard } from '../utils/cardRenderer';
+import type { CardData } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
 
 interface ExecutiveBadgeModalProps {
@@ -15,8 +16,17 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
 
   if (!isOpen || !leader) return null;
 
-  const isExecutive = leader.tier === 'executive';
   const badgeSerial = `UP-EXEC-2026-${leader.id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`;
+  const card: CardData = {
+    name: leader.name || leader.role,
+    role: leader.name ? leader.role : undefined,
+    photoUrl: leader.avatar || undefined,
+    highlight: { label: 'الجهة', value: leader.department },
+    fields: [{ label: 'البريد', value: leader.email }],
+    qrValue: `${window.location.origin}/#leadership`,
+    code: badgeSerial,
+    accent: 'green',
+  };
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
@@ -45,18 +55,7 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
         </div>
 
         {/* Printable Executive Card (Vertical Portrait Ratio) */}
-        <MemberCard
-          id="printable-executive-badge"
-          badge={isExecutive ? 'الهيئة الإدارية' : 'رئاسة لجنة'}
-          accent="green"
-          name={leader.name || leader.role}
-          role={leader.name ? leader.role : undefined}
-          photoUrl={leader.avatar || undefined}
-          highlight={{ label: 'الجهة', value: leader.department }}
-          fields={[{ label: 'البريد', value: leader.email }]}
-          qrValue={`${window.location.origin}/#leadership`}
-          code={badgeSerial}
-        />
+        <MemberCard {...card} />
         {/* Action Buttons: Export PNG & Print PDF */}
         <div className="flex flex-col gap-2.5 mt-6">
           {/* Export PNG Image Button */}
@@ -66,23 +65,23 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
             onClick={async () => {
               setIsExporting(true);
               const cleanName = leader.name.replace(/[^a-zA-Z0-9؀-ۿ]/g, '-');
-              await exportCardAsImage('printable-executive-badge', `UP-Executive-Pass-${cleanName}.png`);
+              await downloadCardPng(card, `UP-Executive-Pass-${cleanName}.png`);
               setIsExporting(false);
             }}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-black font-extrabold text-xs cursor-pointer shadow-[0_0_25px_rgba(0,240,255,0.35)] flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <Download className="w-4 h-4" />
-            <span>{isExporting ? 'جاري تجهيز الصورة...' : 'تصدير وتحميل كصورة رسمية عالية الدقة (PNG) 🖼️'}</span>
+            <span>{isExporting ? 'جاري تجهيز الصورة...' : 'حفظ الكرت كصورة'}</span>
           </button>
 
           {/* Print / Save as PDF Button */}
           <button
             type="button"
-            onClick={() => printCardAsPdf()}
+            onClick={() => void printCard(card)}
             className="w-full py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-2 transition-all"
           >
             <Printer className="w-4 h-4 text-cyan-400" />
-            <span>طباعة / حفظ كـ ملف PDF 📄</span>
+            <span>طباعة / PDF</span>
           </button>
 
           <button

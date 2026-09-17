@@ -40,11 +40,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
     const [before, after] = heroTitle.split(heroHighlight);
     return (
       <>
-        {before.trim() && <span className="block text-white">{before.trim()}</span>}
-        <span className="block sm:whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-[#D1B5E3] via-[#3FE7E3] to-[#98F7F1] pb-2">
+        {before.trim() && <span className="text-white">{before.trim()} </span>}
+        {/* padding-bottom keeps Arabic dots below the baseline inside the gradient clip */}
+        <span className="inline-block pb-[0.18em] -mb-[0.18em] text-transparent bg-clip-text bg-gradient-to-l from-[#3FE7E3] via-[#98F7F1] to-[#D1B5E3]">
           {heroHighlight}
         </span>
-        {after.trim() && <span className="block text-white">{after.trim()}</span>}
+        {after.trim() && <span className="text-white"> {after.trim()}</span>}
       </>
     );
   };
@@ -59,7 +60,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
           <span className="font-semibold text-[#3FE7E3]">{settings.universityNameAr || 'جامعة فلسطين'}</span>
         </div>
 
-        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.15] text-center mb-6 drop-shadow-[0_2px_15px_rgba(0,0,0,0.6)]">
+        <h1 className="text-[2.6rem] sm:text-6xl lg:text-7xl font-black leading-[1.3] text-center mb-6 text-balance">
           {renderTitle()}
         </h1>
 
