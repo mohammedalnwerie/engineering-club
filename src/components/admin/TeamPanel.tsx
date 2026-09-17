@@ -68,6 +68,8 @@ export const TeamPanel: React.FC<{ myRole: AdminRole | null; myEmail: string; sh
 
   const changeRole = async (member: TeamMember, newRole: AdminRole) => {
     if (newRole === member.role) return;
+    const losingMyAccess = member.email === myEmail && newRole === 'media';
+    if (losingMyAccess && !window.confirm('هذه صلاحيتك أنت. لو غيّرتها إلى اللجنة الإعلامية لن تستطيع إدارة الحسابات بعدها. متأكد؟')) return;
     setBusy(member.userId);
     setError(null);
     try {

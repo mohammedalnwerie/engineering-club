@@ -161,6 +161,24 @@ Deno.serve(async (req) => {
     if (link.error || !link.data?.user) return json({ error: `تعذر إنشاء الحساب: ${link.error?.message || ''}` }, 500);
 
     const userId = link.data.user.id;
+
+    // Inviting somebody who is already on the team must never change their role —
+    // that once demoted the owner who invited their own address.
+    const { data: existing } = await admin.from('club_admins').select('role').eq('user_id', userId).maybeSingle();
+    if (existing) {
+      const existingRole = existing.role as Role;
+      const { error: touchError } = await admin
+        .from('club_admins')
+        .update({ email, display_name: displayName || null })
+        .eq('user_id', userId);
+      if (touchError) return json({ error: touchError.message }, 500);
+      const label = ROLE_LABELS[existingRole] || existingRole;
+      const note = userId === caller.user.id
+        ? `هذا حسابك أنت، صلاحيته ${label} ولم تتغير.`
+        : `${email} موجود في الفريق بصلاحية ${label}. غيّر صلاحيته من القائمة بجانب اسمه.`;
+      return json({ ok: true, warning: note });
+    }
+
     const { error: upsertError } = await admin
       .from('club_admins')
       .upsert({ user_id: userId, role, email, display_name: displayName || null }, { onConflict: 'user_id' });
