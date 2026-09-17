@@ -107,8 +107,8 @@ export const LeadershipSection: React.FC = () => {
                           className="w-20 h-20 rounded-2xl object-cover border-2 border-[#7F1AB2]/40 group-hover:border-[#3FE7E3] transition-colors shadow-md"
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center border-2 border-[#7F1AB2]/40 group-hover:border-[#3FE7E3] transition-colors shadow-md">
-                          <img src="/brand/emblem.png" alt="" className="w-12 h-12 object-contain" />
+                        <div className="w-20 h-20 rounded-2xl bg-white/[0.04] flex items-center justify-center border-2 border-[#7F1AB2]/40 group-hover:border-[#3FE7E3] transition-colors shadow-md">
+                          <img src="/brand/emblem-on-dark.png" alt="" className="w-12 h-12 object-contain" />
                         </div>
                       )}
                       {isPresident && (

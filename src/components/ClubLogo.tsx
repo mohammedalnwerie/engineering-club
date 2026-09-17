@@ -2,12 +2,17 @@ import React from 'react';
 
 interface ClubLogoProps {
   variant?: 'full' | 'emblem' | 'horizontal' | 'icon';
+  /** Background the logo sits on. 'dark' uses the light-stroke artwork (no white box). */
   theme?: 'dark' | 'light';
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showSubtitle?: boolean;
-  withPod?: boolean;
 }
+
+const LOGO_SRC = {
+  dark: { emblem: '/brand/emblem-on-dark.png', horizontal: '/brand/logo-horizontal-on-dark.png' },
+  light: { emblem: '/brand/emblem.png', horizontal: '/brand/logo-horizontal.png' },
+};
 
 export const ClubLogo: React.FC<ClubLogoProps> = ({
   variant = 'horizontal',
@@ -15,111 +20,44 @@ export const ClubLogo: React.FC<ClubLogoProps> = ({
   className = '',
   size = 'md',
   showSubtitle = true,
-  withPod = true,
 }) => {
-  const sizeMap = {
-    sm: { img: 'h-7 w-7 sm:h-8 sm:w-8', pod: 'p-1.5 rounded-xl', text: 'text-sm sm:text-base', sub: 'text-[8px] sm:text-[9px]' },
-    md: { img: 'h-9 w-9 sm:h-10 sm:w-10', pod: 'p-2 rounded-2xl', text: 'text-base sm:text-lg', sub: 'text-[9px] sm:text-[10px]' },
-    lg: { img: 'h-16 w-16 sm:h-20 sm:w-20', pod: 'p-3 rounded-2xl', text: 'text-2xl sm:text-3xl', sub: 'text-xs sm:text-sm' },
-    xl: { img: 'h-24 w-24 sm:h-32 sm:w-32', pod: 'p-5 rounded-3xl', text: 'text-3xl sm:text-4xl', sub: 'text-sm sm:text-base' },
-  };
-
-  const currentSize = sizeMap[size];
-  const textColor = theme === 'light' ? 'text-gray-900' : 'text-white';
-
-  const renderEmblem = (customImgClass = '', customPodClass = '') => {
-    const emblemImg = (
-      <img
-        src="/brand/emblem.png"
-        alt="شعار النادي الهندسي"
-        className={`${customImgClass || currentSize.img} object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300 group-hover:scale-105 select-none shrink-0 relative z-10`}
-      />
-    );
-
-    if (!withPod) {
-      return emblemImg;
-    }
-
-    return (
-      <div
-        className={`relative inline-flex items-center justify-center ${customPodClass || currentSize.pod} bg-white shadow-[0_4px_20px_rgba(0,0,0,0.35)] border border-white/90 transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(63,231,227,0.35)] shrink-0`}
-      >
-        {emblemImg}
-      </div>
-    );
-  };
+  const src = LOGO_SRC[theme];
 
   if (variant === 'full') {
+    const emblemSize = { sm: 'h-16 w-16', md: 'h-20 w-20', lg: 'h-24 w-24 sm:h-28 sm:w-28', xl: 'h-28 w-28 sm:h-36 sm:w-36' }[size];
+    const textSize = { sm: 'text-lg', md: 'text-xl', lg: 'text-2xl sm:text-3xl', xl: 'text-3xl sm:text-4xl' }[size];
+    const textColor = theme === 'light' ? 'text-gray-900' : 'text-white';
     return (
-      <div className={`inline-flex flex-col items-center justify-center text-center select-none group ${className}`}>
-        {renderEmblem(
-          currentSize.img,
-          'p-5 sm:p-6 rounded-3xl bg-white shadow-[0_12px_45px_rgba(0,0,0,0.55)] border border-white/95'
-        )}
+      <div className={`inline-flex flex-col items-center justify-center text-center select-none ${className}`}>
+        <img src={src.emblem} alt="شعار النادي الهندسي" className={`${emblemSize} object-contain`} />
         <div className="mt-4">
-          <span className={`block font-black ${currentSize.text} ${textColor} tracking-tight leading-tight`}>
-            النادي الهندسي
-          </span>
+          <span className={`block font-black ${textSize} ${textColor} tracking-tight leading-tight`}>النادي الهندسي</span>
           {showSubtitle && (
-            <span className={`block font-mono ${currentSize.sub} font-semibold tracking-widest text-[#3FE7E3] uppercase mt-1`}>
-              ENGINEERING CLUB
-            </span>
+            <span className="block text-sm font-semibold tracking-widest text-[#3FE7E3] mt-1">ENGINEERING CLUB</span>
           )}
-          <span className="block text-[10px] sm:text-xs text-gray-400 font-sans mt-0.5">
-            جامعة فلسطين
-          </span>
+          <span className="block text-sm text-gray-400 mt-0.5">جامعة فلسطين</span>
         </div>
       </div>
     );
   }
 
-  if (variant === 'emblem') {
+  if (variant === 'emblem' || variant === 'icon') {
+    const emblemSize = { sm: 'h-8 w-8', md: 'h-10 w-10', lg: 'h-16 w-16 sm:h-20 sm:w-20', xl: 'h-24 w-24 sm:h-32 sm:w-32' }[size];
     return (
-      <div className={`inline-flex items-center justify-center shrink-0 select-none group ${className}`}>
-        {renderEmblem()}
-      </div>
+      <img
+        src={src.emblem}
+        alt="شعار النادي الهندسي"
+        className={`${emblemSize} object-contain shrink-0 select-none ${className}`}
+      />
     );
   }
 
-  if (variant === 'icon') {
-    return (
-      <div className={`inline-flex items-center justify-center shrink-0 select-none group ${className}`}>
-        {renderEmblem()}
-      </div>
-    );
-  }
-
-  // Horizontal variant (default for navbar, headers, footers)
-  const hSizeMap = {
-    sm: 'h-6 sm:h-7',
-    md: 'h-7 sm:h-8',
-    lg: 'h-10 sm:h-12',
-    xl: 'h-14 sm:h-16',
-  };
-
-  const currentHSize = hSizeMap[size] || hSizeMap.md;
-
-  if (!withPod) {
-    return (
-      <div className={`inline-flex items-center select-none group ${className}`}>
-        <img
-          src="/brand/logo-horizontal.png"
-          alt="النادي الهندسي — Engineering Club"
-          className={`${currentHSize} w-auto object-contain transition-transform duration-300 group-hover:scale-102`}
-        />
-      </div>
-    );
-  }
-
+  const height = { sm: 'h-8', md: 'h-10', lg: 'h-10 sm:h-12', xl: 'h-14 sm:h-16' }[size];
   return (
-    <div className={`inline-flex items-center select-none group ${className}`}>
-      <div className="bg-white px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl shadow-sm border border-white/90 group-hover:shadow-[0_0_20px_rgba(63,231,227,0.35)] transition-all flex items-center justify-center">
-        <img
-          src="/brand/logo-horizontal.png"
-          alt="النادي الهندسي — Engineering Club"
-          className={`${currentHSize} w-auto object-contain transition-transform duration-300 group-hover:scale-102`}
-        />
-      </div>
-    </div>
+    <img
+      src={src.horizontal}
+      alt="النادي الهندسي — Engineering Club"
+      className={`${height} w-auto object-contain select-none ${className}`}
+    />
   );
 };

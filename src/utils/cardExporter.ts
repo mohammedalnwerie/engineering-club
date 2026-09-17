@@ -23,7 +23,7 @@ export async function exportCardAsImage(
     const dataUrl = await toPng(element, {
       quality: 0.98,
       pixelRatio: options?.pixelRatio || 2,
-      backgroundColor: options?.backgroundColor || '#080c14',
+      backgroundColor: options?.backgroundColor || '#08041D',
       filter: (node: Node) => {
         // Exclude elements with data-export-ignore attribute
         if (node instanceof HTMLElement && node.hasAttribute('data-export-ignore')) {

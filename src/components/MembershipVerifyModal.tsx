@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { StoredApplication } from '../types';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
+import { MemberCard } from './MemberCard';
 import {
   X,
   Search,
@@ -172,90 +173,19 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                   </div>
 
                   {/* The Official Card (Vertical Portrait Ratio) */}
-                  <div
+                  <MemberCard
                     id="verified-member-card"
-                    className="w-full max-w-[340px] sm:max-w-[350px] mx-auto rounded-3xl p-5 bg-gradient-to-b from-[#160E3D] via-[#0D0727] to-[#070319] border-2 border-[#7F1AB2]/50 shadow-[0_12px_45px_rgba(127,26,178,0.3)] font-mono text-right relative overflow-hidden flex flex-col justify-between"
-                  >
-                    {/* Ambient Glows */}
-                    <div className="absolute -top-12 -right-12 w-36 h-36 bg-[#7F1AB2]/15 rounded-full blur-2xl pointer-events-none" />
-                    <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-[#3FE7E3]/10 rounded-full blur-2xl pointer-events-none" />
-
-                    <div>
-                      {/* Lanyard Clip Slot for Realistic Printable Badge */}
-                      <div className="w-14 h-1.5 rounded-full bg-white/20 mx-auto mb-3.5 shadow-inner" />
-
-                      {/* Top Brand Banner: Dedicated 100% to Showcasing the Engineering Club & University */}
-                      <div className="bg-white rounded-2xl p-2.5 sm:p-3 shadow-md border border-white/90 mb-4 text-center">
-                        <img
-                          src="/brand/logo-horizontal.png"
-                          alt="النادي الهندسي"
-                          className="h-10 sm:h-11 w-auto mx-auto object-contain drop-shadow-sm"
-                        />
-                        <div className="text-[10px] font-bold text-gray-700 tracking-wider mt-1 font-sans border-t border-gray-200/80 pt-1 flex items-center justify-center gap-1.5">
-                          <span>جامعة فلسطين</span>
-                          <span className="text-gray-300">•</span>
-                          <span className="font-mono text-[9px] text-gray-500 uppercase tracking-wider font-semibold">University of Palestine</span>
-                        </div>
-                      </div>
-
-                      {/* Member Details */}
-                      <div className="mb-3.5 text-right">
-                        <div className="text-[10px] text-gray-400 font-sans">اسم المهندس/ـة:</div>
-                        <div className="text-xl sm:text-2xl font-black text-white font-sans mt-0.5 tracking-wide leading-tight">
-                          {matchedApp.fullName}
-                        </div>
-                        <div className="text-xs font-mono text-gray-400 mt-1 flex items-center gap-1.5 justify-start">
-                          <span className="text-gray-500">الرقم الجامعي:</span>
-                          <span className="font-bold text-[#3FE7E3]">{matchedApp.studentId || 'UP-STUDENT'}</span>
-                        </div>
-                      </div>
-
-                      {/* Unified Member Details & Integrated Verification QR */}
-                      <div className="p-3.5 rounded-2xl bg-black/60 border border-white/10 text-xs font-sans mb-4 flex items-center justify-between gap-3 shadow-inner">
-                        <div className="space-y-2 flex-1 min-w-0 text-xs font-sans">
-                          <div>
-                            <div className="text-[10px] text-gray-400">التخصص:</div>
-                            <div className="font-bold text-[#3FE7E3] text-xs truncate">
-                              {(matchedApp.major || '').replace(/^(تخصص\s+|كلية\s+)/i, '').trim()}
-                            </div>
-                          </div>
-                          <div className="pt-1.5 border-t border-white/5">
-                            <div className="text-[10px] text-gray-400">اللجنة / المسار:</div>
-                            <div className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B] text-xs truncate">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse shrink-0" />
-                              <span className="truncate">{matchedApp.targetCommittee}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Scannable Verification QR Code (Integrated Side-by-Side) */}
-                        <div className="flex flex-col items-center justify-center shrink-0 border-r border-white/10 pr-3.5">
-                          <div className="p-1 rounded-xl bg-white shadow-md border border-white/90">
-                            <img
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(verifyUrl)}`}
-                              alt="Verification QR"
-                              className="w-14 h-14 object-contain"
-                            />
-                          </div>
-                          <span className="text-[8px] font-mono text-emerald-400 font-bold mt-1 tracking-wider uppercase">
-                            VERIFY PASS
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Sleek Security Footer Ribbon */}
-                    <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 text-[9px] font-mono">
-                      <div className="text-left flex items-center gap-1.5" dir="ltr">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B]" />
-                        <span className="text-[#3FE7E3] font-bold">{authCode}</span>
-                      </div>
-                      <div className="text-gray-400 font-sans text-[9px] font-bold flex items-center gap-1" dir="rtl">
-                        <span>عضوية معتمدة ومفعلة • 2026</span>
-                      </div>
-                    </div>
-                  </div>
-
+                    badge="عضو في النادي"
+                    name={matchedApp.fullName}
+                    subtitle={`الرقم الجامعي: ${matchedApp.studentId}`}
+                    fields={[
+                      { label: 'التخصص', value: (matchedApp.major || '').replace(/^(تخصص\s+|كلية\s+)/, '').trim() },
+                      { label: 'السنة الدراسية', value: matchedApp.academicYear },
+                      { label: 'اللجنة / المسار', value: matchedApp.targetCommittee },
+                    ]}
+                    qrValue={verifyUrl}
+                    code={authCode}
+                  />
                   {/* Actions: Export PNG & Print PDF */}
                   <div className="flex flex-col gap-2 pt-2">
                     <button

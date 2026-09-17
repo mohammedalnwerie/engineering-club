@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
+import { MemberCard } from './MemberCard';
 import type { ClubApplication } from '../types';
 import { checkRateLimit } from '../utils/security';
 
-import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck, Lock, AlertCircle, Ban } from 'lucide-react';
+import { Sparkles, ArrowLeft, ArrowRight, Check, ShieldCheck, Lock, AlertCircle, Ban } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 
@@ -206,10 +207,10 @@ export const JoinClubSection: React.FC = () => {
                 {currentStep === 1 && (
                   <div className="space-y-4 animate-in fade-in duration-200">
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1.5">الاسم الرباعي الكامل:</label>
+                      <label className="block text-xs text-gray-300 mb-1.5">الاسم الرباعي الكامل:</label>
                       <input
                         type="text"
-                        placeholder="مثال: خالد بن سلطان المطيري"
+                        placeholder="مثال: أحمد محمد خليل العمري"
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm"
@@ -218,7 +219,7 @@ export const JoinClubSection: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-mono text-gray-300 mb-1.5">الرقم الجامعي (Student ID):</label>
+                        <label className="block text-xs text-gray-300 mb-1.5">الرقم الجامعي (Student ID):</label>
                         <input
                           type="text"
                           placeholder="مثال: 120220145 (أو الرقم السابق للخريجين)"
@@ -228,7 +229,7 @@ export const JoinClubSection: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-mono text-gray-300 mb-1.5">السنة الدراسية:</label>
+                        <label className="block text-xs text-gray-300 mb-1.5">السنة الدراسية:</label>
 <select
                           value={formData.academicYear}
                           onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
@@ -247,7 +248,7 @@ export const JoinClubSection: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <label className="block text-xs font-mono text-gray-300">البريد الإلكتروني:</label>
+                          <label className="block text-xs text-gray-300">البريد الإلكتروني:</label>
                           <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
                             يفضل الجامعي (@std.up.edu.ps)
                           </span>
@@ -265,7 +266,7 @@ export const JoinClubSection: React.FC = () => {
                         </p>
                       </div>
                       <div>
-                        <label className="block text-xs font-mono text-gray-300 mb-1.5">رقم الهاتف الجوال (واتساب):</label>
+                        <label className="block text-xs text-gray-300 mb-1.5">رقم الهاتف الجوال (واتساب):</label>
                         <input
                           type="tel"
                           placeholder="059XXXXXXX أو 056XXXXXXX"
@@ -286,7 +287,7 @@ export const JoinClubSection: React.FC = () => {
                 {currentStep === 2 && (
                   <div className="space-y-5 animate-in fade-in duration-200">
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-2">اختر كليتك الأكاديمية:</label>
+                      <label className="block text-xs text-gray-300 mb-2">اختر كليتك الأكاديمية:</label>
                       <div className="space-y-2">
                         {[
                           'كلية هندسة برمجيات وذكاء اصطناعي',
@@ -311,7 +312,7 @@ export const JoinClubSection: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-2">اختر تخصصك الهندسي الدقيق:</label>
+                      <label className="block text-xs text-gray-300 mb-2">اختر تخصصك الهندسي الدقيق:</label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {[
                           'هندسة برمجيات',
@@ -409,7 +410,7 @@ export const JoinClubSection: React.FC = () => {
                 {currentStep === 4 && (
                   <div className="space-y-4 animate-in fade-in duration-200">
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1.5">
+                      <label className="block text-xs text-gray-300 mb-1.5">
                         ما الذي تريد أن تبنيه وتطوره في النادي الهندسي؟
                       </label>
                       <textarea
@@ -422,7 +423,7 @@ export const JoinClubSection: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1.5">
+                      <label className="block text-xs text-gray-300 mb-1.5">
                         رابط معرض أعمالك، GitHub، أو لينكدإن (اختياري):
                       </label>
                       <input
@@ -454,7 +455,7 @@ export const JoinClubSection: React.FC = () => {
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-mono text-gray-300">
+                        <label className="block text-xs text-gray-300">
                           اختر نوع الانضمام / اللجنة التي تناسبك:
                         </label>
                         <span className="text-xs font-mono text-gray-400">
@@ -521,7 +522,7 @@ export const JoinClubSection: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-mono text-gray-300 mb-1">
+                      <label className="block text-xs text-gray-300 mb-1">
                         {formData.targetCommittee.includes('عضوية عامة')
                           ? `ساعات الحضور المقترحة أسبوعياً (${formData.weeklyCommitmentHours} ساعات - مرنة حسب رغبتك ومواعيد الفعاليات):`
                           : `الساعات المتاحة للمشاركة والعمل مع اللجنة أسبوعياً (${formData.weeklyCommitmentHours} ساعات):`}
@@ -562,7 +563,7 @@ export const JoinClubSection: React.FC = () => {
                     type="button"
                     onClick={handleNext}
                     disabled={isSending}
-                    className="px-6 py-3 rounded-xl font-bold text-xs text-black bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_20px_rgba(0,240,255,0.3)] flex items-center gap-2 cursor-pointer transition-all"
+                    className="px-6 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#7F1AB2] to-[#6F3993] hover:from-[#A26CC6] hover:to-[#7F1AB2] shadow-[0_8px_24px_rgba(127,26,178,0.35)] disabled:opacity-60 flex items-center gap-2 cursor-pointer transition-all"
                   >
                     <span>{currentStep === 5 ? (isSending ? 'جاري الإرسال...' : 'إرسال طلب الانضمام') : 'التالي'}</span>
                     <ArrowLeft className="w-4 h-4" />
@@ -598,84 +599,25 @@ export const JoinClubSection: React.FC = () => {
 
           {/* Right Column: Live Holographic Engineering ID Card Generator */}
           <div className="lg:col-span-5 flex flex-col items-center">
-            <div className="w-full text-center font-mono text-xs text-cyan-400 mb-3 tracking-wider">
-              معاينة حية لبطاقة العضوية
+            <div className="w-full text-center text-sm text-gray-300 mb-3">
+              معاينة بطاقة عضويتك
             </div>
 
-            {/* Holographic ID Badge */}
-            <div id="live-club-badge-preview" className="w-full max-w-sm rounded-3xl p-6 bg-gradient-to-b from-[#0f172a] to-[#07090e] border border-cyan-400/40 shadow-[0_0_35px_rgba(0,240,255,0.2)] relative overflow-hidden text-right font-mono">
-              {/* Lanyard Clip Simulation Hole */}
-              <div className="w-12 h-2.5 bg-black/80 rounded-full mx-auto mb-4 border border-white/20" />
-
-              {/* Card Header */}
-              <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4 text-xs">
-                <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
-                  <Cpu className="w-4 h-4" />
-                  <span>UP ENGINEERING CLUB</span>
-                </div>
-                <span className="text-amber-400 text-xs bg-amber-950/70 px-2 py-0.5 rounded border border-amber-500/40">
-                  قيد المراجعة والاعتماد
-                </span>
-              </div>
-
-              {/* Student Identity */}
-              <div className="mb-4">
-                <div className="text-xs text-gray-500 uppercase">اسم المهندس/ـة:</div>
-                <div className="text-base font-extrabold text-white truncate">
-                  {formData.fullName || 'المهندس الجديد'}
-                </div>
-                <div className="text-xs text-cyan-300 mt-0.5">
-                  ID: {formData.studentId || '2026-ENG-XXXX'}
-                </div>
-              </div>
-
-              {/* Academic Details */}
-              <div className="grid grid-cols-2 gap-2 text-xs p-3 rounded-xl bg-black/40 border border-white/5 mb-4">
-                <div>
-                  <div className="text-gray-500">التخصص:</div>
-                  <div className="font-bold text-gray-200 truncate">{formData.major}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">السنة:</div>
-                  <div className="font-bold text-gray-200">{formData.academicYear}</div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-gray-500">نوع العضوية / اللجنة:</div>
-                  <div className="font-bold text-cyan-300 truncate">{formData.targetCommittee}</div>
-                </div>
-              </div>
-
-              {/* Skills preview on badge */}
-              <div className="mb-4">
-                <div className="text-xs text-gray-500 mb-1">المهارات والاهتمامات:</div>
-                <div className="flex flex-wrap gap-1">
-                  {formData.skills.length === 0 ? (
-                    <span className="text-xs text-gray-400 italic">شغف بالتعلم من الصفر</span>
-                  ) : (
-                    formData.skills.slice(0, 3).map((s, i) => (
-                      <span key={i} className="px-1.5 py-0.5 rounded bg-cyan-950/60 text-xs text-cyan-300 border border-cyan-500/30">
-                        {s.split(' ')[0]}
-                      </span>
-                    ))
-                  )}
-                  {formData.skills.length > 3 && (
-                    <span className="text-xs text-gray-500">+{formData.skills.length - 3}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Barcode & Security Chip */}
-              <div className="pt-3 border-t border-dashed border-white/10 flex items-center justify-between">
-                <div className="text-xs text-gray-500 text-left">
-                  UNIVERSITY OF PALESTINE
-                  <br />
-                  DIGITAL PASS // 2026-2027
-                </div>
-                <QrCode className="w-10 h-10 text-cyan-400" />
-              </div>
+            <div className="w-full opacity-95">
+              <MemberCard
+                id="live-club-badge-preview"
+                badge="قيد المراجعة"
+                name={formData.fullName || 'اسمك هنا'}
+                subtitle={`الرقم الجامعي: ${formData.studentId || '—'}`}
+                fields={[
+                  { label: 'التخصص', value: formData.major },
+                  { label: 'السنة الدراسية', value: formData.academicYear },
+                  { label: 'اللجنة / المسار', value: formData.targetCommittee },
+                ]}
+                qrValue={`${window.location.origin}/?verify=preview`}
+                code="UP-ENG-XXXXXXXX"
+              />
             </div>
-
-
 
             <p className="text-xs text-gray-400 mt-3 text-center max-w-xs leading-relaxed">
               معاينة فورية للبطاقة — يتم اعتماد وتوليد بطاقة العضوية الإلكترونية الرسمية بمجرد موافقة إدارة النادي على الطلب.
