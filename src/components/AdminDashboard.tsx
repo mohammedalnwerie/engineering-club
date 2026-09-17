@@ -251,7 +251,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     | 'trash'
     | 'security'
   >('overview');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // On phones/tablets the expanded sidebar covers the page, so fold it after navigating.
+  useEffect(() => {
+    if (window.innerWidth < 1024) setIsSidebarCollapsed(true);
+  }, [activeTab]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => window.innerWidth < 1024);
 
   // Live Data states
   const [applications, setApplications] = useState<StoredApplication[]>([]);
