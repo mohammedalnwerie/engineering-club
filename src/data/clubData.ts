@@ -14,8 +14,8 @@ export const COLLEGES: College[] = [
       name: 'ممثلو الكلية في النادي',
       role: 'لجنة التنسيق والمتابعة الطلابية',
       title: 'كلية هندسة برمجيات وذكاء اصطناعي — جامعة فلسطين',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-      email: 'eng.software@up.edu.ps',
+      avatar: '',
+      email: '',
     },
     majors: ['هندسة برمجيات', 'هندسة ذكاء اصطناعي'],
     labsCount: 4,
@@ -37,8 +37,8 @@ export const COLLEGES: College[] = [
       name: 'ممثلو الكلية في النادي',
       role: 'لجنة التنسيق والمتابعة الطلابية',
       title: 'كلية تكنولوجيا المعلومات — جامعة فلسطين',
-      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
-      email: 'it.club@up.edu.ps',
+      avatar: '',
+      email: '',
     },
     majors: ['تخصص نظم المعلومات', 'تخصص الوسائط المتعددة'],
     labsCount: 3,
@@ -60,8 +60,8 @@ export const COLLEGES: College[] = [
       name: 'ممثلو الكلية في النادي',
       role: 'لجنة التنسيق والمتابعة الطلابية',
       title: 'كلية الهندسة التطبيقية والتخطيط العمراني — جامعة فلسطين',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
-      email: 'eng.urban@up.edu.ps',
+      avatar: '',
+      email: '',
     },
     majors: ['تخصص هندسة معمارية', 'تخصص هندسة مدنية'],
     labsCount: 4,
@@ -184,7 +184,7 @@ export const FLAGSHIP_PROJECTS: ProjectCaseStudy[] = [
       { label: 'سهولة إصدار البطاقات', value: 'لحظي' },
       { label: 'الوصول للطلبة', value: 'متاح للجميع' }
     ],
-    techStack: ['React 18', 'TypeScript', 'Tailwind CSS', 'Vite', 'Local & Cloud Storage', 'QR Verification Engine'],
+    techStack: ['React 19', 'TypeScript', 'Tailwind CSS', 'Vite', 'Supabase', 'QR Verification Engine'],
     team: [
       { name: 'فريق البرمجة والتطوير', role: 'هندسة النظم والواجهات', major: 'هندسة برمجيات' },
       { name: 'فريق الوسائط والتصميم', role: 'تصميم الهوية وتجربة المستخدم UI/UX', major: 'تخصص الوسائط المتعددة' },
@@ -309,7 +309,7 @@ export const TRAINING_COURSES: TrainingCourse[] = [
     instructor: {
       name: 'فريق التدريب البرمجي',
       title: 'مدربون من طلبة السنوات المتقدمة وخريجي التخصص',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80'
+      avatar: ''
     },
     level: 'مبتدئ',
     duration: '4 أسابيع',
@@ -332,7 +332,7 @@ export const TRAINING_COURSES: TrainingCourse[] = [
     instructor: {
       name: 'فريق التدريب المعماري',
       title: 'مدربون متخصصون في النمذجة المعمارية والـ BIM',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80'
+      avatar: ''
     },
     level: 'مبتدئ',
     duration: '4 أسابيع',
@@ -355,90 +355,85 @@ export const LEADERSHIP_MEMBERS: LeaderMember[] = [
   // 1. رئيس النادي
   {
     id: 'pres-1',
-    name: 'م. رئيس النادي الهندسي',
+    name: '',
     role: 'رئيس النادي الهندسي',
     tier: 'executive',
     department: 'رئاسة النادي',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80',
+    avatar: '',
     quote: 'نؤمن أن المهندس لا ينتظر الفرصة، بل يبتكر أدوات بنائها ويقود التحول الإيجابي في جامعته ومجتمعه.',
-    linkedin: 'https://linkedin.com',
-    github: 'https://github.com',
-    email: 'president@up.edu.ps',
+    email: '',
     skills: ['القيادة الطلابية', 'إدارة الابتكار الهندسي', 'التنسيق الأكاديمي وصناعة القرار']
   },
   // 2. نائب رئيس النادي للشؤون الإدارية
   {
     id: 'vp-admin',
-    name: 'م. نائب الرئيس للشؤون الإدارية',
+    name: '',
     role: 'نائب رئيس النادي للشؤون الإدارية',
     tier: 'executive',
     department: 'الهيئة الإدارية',
-    avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&auto=format&fit=crop&q=80',
+    avatar: '',
     quote: 'إدارة الهيكل التنظيمي، التنسيق الإداري، والارتقاء بالأداء المؤسسي للنادي.',
-    linkedin: 'https://linkedin.com',
-    email: 'vp.admin@up.edu.ps',
+    email: '',
     skills: ['الإدارة التنظيمية', 'التنسيق والمتابعة', 'الحوكمة وضبط العمليات']
   },
   // 3. نائب رئيس النادي للشؤون التنفيذية
   {
     id: 'vp-exec',
-    name: 'م. نائب الرئيس للشؤون التنفيذية',
+    name: '',
     role: 'نائب رئيس النادي للشؤون التنفيذية',
     tier: 'executive',
     department: 'الهيئة الإدارية',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80',
+    avatar: '',
     quote: 'متابعة تنفيذ المبادرات الهندسية الميدانية، وتوجيه فرق العمل لتحقيق أثر ملموس.',
-    linkedin: 'https://linkedin.com',
-    email: 'vp.exec@up.edu.ps',
+    email: '',
     skills: ['التنفيذ الميداني', 'إدارة المشاريع الهندسية', 'توجيه الفرق الطلابية']
   },
   // 4. أمين الصندوق
   {
     id: 'treasurer-1',
-    name: 'م. أمين صندوق النادي',
+    name: '',
     role: 'أمين صندوق النادي',
     tier: 'executive',
     department: 'الهيئة الإدارية',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
+    avatar: '',
     quote: 'إدارة الموارد بكفاءة وشفافية تضمن تنفيذ الفعاليات والمشاريع بأعلى جودة ممكنة.',
-    linkedin: 'https://linkedin.com',
-    email: 'treasurer@up.edu.ps',
+    email: '',
     skills: ['الإدارة المالية والموازنات', 'الشفافية والتنظيم', 'إدارة الموارد والعهد']
   },
   // 5. لجنة الفعاليات والأنشطة
   {
     id: 'comm-events',
-    name: 'م. مسؤول لجنة الفعاليات والأنشطة',
+    name: '',
     role: 'رئيس لجنة الفعاليات والأنشطة',
     tier: 'committee-lead',
     department: 'لجنة الفعاليات والأنشطة',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+    avatar: '',
     quote: 'نبتكر فعاليات ومسابقات وورش عمل تصنع تجربة جامعية غنية وممتعة لجميع الزملاء.',
-    email: 'events@up.edu.ps',
+    email: '',
     skills: ['إدارة وتنظيم الفعاليات', 'إقامة الهاكاثونات', 'التخطيط الميداني واللوجستي']
   },
   // 6. لجنة العلاقات والتدريب
   {
     id: 'comm-training',
-    name: 'م. مسؤول لجنة العلاقات والتدريب',
+    name: '',
     role: 'رئيس لجنة العلاقات والتدريب',
     tier: 'committee-lead',
     department: 'لجنة العلاقات والتدريب',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80',
+    avatar: '',
     quote: 'نبني جسوراً من الشراكات وورش التدريب لتطوير قدرات الطلبة وتأهيلهم لسوق العمل.',
-    email: 'training@up.edu.ps',
+    email: '',
     skills: ['الشراكات الطلابية', 'تنظيم الورش والتدريبات', 'التواصل المؤسسي']
   },
   // 7. اللجنة الإعلامية
   {
     id: 'comm-media',
-    name: 'أ. مسؤول اللجنة الإعلامية',
+    name: '',
     role: 'رئيس اللجنة الإعلامية',
     tier: 'committee-lead',
     department: 'اللجنة الإعلامية',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+    avatar: '',
     quote: 'نبرز إبداعات مهندسي فلسطين وننقل رسالة النادي وأنشطته بهوية بصرية احترافية وملهمة.',
-    email: 'media@up.edu.ps',
+    email: '',
     skills: ['صناعة المحتوى الرقمي', 'التغطيات الإعلامية', 'التصميم والإنتاج المرئي']
   }
 ];
@@ -454,7 +449,7 @@ export const STUDENT_SPOTLIGHT = {
   name: 'طالب متميز من مهندسي جامعة فلسطين',
   major: 'كليات الهندسة وتكنولوجيا المعلومات',
   achievement: 'مشاركة فاعلة في تأسيس مبادرات النادي الهندسي والمساهمة في بناء بيئة طلابية ملهمة تدعم كافة الزملاء والزميلات في التخصصات الهندسية.',
-  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=80',
+  avatar: '',
   quote: 'النادي الهندسي في جامعة فلسطين هو بوابتنا لتحويل ما نتعلمه في القاعات إلى أثر حقيقي ومشاريع نخدم بها مجتمعنا ووطننا.',
   projectsCount: 2,
   awardsCount: 1,

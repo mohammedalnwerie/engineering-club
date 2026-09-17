@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { ClubApplication } from '../types';
-import { sound } from '../utils/soundEngine';
 import { checkRateLimit } from '../utils/security';
 
 import { Sparkles, ArrowLeft, ArrowRight, Check, QrCode, Cpu, ShieldCheck, Lock, AlertCircle, Ban } from 'lucide-react';
@@ -83,7 +82,6 @@ export const JoinClubSection: React.FC = () => {
   ];
 
   const handleNext = () => {
-    sound.playClick();
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -93,7 +91,6 @@ export const JoinClubSection: React.FC = () => {
       const isCommClosed = !recruitment.isGlobalRecruitmentOpen || recruitment.committees[selectedCommId]?.isOpen === false;
 
       if (isCommClosed) {
-        sound.playError();
         const notice = !recruitment.isGlobalRecruitmentOpen
           ? (recruitment.globalClosedMessage || 'باب استقطاب اللجان متوقف مؤقتاً')
           : (recruitment.committees[selectedCommId]?.closedNotice || 'اكتملت المقاعد المتاحة لهذه اللجنة');
@@ -106,14 +103,12 @@ export const JoinClubSection: React.FC = () => {
   };
 
   const handlePrev = () => {
-    sound.playClick();
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   const toggleSkill = (skill: string) => {
-    sound.playHover();
     let updated = formData.skills.filter((s) => s !== 'طالب جديد — شغوف بالتعلم من الصفر');
     if (updated.includes(skill)) {
       updated = updated.filter((s) => s !== skill);
@@ -127,7 +122,6 @@ export const JoinClubSection: React.FC = () => {
     if (isSending) return;
     const rateCheck = checkRateLimit('join_submission', 4000);
     if (!rateCheck.allowed) {
-      sound.playError();
       alert(`يرجى الانتظار ${rateCheck.waitSeconds} ثوانٍ قبل إعادة الإرسال لحماية الخادم.`);
       return;
     }
@@ -136,14 +130,12 @@ export const JoinClubSection: React.FC = () => {
     try {
       await dataService.submitApplication(formData);
     } catch (err) {
-      sound.playError();
       alert(`تعذر إرسال طلب الانضمام: ${err instanceof Error ? err.message : 'خطأ غير معروف'}. يرجى المحاولة مرة أخرى.`);
       return;
     } finally {
       setIsSending(false);
     }
 
-    sound.playSuccess();
     setIsSubmitted(true);
     confetti({
       particleCount: 120,
@@ -155,10 +147,10 @@ export const JoinClubSection: React.FC = () => {
 
 
   return (
-    <section id="join" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]">
+    <section id="join" className="py-16 sm:py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 text-xs font-mono mb-4">
             <Sparkles className="w-4 h-4 text-cyan-400" />
             <span>مكانك معنا في النادي الهندسي</span>
@@ -256,7 +248,7 @@ export const JoinClubSection: React.FC = () => {
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <label className="block text-xs font-mono text-gray-300">البريد الإلكتروني:</label>
-                          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                          <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
                             يفضل الجامعي (@std.up.edu.ps)
                           </span>
                         </div>
@@ -268,7 +260,7 @@ export const JoinClubSection: React.FC = () => {
                           className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm font-mono text-left"
                           dir="ltr"
                         />
-                        <p className="text-[11px] text-gray-400 mt-1">
+                        <p className="text-xs text-gray-400 mt-1">
                           يمكنك استخدام إيميل الجامعة الرسمي (@std.up.edu.ps) أو بريدك الشخصي (Gmail وغيره).
                         </p>
                       </div>
@@ -282,7 +274,7 @@ export const JoinClubSection: React.FC = () => {
                           className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-sm font-mono text-left"
                           dir="ltr"
                         />
-                        <p className="text-[11px] text-gray-400 mt-1">
+                        <p className="text-xs text-gray-400 mt-1">
                           سيتم إرسال بطاقة العضوية وإشعار القبول عبر هذا الرقم مباشرة.
                         </p>
                       </div>
@@ -304,7 +296,6 @@ export const JoinClubSection: React.FC = () => {
                           <div
                             key={c}
                             onClick={() => {
-                              sound.playHover();
                               setFormData({ ...formData, college: c });
                             }}
                             className={`p-3.5 rounded-xl border text-sm cursor-pointer transition-all ${
@@ -333,7 +324,6 @@ export const JoinClubSection: React.FC = () => {
                           <div
                             key={m}
                             onClick={() => {
-                              sound.playHover();
                               setFormData({ ...formData, major: m });
                             }}
                             className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
@@ -365,7 +355,6 @@ export const JoinClubSection: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        sound.playHover();
                         const beginnerSkill = 'طالب جديد — شغوف بالتعلم من الصفر';
                         if (formData.skills.includes(beginnerSkill)) {
                           setFormData({ ...formData, skills: formData.skills.filter((s) => s !== beginnerSkill) });
@@ -468,7 +457,7 @@ export const JoinClubSection: React.FC = () => {
                         <label className="block text-xs font-mono text-gray-300">
                           اختر نوع الانضمام / اللجنة التي تناسبك:
                         </label>
-                        <span className="text-[10px] font-mono text-gray-400">
+                        <span className="text-xs font-mono text-gray-400">
                           (يتم تحديث شواغر اللجان بشكل فوري)
                         </span>
                       </div>
@@ -487,11 +476,9 @@ export const JoinClubSection: React.FC = () => {
                               key={comm.id}
                               onClick={() => {
                                 if (isClosed) {
-                                  sound.playError();
                                   alert(`عذراً، الاستقطاب لهذه اللجنة مغلق حالياً: ${closedNotice}. يرجى اختيار لجنة أخرى أو العضوية العامة.`);
                                   return;
                                 }
-                                sound.playHover();
                                 setFormData({ ...formData, targetCommittee: comm.name });
                               }}
                               className={`p-4 rounded-2xl border transition-all relative ${
@@ -508,21 +495,21 @@ export const JoinClubSection: React.FC = () => {
                                 </span>
 
                                 {isClosed ? (
-                                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-md border text-amber-400 bg-amber-950/80 border-amber-500/40 flex items-center gap-1 shadow">
+                                  <span className="text-xs font-mono px-2.5 py-0.5 rounded-md border text-amber-400 bg-amber-950/80 border-amber-500/40 flex items-center gap-1 shadow">
                                     <Lock className="w-3 h-3" />
                                     <span>مكتمل الاستقطاب</span>
                                   </span>
                                 ) : (
-                                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${comm.badgeColor}`}>
+                                  <span className={`text-xs font-mono px-2 py-0.5 rounded-md border ${comm.badgeColor}`}>
                                     {comm.badge}
                                   </span>
                                 )}
                               </div>
 
-                              <p className="text-[11px] text-gray-400 leading-relaxed">{comm.desc}</p>
+                              <p className="text-xs text-gray-400 leading-relaxed">{comm.desc}</p>
 
                               {isClosed && (
-                                <div className="mt-2 pt-2 border-t border-white/5 flex items-center gap-1.5 text-[10px] text-amber-400 font-mono">
+                                <div className="mt-2 pt-2 border-t border-white/5 flex items-center gap-1.5 text-xs text-amber-400 font-mono">
                                   <Ban className="w-3 h-3 text-amber-400 shrink-0" />
                                   <span>{closedNotice}</span>
                                 </div>
@@ -547,7 +534,7 @@ export const JoinClubSection: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, weeklyCommitmentHours: Number(e.target.value) })}
                         className="w-full accent-cyan-400 cursor-pointer"
                       />
-                      <div className="flex justify-between text-[10px] font-mono text-gray-500 mt-1">
+                      <div className="flex justify-between text-xs font-mono text-gray-500 mt-1">
                         <span>2 ساعات (مشاركة خفيفة)</span>
                         <span>8 ساعات (متوسط)</span>
                         <span>15 ساعة (قيادي/نشط)</span>
@@ -598,7 +585,6 @@ export const JoinClubSection: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setIsSubmitted(false);
                     setCurrentStep(1);
                   }}
@@ -622,29 +608,29 @@ export const JoinClubSection: React.FC = () => {
               <div className="w-12 h-2.5 bg-black/80 rounded-full mx-auto mb-4 border border-white/20" />
 
               {/* Card Header */}
-              <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4 text-[11px]">
+              <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4 text-xs">
                 <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
                   <Cpu className="w-4 h-4" />
                   <span>UP ENGINEERING CLUB</span>
                 </div>
-                <span className="text-amber-400 text-[10px] bg-amber-950/70 px-2 py-0.5 rounded border border-amber-500/40">
+                <span className="text-amber-400 text-xs bg-amber-950/70 px-2 py-0.5 rounded border border-amber-500/40">
                   قيد المراجعة والاعتماد
                 </span>
               </div>
 
               {/* Student Identity */}
               <div className="mb-4">
-                <div className="text-[10px] text-gray-500 uppercase">اسم المهندس/ـة:</div>
+                <div className="text-xs text-gray-500 uppercase">اسم المهندس/ـة:</div>
                 <div className="text-base font-extrabold text-white truncate">
                   {formData.fullName || 'المهندس الجديد'}
                 </div>
-                <div className="text-[11px] text-cyan-300 mt-0.5">
+                <div className="text-xs text-cyan-300 mt-0.5">
                   ID: {formData.studentId || '2026-ENG-XXXX'}
                 </div>
               </div>
 
               {/* Academic Details */}
-              <div className="grid grid-cols-2 gap-2 text-[10px] p-3 rounded-xl bg-black/40 border border-white/5 mb-4">
+              <div className="grid grid-cols-2 gap-2 text-xs p-3 rounded-xl bg-black/40 border border-white/5 mb-4">
                 <div>
                   <div className="text-gray-500">التخصص:</div>
                   <div className="font-bold text-gray-200 truncate">{formData.major}</div>
@@ -661,26 +647,26 @@ export const JoinClubSection: React.FC = () => {
 
               {/* Skills preview on badge */}
               <div className="mb-4">
-                <div className="text-[10px] text-gray-500 mb-1">المهارات والاهتمامات:</div>
+                <div className="text-xs text-gray-500 mb-1">المهارات والاهتمامات:</div>
                 <div className="flex flex-wrap gap-1">
                   {formData.skills.length === 0 ? (
-                    <span className="text-[10px] text-gray-400 italic">شغف بالتعلم من الصفر</span>
+                    <span className="text-xs text-gray-400 italic">شغف بالتعلم من الصفر</span>
                   ) : (
                     formData.skills.slice(0, 3).map((s, i) => (
-                      <span key={i} className="px-1.5 py-0.5 rounded bg-cyan-950/60 text-[9px] text-cyan-300 border border-cyan-500/30">
+                      <span key={i} className="px-1.5 py-0.5 rounded bg-cyan-950/60 text-xs text-cyan-300 border border-cyan-500/30">
                         {s.split(' ')[0]}
                       </span>
                     ))
                   )}
                   {formData.skills.length > 3 && (
-                    <span className="text-[9px] text-gray-500">+{formData.skills.length - 3}</span>
+                    <span className="text-xs text-gray-500">+{formData.skills.length - 3}</span>
                   )}
                 </div>
               </div>
 
               {/* Barcode & Security Chip */}
               <div className="pt-3 border-t border-dashed border-white/10 flex items-center justify-between">
-                <div className="text-[9px] text-gray-500 text-left">
+                <div className="text-xs text-gray-500 text-left">
                   UNIVERSITY OF PALESTINE
                   <br />
                   DIGITAL PASS // 2026-2027

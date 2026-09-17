@@ -9,7 +9,10 @@ export const CanvasBackground: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId = 0;
+    // Static background on touch devices and for reduced-motion users; animate only on desktop.
+    const isStatic =
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.matchMedia('(pointer: coarse)').matches;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
@@ -18,6 +21,7 @@ export const CanvasBackground: React.FC = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
       initNodes();
+      if (isStatic) render();
     };
 
     // Subtle architectural grid nodes with engineering details
@@ -126,14 +130,23 @@ export const CanvasBackground: React.FC = () => {
         }
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      if (!isStatic && !document.hidden) {
+        animationFrameId = requestAnimationFrame(render);
+      }
     };
+
+    const handleVisibility = () => {
+      cancelAnimationFrame(animationFrameId);
+      if (!document.hidden && !isStatic) render();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     render();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 

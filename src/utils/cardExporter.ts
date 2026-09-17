@@ -1,5 +1,4 @@
 import { toPng } from 'html-to-image';
-import { sound } from './soundEngine';
 
 /**
  * Exports any DOM element as a high-resolution PNG image and triggers automatic download.
@@ -15,12 +14,10 @@ export async function exportCardAsImage(
   const element = document.getElementById(elementId);
   if (!element) {
     console.error(`Element with id "${elementId}" not found for image export.`);
-    sound.playError();
     return false;
   }
 
   try {
-    sound.playClick();
 
     // Generate crisp 2x resolution PNG
     const dataUrl = await toPng(element, {
@@ -43,11 +40,9 @@ export async function exportCardAsImage(
     link.click();
     document.body.removeChild(link);
 
-    sound.playSuccess();
     return true;
   } catch (error) {
     console.error('Failed to export card as image:', error);
-    sound.playError();
     return false;
   }
 }
@@ -56,6 +51,5 @@ export async function exportCardAsImage(
  * Triggers standard browser print dialogue for official PDF saving.
  */
 export function printCardAsPdf(): void {
-  sound.playClick();
   window.print();
 }

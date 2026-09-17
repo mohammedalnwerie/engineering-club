@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { SiteSettings } from '../types';
 import { Target, Compass, Sparkles, Award, ShieldCheck, HeartHandshake, Zap, Rocket, FileText, ArrowLeft, BookOpen } from 'lucide-react';
-import { sound } from '../utils/soundEngine';
 
 interface BrandIdentitySectionProps {
   onOpenAboutPage?: () => void;
@@ -22,7 +21,6 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
   }, []);
 
   const handleOpenCharter = () => {
-    sound.playClick();
     if (onOpenAboutPage) {
       onOpenAboutPage();
     } else {
@@ -53,7 +51,7 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
   const conciseAbout = settings.aboutUs || 'النادي الهندسي هو إطار طلابي تطوعي، غير ربحي، وغير مسيّس، لا يتبع لأي جهة حزبية أو سياسية، ولا يهدف إلى تحقيق أي مكاسب مادية. تأسس النادي بمبادرة من طلبة كلية هندسة البرمجيات والذكاء الاصطناعي في جامعة فلسطين، ليكون منصة طلابية جامعة تجمع طلبة التخصصات الهندسية والتقنية في الجامعة تحت مظلة واحدة، بهدف تنمية مهاراتهم الأكاديمية والعملية والتقنية، وتعزيز روح التعاون والإبداع بينهم.';
 
   return (
-    <section id="brand-identity" className="relative py-20 px-4 sm:px-6 lg:px-8 z-10 overflow-hidden bg-[#08041D]/80 border-t border-white/5">
+    <section id="brand-identity" className="relative py-14 sm:py-20 px-4 sm:px-6 lg:px-8 z-10 overflow-hidden bg-[#08041D]/80 border-t border-white/5">
       {/* Subtle Background Glows */}
       <div className="absolute top-1/4 -right-40 w-96 h-96 bg-[#7F1AB2]/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -left-40 w-96 h-96 bg-[#3FE7E3]/10 rounded-full blur-3xl pointer-events-none" />
@@ -63,7 +61,7 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
         <div className="text-center mb-12 flex flex-col items-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-3 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>الهوية والركائز المؤسسية // CORE FOUNDATIONS</span>
+            <span>الهوية والركائز</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
             من نحن والرسالة والرؤية
@@ -87,7 +85,7 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
                     <FileText className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="font-mono text-[10px] text-emerald-400 uppercase tracking-widest">نبذة عن النادي</span>
+                    <span className="font-mono text-xs text-emerald-400 uppercase tracking-widest">نبذة عن النادي</span>
                     <h3 className="text-xl font-black text-white">من نحن</h3>
                   </div>
                 </div>
@@ -116,7 +114,7 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
                     <Target className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="font-mono text-[10px] text-cyan-400 uppercase tracking-widest">رؤية النادي</span>
+                    <span className="font-mono text-xs text-cyan-400 uppercase tracking-widest">رؤية النادي</span>
                     <h3 className="text-xl font-black text-white">الرؤية</h3>
                   </div>
                 </div>
@@ -145,7 +143,7 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
                     <Compass className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="font-mono text-[10px] text-[#B991D4] uppercase tracking-widest">رسالة النادي</span>
+                    <span className="font-mono text-xs text-[#B991D4] uppercase tracking-widest">رسالة النادي</span>
                     <h3 className="text-xl font-black text-white">الرسالة</h3>
                   </div>
                 </div>
@@ -199,7 +197,7 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
             <h3 className="text-xl sm:text-2xl font-bold text-white">المبادئ التي تقود كل مبادرة هندسية</h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             {valuesList.map((val, idx) => {
               const valName = typeof val === 'string' ? val : val.name;
               const ValIcon = valueIcons[valName] || Award;
@@ -210,14 +208,13 @@ export const BrandIdentitySection: React.FC<BrandIdentitySectionProps> = ({ onOp
               return (
                 <div
                   key={idx}
-                  onMouseEnter={() => sound.playHover()}
                   className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-[#7F1AB2]/40 hover:bg-[#381C4A]/30 transition-all duration-300 group flex flex-col justify-between"
                 >
                   <div>
                     <div className="w-10 h-10 rounded-xl bg-white/[0.04] group-hover:bg-emerald-500/20 border border-white/10 group-hover:border-emerald-500/40 flex items-center justify-center text-gray-300 group-hover:text-emerald-400 mb-4 transition-all">
                       <ValIcon className="w-5 h-5" />
                     </div>
-                    <div className="font-sans text-[11px] font-bold text-emerald-400 mb-1">القيمة 0{idx + 1}</div>
+                    <div className="font-sans text-xs font-bold text-emerald-400 mb-1">القيمة 0{idx + 1}</div>
                     <h4 className="text-lg font-bold text-white mb-2">{valName}</h4>
                     <p className="text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
                       {desc}

@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { ProjectCaseStudy } from '../types';
-import { sound } from '../utils/soundEngine';
 import { ArrowUpRight, ExternalLink, X, Award, Users, Cpu, Sparkles, ArrowLeft } from 'lucide-react';
+
+const PROJECT_CATEGORY_LABELS: Record<string, string> = {
+  software: 'البرمجيات والأنظمة',
+  ai: 'الذكاء الاصطناعي',
+  architecture: 'العمارة والتخطيط',
+};
 
 export const ProjectsSection: React.FC = () => {
   const [projectsList, setProjectsList] = useState<ProjectCaseStudy[]>([]);
@@ -29,12 +34,10 @@ export const ProjectsSection: React.FC = () => {
   });
 
   const openProjectModal = (proj: ProjectCaseStudy) => {
-    sound.playModalOpen();
     setActiveModalProject(proj);
   };
 
   const closeModal = () => {
-    sound.playClick();
     setActiveModalProject(null);
   };
 
@@ -43,14 +46,14 @@ export const ProjectsSection: React.FC = () => {
   }
 
   return (
-    <section id="projects" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="projects" className="py-16 sm:py-28 px-4 sm:px-6 lg:px-8 relative z-10">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-mono mb-3">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>STUDENT INNOVATION HUB // حاضنة المشاريع الهندسية</span>
+              <span>حاضنة المشاريع الهندسية</span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
               حاضنة المشاريع والمبادرات الطلابية
@@ -62,7 +65,7 @@ export const ProjectsSection: React.FC = () => {
         </div>
 
         {/* 4-Stage Project Lifecycle Roadmap */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10 sm:mb-16">
           {[
             {
               step: '01',
@@ -128,7 +131,6 @@ export const ProjectsSection: React.FC = () => {
               <button
                 key={tab.value}
                 onClick={() => {
-                  sound.playClick();
                   setFilter(tab.value as any);
                 }}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
@@ -157,7 +159,7 @@ export const ProjectsSection: React.FC = () => {
                 {/* Header Meta: Category & Status */}
                 <div className="flex items-center justify-between mb-4">
                   <span className="font-mono text-xs px-2.5 py-1 rounded bg-white/[0.04] border border-white/10 text-cyan-300">
-                    {project.collegeName.split(' ')[0]} // {project.category.toUpperCase()}
+                    {PROJECT_CATEGORY_LABELS[project.category] || project.category}
                   </span>
                   <span
                     className={`font-mono text-xs px-2.5 py-0.5 rounded-full border ${
@@ -187,7 +189,7 @@ export const ProjectsSection: React.FC = () => {
                   {project.impactMetrics.slice(0, 2).map((metric, i) => (
                     <div key={i}>
                       <div className="font-mono text-sm sm:text-base font-extrabold text-cyan-400">{metric.value}</div>
-                      <div className="text-[10px] text-gray-400">{metric.label}</div>
+                      <div className="text-xs text-gray-400">{metric.label}</div>
                     </div>
                   ))}
                 </div>
@@ -197,13 +199,13 @@ export const ProjectsSection: React.FC = () => {
                   {project.techStack.slice(0, 3).map((tech, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/5 text-[10px] font-mono text-gray-300"
+                      className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/5 text-xs font-mono text-gray-300"
                     >
                       {tech}
                     </span>
                   ))}
                   {project.techStack.length > 3 && (
-                    <span className="px-1.5 py-0.5 rounded bg-white/[0.03] text-[10px] font-mono text-gray-500">
+                    <span className="px-1.5 py-0.5 rounded bg-white/[0.03] text-xs font-mono text-gray-500">
                       +{project.techStack.length - 3}
                     </span>
                   )}
@@ -216,16 +218,10 @@ export const ProjectsSection: React.FC = () => {
                   onClick={() => openProjectModal(project)}
                   className="text-xs sm:text-sm font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <span>تفاصيل المبادرة (Overview)</span>
+                  <span>تفاصيل المبادرة</span>
                   <ArrowUpRight className="w-4 h-4" />
                 </button>
 
-                {project.award && (
-                  <span className="flex items-center gap-1 text-[10px] font-mono text-amber-400">
-                    <Award className="w-3 h-3" />
-                    <span>معتمد</span>
-                  </span>
-                )}
               </div>
             </div>
           ))}
@@ -236,7 +232,7 @@ export const ProjectsSection: React.FC = () => {
           <div className="max-w-2xl text-right">
             <div className="inline-flex items-center gap-2 font-mono text-xs text-cyan-300 mb-2 uppercase">
               <Sparkles className="w-4 h-4 text-emerald-400" />
-              <span>حاضنة مشاريع جامعة فلسطين // OPEN CALL FOR IDEAS</span>
+              <span>باب الأفكار مفتوح</span>
             </div>
             <h3 className="text-xl sm:text-3xl font-extrabold text-white mb-2">
               لديك فكرة مشروع أو مبادرة هندسية؟
@@ -247,7 +243,6 @@ export const ProjectsSection: React.FC = () => {
           </div>
           <button
             onClick={() => {
-              sound.playClick();
               const target = document.querySelector('#join');
               target?.scrollIntoView({ behavior: 'smooth' });
             }}
@@ -327,7 +322,7 @@ export const ProjectsSection: React.FC = () => {
               <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-500/30 mb-6 font-mono text-xs text-cyan-300 flex items-center gap-3">
                 <Cpu className="w-5 h-5 shrink-0 text-cyan-400" />
                 <div>
-                  <div className="text-[10px] text-gray-400 uppercase">المخطط التدفقي للمشروع (Workflow / Pipeline):</div>
+                  <div className="text-xs text-gray-400 uppercase">المخطط التدفقي للمشروع (Workflow / Pipeline):</div>
                   <div className="font-semibold text-white mt-0.5">{activeModalProject.schematicType}</div>
                 </div>
               </div>
@@ -341,7 +336,7 @@ export const ProjectsSection: React.FC = () => {
                   {activeModalProject.impactMetrics.map((m, i) => (
                     <div key={i} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-center">
                       <div className="font-mono text-lg font-extrabold text-cyan-400">{m.value}</div>
-                      <div className="text-[11px] text-gray-400 mt-0.5">{m.label}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{m.label}</div>
                     </div>
                   ))}
                 </div>

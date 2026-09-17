@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { dataService } from '../services/dataService';
 import type { ComplaintItem } from '../types';
-import { sound } from '../utils/soundEngine';
 import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check, Camera, Upload, Trash2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { checkRateLimit } from '../utils/security';
@@ -72,7 +71,6 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
           } else {
             setAttachmentImage(raw);
           }
-          sound.playSuccess();
         } catch {
           setAttachmentImage(raw);
         }
@@ -87,19 +85,16 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim()) {
-      sound.playError();
       alert('يرجى كتابة عنوان الشكوى أو المقترح قبل الإرسال.');
       return;
     }
     if (!message.trim()) {
-      sound.playError();
       alert('يرجى كتابة تفاصيل وموضوع الشكوى أو المقترح بالتفصيل.');
       return;
     }
 
     const rateCheck = checkRateLimit('complaint_submission', 4000);
     if (!rateCheck.allowed) {
-      sound.playError();
       alert(`يرجى الانتظار ${rateCheck.waitSeconds} ثوانٍ قبل إرسال بلاغ آخر لحماية النظام من الضغط.`);
       return;
     }
@@ -121,14 +116,12 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
       attachmentImage: attachmentImage || undefined,
       });
     } catch (err) {
-      sound.playError();
       alert(`تعذر إرسال الشكوى: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
       return;
     } finally {
       setIsSending(false);
     }
 
-    sound.playSuccess();
     setSubmittedTicket(newComplaint);
     confetti({
       particleCount: 50,
@@ -145,12 +138,10 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
 
     // Strict Privacy: If student enters numeric student ID (any digits), guide them to use ticket number
     if (!cleanQuery.toUpperCase().includes('UP-CMP') && /^\d+$/.test(cleanQuery)) {
-      sound.playError();
       alert('🔒 لدواعي الأمان وحماية خصوصية الشكاوى، تم حظر الاستعلام بالرقم الجامعي. الاستعلام متاح حصرياً عبر رمز التذكرة السري الفريد (مثال: UP-CMP-2026-A1B2C3D4E5) الذي استلمته عند تقديم الطلب لحفظ سرية الملاحظات.');
       return;
     }
 
-    sound.playClick();
     setIsTracking(true);
     try {
       setFoundTicket(await dataService.trackComplaint(cleanQuery));
@@ -163,7 +154,6 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
   };
 
   const copyTicketNumber = (num: string) => {
-    sound.playClick();
     navigator.clipboard.writeText(num);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -190,7 +180,6 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
         {/* Close Button */}
         <button
           onClick={() => {
-            sound.playClick();
             onClose();
           }}
           className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -215,7 +204,6 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
           <button
             type="button"
             onClick={() => {
-              sound.playClick();
               setActiveTab('submit');
             }}
             className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
@@ -231,7 +219,6 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
           <button
             type="button"
             onClick={() => {
-              sound.playClick();
               setActiveTab('track');
             }}
             className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
@@ -264,7 +251,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                 {/* Ticket Number Display */}
                 <div className="p-4 rounded-xl bg-black/60 border border-emerald-500/30 flex items-center justify-between font-mono">
                   <div className="text-right">
-                    <div className="text-[10px] text-gray-400 font-sans">كود التتبع الخاص بالشكوى:</div>
+                    <div className="text-xs text-gray-400 font-sans">كود التتبع الخاص بالشكوى:</div>
                     <div className="text-base sm:text-lg font-extrabold text-cyan-400">{submittedTicket.ticketNumber}</div>
                   </div>
                   <button
@@ -277,7 +264,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                   </button>
                 </div>
 
-                <p className="text-[11px] text-gray-400 leading-relaxed">
+                <p className="text-xs text-gray-400 leading-relaxed">
                   احفظ هذا الرمز للاستعلام عن نتيجة المتابعة ورد الإدارة من خلال تبويب "متابعة حالة شكوى سابقة".
                 </p>
 
@@ -299,7 +286,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                     <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
                     <div>
                       <div className="font-bold text-white">التقديم بهوية سرية (Anonymous)</div>
-                      <div className="text-[11px] text-gray-400">إخفاء اسمك وبياناتك الشخصية عن فريق المتابعة واللجان</div>
+                      <div className="text-xs text-gray-400">إخفاء اسمك وبياناتك الشخصية عن فريق المتابعة واللجان</div>
                     </div>
                   </div>
                   <input
@@ -417,7 +404,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                 {/* Attachment Image Dropzone */}
                 <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <label className="block text-gray-300 font-mono text-[11px] flex items-center gap-1.5">
+                    <label className="block text-gray-300 font-mono text-xs flex items-center gap-1.5">
                       <Camera className="w-3.5 h-3.5 text-cyan-400" />
                       <span>إرفاق صورة أو لقطة شاشة تدعم الطلب (اختياري 📸):</span>
                     </label>
@@ -425,10 +412,9 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                       <button
                         type="button"
                         onClick={() => {
-                          sound.playClick();
                           setAttachmentImage(null);
                         }}
-                        className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1 cursor-pointer font-sans"
+                        className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 cursor-pointer font-sans"
                       >
                         <Trash2 className="w-3 h-3" />
                         <span>حذف الصورة</span>
@@ -445,12 +431,12 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                         onClick={() => window.open(attachmentImage, '_blank')}
                         title="انقر لمعاينة الصورة بالحجم الكامل"
                       />
-                      <div className="flex-1 min-w-0 text-[11px] text-gray-300 font-sans">
+                      <div className="flex-1 min-w-0 text-xs text-gray-300 font-sans">
                         <div className="text-emerald-400 font-bold flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>تم إرفاق الصورة وضغطها بنجاح</span>
                         </div>
-                        <div className="text-gray-400 text-[10px] mt-0.5">ستُرسل كدليل مرفق مع التذكرة لمساعدة فريق المتابعة</div>
+                        <div className="text-gray-400 text-xs mt-0.5">ستُرسل كدليل مرفق مع التذكرة لمساعدة فريق المتابعة</div>
                       </div>
                     </div>
                   ) : (
@@ -459,7 +445,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                       <span className="text-xs text-gray-300 font-sans font-medium">
                         اضغط لرفع لقطة شاشة أو صورة من جهازك
                       </span>
-                      <span className="text-[10px] text-gray-500 font-mono mt-0.5">
+                      <span className="text-xs text-gray-500 font-mono mt-0.5">
                         PNG, JPG, WebP — يتم تحسين الحجم تلقائياً
                       </span>
                       <input
@@ -500,12 +486,12 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
         {activeTab === 'track' && (
           <div className="space-y-5">
             <div>
-              <div className="flex items-center justify-between text-[11px] font-mono text-gray-400 mb-2">
+              <div className="flex items-center justify-between text-xs font-mono text-gray-400 mb-2">
                 <span className="flex items-center gap-1.5 text-cyan-300 font-bold">
                   <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>الاستعلام الآمن بالرمز الفريد فقط // UNIQUE TICKET ID ONLY</span>
+                  <span>الاستعلام برقم التذكرة فقط</span>
                 </span>
-                <span className="text-[10px] text-gray-500">🔒 خصوصية وسرية مطلقة</span>
+                <span className="text-xs text-gray-500">🔒 خصوصية وسرية مطلقة</span>
               </div>
               <form onSubmit={handleTrack} className="flex gap-2">
                 <input
@@ -534,7 +520,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                     {/* Status Header */}
                     <div className="flex items-center justify-between pb-3 border-b border-white/10">
                       <div>
-                        <span className="text-[10px] font-mono text-gray-400">رقم الشكوى:</span>
+                        <span className="text-xs font-mono text-gray-400">رقم الشكوى:</span>
                         <div className="font-mono text-sm font-bold text-cyan-400">{foundTicket.ticketNumber}</div>
                       </div>
 
@@ -574,7 +560,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                     {/* Attached Image Display */}
                     {foundTicket.attachmentImage && (
                       <div className="p-3 rounded-xl bg-black/40 border border-white/10">
-                        <div className="text-[11px] font-mono text-gray-400 mb-2 flex items-center gap-1.5">
+                        <div className="text-xs font-mono text-gray-400 mb-2 flex items-center gap-1.5">
                           <Camera className="w-3.5 h-3.5 text-cyan-400" />
                           <span>الصورة المرفقة مع البلاغ:</span>
                         </div>
@@ -589,7 +575,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                     )}
 
                     {/* Metadata */}
-                    <div className="flex flex-wrap items-center justify-between text-[11px] text-gray-400 pt-1">
+                    <div className="flex flex-wrap items-center justify-between text-xs text-gray-400 pt-1">
                       <span>الكلية: {foundTicket.college}</span>
                       <span>تاريخ التقديم: {new Date(foundTicket.createdAt).toLocaleDateString('ar-EG')}</span>
                     </div>
@@ -606,7 +592,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                         </p>
                       </div>
                     ) : (
-                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-[11px] text-gray-400">
+                      <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-gray-400">
                         الطلب قيد الدراسة من قبل ممثلي الكلية وإدارة النادي، وسيتم تحديث الرد هنا فور الانتهاء.
                       </div>
                     )}
@@ -615,7 +601,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                   <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 text-center text-gray-400 text-xs space-y-2">
                     <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-2 opacity-75" />
                     <div className="text-white font-bold">لم يتم العثور على أي شكوى مسجلة بهذا الرمز الفريد.</div>
-                    <p className="text-[11px] text-gray-400 leading-relaxed max-w-md mx-auto">
+                    <p className="text-xs text-gray-400 leading-relaxed max-w-md mx-auto">
                       تنبيه أمني: الاستعلام متاح حصرياً بواسطة <span className="text-cyan-300 font-mono font-bold">الرمز الفريد للتذكرة</span> الصادر عند التقديم لضمان أقصى درجات الخصوصية وحجب الشكاوى عن أي استعلام خارجي بالرقم الجامعي.
                     </p>
                   </div>

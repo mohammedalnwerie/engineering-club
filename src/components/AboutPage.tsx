@@ -16,7 +16,6 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { ClubLogo } from './ClubLogo';
-import { sound } from '../utils/soundEngine';
 
 interface AboutPageProps {
   onClose: () => void;
@@ -27,7 +26,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
   const [copied, setCopied] = useState(false);
 
   const handleShare = () => {
-    sound.playClick();
     const url = window.location.origin + window.location.pathname + '#/about';
     navigator.clipboard.writeText(url);
     setCopied(true);
@@ -35,7 +33,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
   };
 
   const handlePrint = () => {
-    sound.playClick();
     window.print();
   };
 
@@ -133,7 +130,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
           {/* Back Button */}
           <button
             onClick={() => {
-              sound.playClick();
               onClose();
             }}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/[0.04] border border-white/10 hover:border-emerald-400/50 hover:bg-emerald-500/10 text-gray-200 hover:text-emerald-400 text-xs sm:text-sm font-medium transition-all cursor-pointer group"
@@ -184,7 +180,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
             {/* Join CTA */}
             <button
               onClick={() => {
-                sound.playClick();
                 if (onOpenJoin) {
                   onOpenJoin();
                 } else {
@@ -215,7 +210,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
         <section className="text-center mb-16 pb-12 border-b border-white/10 relative">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-6 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
             <span className="w-2 h-2 rounded-full bg-[#3FE7E3] animate-pulse" />
-            <span>وثيقة رسمية معتمدة // OFFICIAL CLUB CHARTER</span>
+            <span>ميثاق النادي الهندسي</span>
           </div>
 
           <div className="my-6">
@@ -264,7 +259,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <span className="font-mono text-[11px] text-emerald-400 uppercase tracking-widest">ABOUT THE CLUB</span>
+              <span className="font-mono text-xs text-emerald-400 uppercase tracking-widest">ABOUT THE CLUB</span>
               <h2 className="text-2xl sm:text-3xl font-black text-white">من نحن</h2>
             </div>
           </div>
@@ -302,7 +297,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
               <Target className="w-6 h-6" />
             </div>
             <div>
-              <span className="font-mono text-[11px] text-emerald-400 uppercase tracking-widest">STRATEGIC VISION</span>
+              <span className="font-mono text-xs text-emerald-400 uppercase tracking-widest">STRATEGIC VISION</span>
               <h2 className="text-2xl sm:text-3xl font-black text-white">رؤية النادي</h2>
             </div>
           </div>
@@ -381,7 +376,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
               <Compass className="w-6 h-6" />
             </div>
             <div>
-              <span className="font-mono text-[11px] text-[#B991D4] uppercase tracking-widest">MISSION STATEMENT</span>
+              <span className="font-mono text-xs text-[#B991D4] uppercase tracking-widest">MISSION STATEMENT</span>
               <h2 className="text-2xl sm:text-3xl font-black text-white">رسالة النادي</h2>
             </div>
           </div>
@@ -397,7 +392,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
             {/* 5 Strategic Execution Paths */}
             <div className="space-y-4 pt-4 border-t border-white/10">
               <h4 className="text-xs font-mono uppercase tracking-wider text-blue-400">
-                مسارات تحقيق الرسالة التنفيذية // OPERATIONAL EXECUTION TRACKS
+                مسارات تحقيق الرسالة
               </h4>
 
               {/* Path 1 */}
@@ -475,7 +470,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
               <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <span className="font-mono text-[11px] text-emerald-400 uppercase tracking-widest">PARTICIPATING FACULTIES</span>
+              <span className="font-mono text-xs text-emerald-400 uppercase tracking-widest">PARTICIPATING FACULTIES</span>
               <h2 className="text-2xl sm:text-3xl font-black text-white">الكليات المنضوية تحت مظلة النادي</h2>
             </div>
           </div>
@@ -493,13 +488,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
                       <div className="w-10 h-10 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-white">
                         <IconComp className="w-5 h-5" />
                       </div>
-                      <span className="font-mono text-[11px] px-2.5 py-1 rounded-full bg-white/10 text-white font-medium">
+                      <span className="font-mono text-xs px-2.5 py-1 rounded-full bg-white/10 text-white font-medium">
                         {college.badge}
                       </span>
                     </div>
 
                     <h3 className="text-lg font-bold text-white mb-1">{college.name}</h3>
-                    <div className="font-mono text-[11px] text-gray-400 mb-3">{college.nameEn}</div>
+                    <div className="font-mono text-xs text-gray-400 mb-3">{college.nameEn}</div>
                     <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-light">
                       {college.desc}
                     </p>
@@ -522,7 +517,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
               <Award className="w-6 h-6" />
             </div>
             <div>
-              <span className="font-mono text-[11px] text-emerald-400 uppercase tracking-widest">ORGANIZATIONAL VALUES</span>
+              <span className="font-mono text-xs text-emerald-400 uppercase tracking-widest">ORGANIZATIONAL VALUES</span>
               <h2 className="text-2xl sm:text-3xl font-black text-white">القيم الجوهرية الخمس</h2>
             </div>
           </div>
@@ -536,7 +531,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
                 <div>
                   <div className="font-mono text-xs text-emerald-400 font-bold mb-2">VALUE {val.num}</div>
                   <h3 className="text-lg font-bold text-white mb-1">{val.title}</h3>
-                  <div className="font-mono text-[10px] text-gray-400 uppercase tracking-wider mb-2">{val.titleEn}</div>
+                  <div className="font-mono text-xs text-gray-400 uppercase tracking-wider mb-2">{val.titleEn}</div>
                   <p className="text-xs text-gray-300 leading-relaxed font-light">
                     {val.desc}
                   </p>
@@ -556,7 +551,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <span className="font-mono text-[11px] text-cyan-400 uppercase tracking-widest">GOVERNANCE & BYLAWS</span>
+              <span className="font-mono text-xs text-cyan-400 uppercase tracking-widest">GOVERNANCE & BYLAWS</span>
               <h2 className="text-2xl sm:text-3xl font-black text-white">مبادئ العمل والحوكمة الطلابية</h2>
             </div>
           </div>
@@ -592,7 +587,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
             <div className="pt-6 flex flex-wrap items-center justify-center gap-4 no-print">
               <button
                 onClick={() => {
-                  sound.playClick();
                   if (onOpenJoin) {
                     onOpenJoin();
                   } else {
@@ -611,7 +605,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
 
               <button
                 onClick={() => {
-                  sound.playClick();
                   onClose();
                 }}
                 className="px-6 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-200 text-sm font-medium transition-all cursor-pointer"
@@ -620,10 +613,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
               </button>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between text-[11px] font-mono text-gray-400">
-              <span>DOCUMENT REF: UP-ENG-CHARTER-2026</span>
-              <span>VERIFIED BY ENGINEERING COLLEGES // PALESTINE</span>
-              <span>CONFIDENTIALITY: PUBLIC CHARTER</span>
+            <div className="mt-8 pt-6 border-t border-white/10 text-xs text-gray-400">
+              ميثاق النادي الهندسي — جامعة فلسطين — وثيقة عامة
             </div>
           </div>
         </section>

@@ -1,4 +1,5 @@
 import { safeStorage } from './safeStorage';
+import { dataService } from './dataService';
 import type { StoredApplication } from '../types';
 
 export interface EmailConfig {
@@ -12,18 +13,22 @@ export interface EmailConfig {
 const EMAIL_CONFIG_KEY = 'eng_club_email_config_v1';
 
 export const emailService = {
+  // Shared between admins via the database; the old per-browser copy is only a fallback.
   getConfig(): EmailConfig {
-    return safeStorage.get<EmailConfig>(EMAIL_CONFIG_KEY, {
-      serviceId: '',
-      templateId: '',
-      publicKey: '',
-      senderEmail: 'eng.club@up.edu.ps',
-      customMessageTemplate: '',
-    });
+    return (
+      dataService.getEmailConfig() ||
+      safeStorage.get<EmailConfig>(EMAIL_CONFIG_KEY, {
+        serviceId: '',
+        templateId: '',
+        publicKey: '',
+        senderEmail: '',
+        customMessageTemplate: '',
+      })
+    );
   },
 
   saveConfig(config: EmailConfig) {
-    safeStorage.set(EMAIL_CONFIG_KEY, config);
+    dataService.saveEmailConfig(config);
   },
 
   formatAcceptanceEmail(app: StoredApplication) {
@@ -138,7 +143,7 @@ ${verifyUrl}
             auth_code: authCode,
             verify_url: verifyUrl,
             subject: subject,
-            club_email: config.senderEmail || 'eng.club@up.edu.ps',
+            club_email: config.senderEmail,
           }
         })
       });

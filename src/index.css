@@ -55,7 +55,7 @@
 @layer base {
   :root {
     --font-sans: 'Alexandria', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-mono: 'JetBrains Mono', 'IBM Plex Sans Arabic', monospace;
     --font-display: 'Alexandria', sans-serif;
     color-scheme: dark;
   }

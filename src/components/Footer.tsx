@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ArrowUp, MapPin, Check, Sparkles } from 'lucide-react';
-import { sound } from '../utils/soundEngine';
 import { ClubLogo } from './ClubLogo';
 import { dataService } from '../services/dataService';
 
@@ -18,12 +17,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    sound.playSuccess();
     setSubscribed(true);
   };
 
   const scrollToTop = () => {
-    sound.playClick();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

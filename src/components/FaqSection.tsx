@@ -60,11 +60,11 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
   };
 
   return (
-    <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/90 border-t border-white/5">
+    <section id="faq" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/90 border-t border-white/5">
       <div className="max-w-5xl mx-auto">
         
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-4 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
             <HelpCircle className="w-4 h-4" />
             <span>الأسئلة الشائعة والإرشاد الطلابي</span>

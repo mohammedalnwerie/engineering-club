@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { LeaderMember } from '../types';
-import { sound } from '../utils/soundEngine';
 import { Mail, ShieldCheck, Award } from 'lucide-react';
 
 export const LeadershipSection: React.FC = () => {
@@ -44,15 +43,15 @@ export const LeadershipSection: React.FC = () => {
   };
 
   return (
-    <section id="leadership" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/85 border-t border-white/5">
+    <section id="leadership" className="py-16 sm:py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/85 border-t border-white/5">
       <div className="max-w-7xl mx-auto">
         
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#532B6E]/40 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#532B6E]/40 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs mb-3">
               <ShieldCheck className="w-4 h-4 text-[#3FE7E3]" />
-              <span>الهيكل القيادي والتنظيمي المعتمد</span>
+              <span>الهيكل القيادي والتنظيمي</span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
               قيادة النادي الهندسي
@@ -69,10 +68,9 @@ export const LeadershipSection: React.FC = () => {
             <button
               key={t.value}
               onClick={() => {
-                sound.playClick();
-                setActiveTier(t.value as any);
+                setActiveTier(t.value as typeof activeTier);
               }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
                 activeTier === t.value
                   ? 'bg-gradient-to-r from-[#7F1AB2] to-[#532B6E] text-white shadow-[0_0_18px_rgba(127,26,178,0.35)] border border-[#3FE7E3]/30'
                   : 'bg-white/[0.04] text-gray-400 hover:text-white border border-white/5'
@@ -84,7 +82,7 @@ export const LeadershipSection: React.FC = () => {
         </div>
 
         {/* Unified Cards Grid - Exactly Equal Dimensions for All Members & Positions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
           {filteredMembers.map((member) => {
             const isPresident = member.role.includes('رئيس النادي') && !member.role.includes('نائب');
             const tierLabel = getTierLabel(member.tier, member.role);
@@ -99,42 +97,20 @@ export const LeadershipSection: React.FC = () => {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#7F1AB2]/10 rounded-full blur-2xl pointer-events-none" />
 
                 <div>
-                  {/* Card Header: Prominent Club Logo & University Identity */}
-                  <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                      <div className="p-1.5 sm:p-2 rounded-2xl bg-white shadow-md border border-white/90 flex items-center justify-center shrink-0">
-                        <img
-                          src="/brand/emblem.png"
-                          alt="شعار النادي الهندسي"
-                          className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.15)] transition-transform group-hover:scale-105"
-                        />
-                      </div>
-                      <div>
-                        <div className="text-sm font-black text-white tracking-wide leading-tight">
-                          النادي الهندسي
-                        </div>
-                        <div className="text-[10px] text-[#3FE7E3] font-mono uppercase tracking-wider font-semibold mt-0.5">
-                          ENGINEERING CLUB
-                        </div>
-                        <div className="text-[9px] text-gray-400 font-sans">
-                          جامعة فلسطين
-                        </div>
-                      </div>
-                    </div>
-
-                    <span className={`text-[10px] font-mono px-2.5 py-1 rounded-full border font-semibold ${tierBadge}`}>
-                      {tierLabel}
-                    </span>
-                  </div>
-
-                  {/* Leader Photo & Identity */}
-                  <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-start gap-4">
                     <div className="relative shrink-0">
-                      <img
-                        src={member.avatar}
-                        alt={member.name}
-                        className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-[#7F1AB2]/40 group-hover:border-[#3FE7E3] transition-colors shadow-md"
-                      />
+                      {member.avatar ? (
+                        <img
+                          src={member.avatar}
+                          alt={member.name || member.role}
+                          loading="lazy"
+                          className="w-20 h-20 rounded-2xl object-cover border-2 border-[#7F1AB2]/40 group-hover:border-[#3FE7E3] transition-colors shadow-md"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center border-2 border-[#7F1AB2]/40 group-hover:border-[#3FE7E3] transition-colors shadow-md">
+                          <img src="/brand/emblem.png" alt="" className="w-12 h-12 object-contain" />
+                        </div>
+                      )}
                       {isPresident && (
                         <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-[#7F1AB2] text-white shadow">
                           <Award className="w-3.5 h-3.5" />
@@ -143,31 +119,34 @@ export const LeadershipSection: React.FC = () => {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-base sm:text-lg font-extrabold text-white leading-snug break-words">
-                        {member.name}
-                      </h3>
-                      <div className="text-xs sm:text-sm font-bold text-[#3FE7E3] mt-1 leading-snug break-words">
+                      <span className={`inline-block text-xs px-2.5 py-1 rounded-full border font-semibold mb-2 ${tierBadge}`}>
+                        {tierLabel}
+                      </span>
+                      <h3 className="text-lg font-extrabold text-white leading-snug break-words">
                         {member.role}
-                      </div>
-                      <div className="text-[11px] text-gray-400 mt-0.5 leading-snug">
-                        {member.department}
+                      </h3>
+                      <div className={`text-sm mt-1 leading-snug break-words ${member.name ? 'text-[#3FE7E3] font-bold' : 'text-gray-500'}`}>
+                        {member.name || 'يُعلن الاسم قريباً'}
                       </div>
                     </div>
                   </div>
+
+                  {member.quote && (
+                    <p className="hidden sm:block mt-5 text-sm text-gray-300 leading-relaxed">{member.quote}</p>
+                  )}
                 </div>
 
-                {/* Clean, Official Contact Footer */}
-                <div className="pt-3.5 mt-4 border-t border-white/10 flex items-center justify-between text-xs font-mono">
-                  <span className="text-gray-400 text-[11px]">البريد الرسمي:</span>
-                  <a
-                    href={`mailto:${member.email}`}
-                    className="text-[#3FE7E3] hover:text-white transition-colors truncate max-w-[180px] flex items-center gap-1.5"
-                    dir="ltr"
-                  >
-                    <Mail className="w-3.5 h-3.5 shrink-0" />
-                    <span>{member.email}</span>
-                  </a>
-                </div>
+                {member.email && (
+                  <div className="pt-4 mt-5 border-t border-white/10">
+                    <a
+                      href={`mailto:${member.email}`}
+                      className="text-sm text-[#3FE7E3] hover:text-white transition-colors flex items-center gap-2 min-h-[44px]"
+                    >
+                      <Mail className="w-4 h-4 shrink-0" />
+                      <span className="truncate" dir="ltr">{member.email}</span>
+                    </a>
+                  </div>
+                )}
               </div>
             );
           })}

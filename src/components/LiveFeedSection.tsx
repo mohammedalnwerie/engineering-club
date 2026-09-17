@@ -119,7 +119,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
   }
 
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 border-t border-white/5 bg-[#08041D]/80">
+    <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative z-10 border-t border-white/5 bg-[#08041D]/80">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
@@ -152,7 +152,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                     <Lightbulb className="w-4 h-4" />
                   </div>
                   <h4 className="text-xs font-bold text-white mb-1">الابتكار التطبيقي</h4>
-                  <p className="text-[11px] text-gray-400 leading-relaxed font-light">
+                  <p className="text-xs text-gray-400 leading-relaxed font-light">
                     مشاريع تخرج أو نماذج برمجية ومعمارية وإنشائية قابلة للتطبيق.
                   </p>
                 </div>
@@ -162,7 +162,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                     <Users className="w-4 h-4" />
                   </div>
                   <h4 className="text-xs font-bold text-white mb-1">الأثر والمشاركة</h4>
-                  <p className="text-[11px] text-gray-400 leading-relaxed font-light">
+                  <p className="text-xs text-gray-400 leading-relaxed font-light">
                     نقل المعرفة، مساعدة الزملاء، والمساهمة الفاعلة في الحياة الجامعية.
                   </p>
                 </div>
@@ -172,7 +172,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                     <Trophy className="w-4 h-4" />
                   </div>
                   <h4 className="text-xs font-bold text-white mb-1">المسابقات والجوائز</h4>
-                  <p className="text-[11px] text-gray-400 leading-relaxed font-light">
+                  <p className="text-xs text-gray-400 leading-relaxed font-light">
                     المشاركة في الهاكاثونات والمسابقات المحلية والدولية.
                   </p>
                 </div>
@@ -200,7 +200,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                   <ArrowLeft className="w-3.5 h-3.5" />
                 </button>
               ) : (
-                <span className="text-[11px] text-gray-400 font-mono text-center sm:text-right">
+                <span className="text-xs text-gray-400 font-mono text-center sm:text-right">
                   الترشيح متاح لأعضاء النادي المسجلين فقط
                 </span>
               )}
@@ -215,7 +215,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="text-sm font-bold text-white">نبض وتحديثات النادي</span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
                   تحديثات حية
                 </span>
               </div>
@@ -227,14 +227,14 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                     key={item.id}
                     className="p-3.5 rounded-2xl bg-black/30 border border-white/5 hover:border-emerald-500/30 transition-all flex items-start gap-3"
                   >
-                    <span className="text-[10px] font-mono px-2 py-1 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/20 shrink-0 mt-0.5">
+                    <span className="text-xs font-mono px-2 py-1 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/20 shrink-0 mt-0.5">
                       {item.tag}
                     </span>
                     <div className="flex-1">
                       <div className="text-xs font-bold text-gray-200 mb-0.5 leading-snug">
                         {item.title}
                       </div>
-                      <div className="text-[10px] text-gray-400 font-mono">{item.time}</div>
+                      <div className="text-xs text-gray-400 font-mono">{item.time}</div>
                     </div>
                   </div>
                 ))}
@@ -242,7 +242,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
             </div>
 
             <div className="mt-6 pt-4 border-t border-white/10 text-center">
-              <span className="text-[11px] text-gray-400 font-light">
+              <span className="text-xs text-gray-400 font-light">
                 تابع منصات النادي للحصول على آخر التنبيهات والفرص الهندسية أولاً بأول.
               </span>
             </div>
@@ -330,7 +330,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                             setShowNominateModal(false);
                             onOpenJoin();
                           }}
-                          className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+                          className="text-xs font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
                         >
                           لست عضواً بعد؟ انقر هنا للانتساب إلى النادي الآن
                         </button>

@@ -97,7 +97,7 @@ export const EventsSection: React.FC = () => {
   }
 
   return (
-    <section id="events" className="py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/80 border-t border-white/5">
+    <section id="events" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/80 border-t border-white/5">
       <div className="max-w-6xl mx-auto">
         
         {/* Section Header */}
@@ -105,7 +105,7 @@ export const EventsSection: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#381C4A]/60 border border-[#3FE7E3]/30 text-[#3FE7E3] text-xs font-mono mb-3 shadow-[0_0_20px_rgba(63,231,227,0.12)]">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>البرامج والأنشطة القادمة // قيد التنسيق والتحضير</span>
+              <span>البرامج والأنشطة القادمة</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
               أجندة الفعاليات والورش الهندسية
@@ -143,7 +143,7 @@ export const EventsSection: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-[11px] font-mono px-3 py-1 rounded-full bg-black/40 text-gray-300 border border-white/10">
+                    <span className="text-xs font-mono px-3 py-1 rounded-full bg-black/40 text-gray-300 border border-white/10">
                       {track.badge}
                     </span>
                     <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400">
@@ -161,7 +161,7 @@ export const EventsSection: React.FC = () => {
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between text-gray-400 text-xs font-mono">
-                  <span>TRACK #{idx + 1}</span>
+                  <span>المسار {idx + 1}</span>
                   <span className="text-emerald-400">قريباً</span>
                 </div>
               </div>

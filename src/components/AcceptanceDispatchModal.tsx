@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { StoredApplication } from '../types';
 import { emailService } from '../services/emailService';
-import { sound } from '../utils/soundEngine';
 import {
   X,
   Mail,
@@ -40,14 +39,12 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   const authCode = `UP-ENG-${(app.id || 'VALID').slice(-8).toUpperCase()}`;
 
   const handleCopyLink = () => {
-    sound.playClick();
     navigator.clipboard.writeText(verifyUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
   const handleCopyMessage = () => {
-    sound.playClick();
     const { body } = emailService.formatAcceptanceEmail(app);
     navigator.clipboard.writeText(body);
     setCopiedMsg(true);
@@ -55,19 +52,15 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   };
 
   const handleSendAutoEmail = async () => {
-    sound.playClick();
     setIsSendingAuto(true);
     setAutoStatus(null);
     try {
       const res = await emailService.sendAutomatedEmail(app);
       if (res.success) {
-        sound.playSuccess();
       } else {
-        sound.playError();
       }
       setAutoStatus(res);
     } catch {
-      sound.playError();
       setAutoStatus({ success: false, message: 'حدث خطأ غير متوقع أثناء محاولة الإرسال.' });
     } finally {
       setIsSendingAuto(false);
@@ -83,7 +76,6 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
         {/* Close Button */}
         <button
           onClick={() => {
-            sound.playClick();
             onClose();
           }}
           className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -188,7 +180,6 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
           <button
             type="button"
             onClick={() => {
-              sound.playClick();
               emailService.openWhatsAppChat(app);
             }}
             className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs cursor-pointer shadow-lg flex items-center justify-between transition-all"
@@ -204,7 +195,6 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
           <button
             type="button"
             onClick={() => {
-              sound.playClick();
               emailService.openGmailWebmail(app);
             }}
             className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600/90 via-rose-600 to-red-500/90 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs cursor-pointer shadow-lg flex items-center justify-between transition-all"
@@ -250,7 +240,6 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
               <button
                 type="button"
                 onClick={() => {
-                  sound.playClick();
                   onClose();
                   onViewBadge(app);
                 }}

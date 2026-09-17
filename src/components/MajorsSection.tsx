@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { Major } from '../types';
-import { sound } from '../utils/soundEngine';
 import { Terminal, Cpu, BrainCircuit, ShieldCheck, Compass, Building2, ChevronLeft, Layers, ArrowUpRight, Sparkles } from 'lucide-react';
 
 const ICONS_MAP: Record<string, React.ElementType> = {
@@ -48,20 +47,19 @@ export const MajorsSection: React.FC = () => {
   const ActiveIcon = ICONS_MAP[activeMajor.iconName] || Terminal;
 
   const handleSelectMajor = (id: string) => {
-    sound.playClick();
     setActiveMajorId(id);
   };
 
 
   return (
-    <section id="majors" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/60">
+    <section id="majors" className="py-16 sm:py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/60">
       <div className="max-w-7xl mx-auto">
         {/* Section Heading */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/40 border border-blue-500/30 text-blue-400 text-xs font-mono mb-3">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-              <span>DISCIPLINES & PATHWAYS // 6 MAJORS</span>
+              <span>{majorsList.length} تخصصات هندسية وتقنية</span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
               التخصصات والمسارات الهندسية
@@ -83,7 +81,6 @@ export const MajorsSection: React.FC = () => {
               <button
                 key={major.id}
                 onClick={() => handleSelectMajor(major.id)}
-                onMouseEnter={() => sound.playHover()}
                 className={`p-4 rounded-2xl border text-right transition-all duration-300 relative overflow-hidden cursor-pointer flex flex-col justify-between h-36 ${
                   isSelected
                     ? 'glass-panel border-cyan-400/80 shadow-[0_0_25px_rgba(0,240,255,0.2)] bg-cyan-950/30'
@@ -113,8 +110,8 @@ export const MajorsSection: React.FC = () => {
                   >
                     {major.name}
                   </h4>
-                  <div className="font-mono text-[10px] text-gray-500 mt-1 truncate">
-                    {major.collegeName.split(' ')[0]}
+                  <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                    {major.collegeName.replace(/^كلية\s*/, '')}
                   </div>
                 </div>
 
@@ -141,7 +138,7 @@ export const MajorsSection: React.FC = () => {
                   </div>
                   <div>
                     <div className="font-mono text-xs text-cyan-400 uppercase tracking-wider">
-                      SPEC CODE: {activeMajor.code} // {activeMajor.collegeName}
+                      {activeMajor.collegeName}
                     </div>
                     <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
                       {activeMajor.name}
@@ -156,7 +153,6 @@ export const MajorsSection: React.FC = () => {
                 {/* Key Courses */}
                 <div className="mb-6">
                   <h5 className="font-mono text-xs uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-1.5">
-                    <span>//</span>
                     <span>ما ستتعلمه وتكتسبه في هذا التخصص:</span>
                   </h5>
                   <div className="space-y-2">
@@ -169,7 +165,7 @@ export const MajorsSection: React.FC = () => {
                           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                           <span>{course}</span>
                         </div>
-                        <span className="font-mono text-[10px] text-gray-500">مسار {idx + 1}</span>
+                        <span className="font-mono text-xs text-gray-500">مسار {idx + 1}</span>
                       </div>
                     ))}
                   </div>
@@ -223,7 +219,7 @@ export const MajorsSection: React.FC = () => {
                     <Sparkles className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="inline-flex items-center gap-2 font-mono text-[10px] text-emerald-400 uppercase tracking-wider">
+                    <div className="inline-flex items-center gap-2 font-mono text-xs text-emerald-400 uppercase tracking-wider">
                       <span>حاضنة الأفكار والمشاريع الطلابية</span>
                       <span className="text-emerald-500/50">|</span>
                       <span className="text-gray-400">باب التقديم مفتوح</span>
@@ -239,7 +235,6 @@ export const MajorsSection: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     const target = document.querySelector('#join');
                     target?.scrollIntoView({ behavior: 'smooth' });
                   }}

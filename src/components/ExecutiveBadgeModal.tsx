@@ -1,6 +1,5 @@
 import React from 'react';
 import type { LeaderMember } from '../types';
-import { sound } from '../utils/soundEngine';
 import { X, ShieldCheck, Printer, Award, Download } from 'lucide-react';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 
@@ -27,7 +26,6 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
         {/* Close Button */}
         <button
           onClick={() => {
-            sound.playClick();
             onClose();
           }}
           className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -76,9 +74,9 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
             <div className="flex items-center gap-3.5 mb-4 text-right">
               <div className="relative shrink-0">
                 <img
-                  src={leader.avatar}
-                  alt={leader.name}
-                  className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl object-cover border-2 border-[#7F1AB2]/60 shadow-lg"
+                  src={leader.avatar || '/brand/emblem.png'}
+                  alt={leader.name || leader.role}
+                  className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl border-2 border-[#7F1AB2]/60 shadow-lg ${leader.avatar ? 'object-cover' : 'object-contain bg-white p-2'}`}
                 />
                 <div className="absolute -bottom-1 -right-1 p-1 rounded-full bg-[#7F1AB2] text-white shadow">
                   <Award className="w-3 h-3" />
@@ -87,7 +85,7 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
               <div className="min-w-0 flex-1">
                 <div className="text-[10px] text-gray-400 font-sans">الاسم / القيادي:</div>
                 <div className="text-base sm:text-lg font-black text-white font-sans leading-tight">
-                  {leader.name}
+                  {leader.name || '—'}
                 </div>
                 <div className="text-xs font-bold text-[#3FE7E3] font-sans mt-0.5 leading-tight">
                   {leader.role}
@@ -98,45 +96,47 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
               </div>
             </div>
 
-            {/* Clean Executive Metadata */}
-            <div className="space-y-2 p-3 rounded-2xl bg-black/50 border border-white/10 mb-4 text-xs font-sans">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-400">المستوى:</span>
-                <span className="font-bold text-gray-200">
-                  {isExecutive ? 'الهيئة الإدارية والتنفيذية' : 'رئاسة اللجان المتخصصة'}
-                </span>
+            {/* Clean Executive Metadata & Integrated Verification QR */}
+            <div className="p-3.5 rounded-2xl bg-black/60 border border-white/10 mb-4 flex items-center justify-between gap-3 shadow-inner">
+              <div className="space-y-2 flex-1 min-w-0 text-xs font-sans">
+                <div>
+                  <div className="text-[10px] text-gray-400">المستوى القيادي:</div>
+                  <div className="font-bold text-gray-200 text-xs truncate">
+                    {isExecutive ? 'الهيئة الإدارية والتنفيذية' : 'رئاسة اللجان المتخصصة'}
+                  </div>
+                </div>
+                <div className="pt-1.5 border-t border-white/5">
+                  <div className="text-[10px] text-gray-400">البريد الرسمي:</div>
+                  <div className="font-bold text-[#3FE7E3] font-mono text-[11px] truncate">{leader.email}</div>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
-                <span className="text-gray-400">البريد الرسمي:</span>
-                <span className="font-bold text-[#3FE7E3] font-mono text-[11px]">{leader.email}</span>
+
+              {/* Scannable Verification QR Code (Integrated Side-by-Side) */}
+              <div className="flex flex-col items-center justify-center shrink-0 border-r border-white/10 pr-3.5">
+                <div className="p-1 rounded-xl bg-white shadow-md border border-white/90">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(
+                      `${window.location.origin}/?verifyLeader=${encodeURIComponent(leader.id)}`
+                    )}`}
+                    alt="Verification QR"
+                    className="w-14 h-14 object-contain"
+                  />
+                </div>
+                <span className="text-[8px] font-mono text-cyan-400 font-bold mt-1 tracking-wider uppercase">
+                  VERIFY PASS
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Verification Barcode, Serial & Official Stamp */}
-          <div className="pt-3 border-t border-dashed border-white/15 flex items-center justify-between gap-3">
-            <div className="text-left flex-1 min-w-0" dir="ltr">
-              <div className="text-[9px] text-gray-400 font-mono tracking-wider font-bold">
-                PASS ID: <span className="text-[#3FE7E3] font-mono">{badgeSerial}</span>
-              </div>
-              <div className="text-[8px] text-gray-500 font-mono tracking-tight mt-0.5 uppercase">
-                OFFICIAL BOARD ACCREDITATION
-              </div>
-              <div className="inline-flex items-center gap-1 mt-1 text-[9px] text-[#35BC2B] font-sans font-bold" dir="rtl">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B]" />
-                <span>اعتماد قيادي ساري • 2026</span>
-              </div>
+          {/* Sleek Security Footer Ribbon */}
+          <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 text-[9px] font-mono">
+            <div className="text-left flex items-center gap-1.5" dir="ltr">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B]" />
+              <span className="text-[#3FE7E3] font-bold">{badgeSerial}</span>
             </div>
-
-            {/* Scannable Verification QR Code */}
-            <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow shrink-0 border border-white/90">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(
-                  `${window.location.origin}/?verifyLeader=${encodeURIComponent(leader.id)}`
-                )}`}
-                alt="Verification QR"
-                className="w-11 h-11 object-contain"
-              />
+            <div className="text-gray-400 font-sans text-[9px] font-bold flex items-center gap-1" dir="rtl">
+              <span>اعتماد قيادي ساري • 2026</span>
             </div>
           </div>
         </div>
@@ -172,7 +172,6 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
           <button
             type="button"
             onClick={() => {
-              sound.playClick();
               onClose();
             }}
             className="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs transition-colors cursor-pointer"

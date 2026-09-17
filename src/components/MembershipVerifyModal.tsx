@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { StoredApplication } from '../types';
-import { sound } from '../utils/soundEngine';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
 import {
   X,
@@ -88,7 +87,6 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    sound.playClick();
     void performSearch(searchQuery);
   };
 
@@ -109,7 +107,6 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
         {/* Close Button */}
         <button
           onClick={() => {
-            sound.playClick();
             onClose();
           }}
           className="absolute top-5 left-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -167,7 +164,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                   <div className="p-3.5 rounded-2xl bg-[#7F1AB2]/20 border border-[#7F1AB2]/40 text-[#3FE7E3] flex items-center justify-between shadow-lg">
                     <div className="flex items-center gap-2 text-xs font-bold">
                       <CheckCircle2 className="w-5 h-5 text-[#35BC2B] shrink-0" />
-                      <span>عضوية رسمية معتمدة ومفعلة // VERIFIED</span>
+                      <span>عضوية مقبولة ومفعّلة</span>
                     </div>
                     <span className="font-mono text-[10px] text-[#35BC2B] px-2.5 py-0.5 rounded-full bg-[#35BC2B]/10 border border-[#35BC2B]/30 font-bold">
                       نشطة
@@ -213,45 +210,48 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Academic Information (Clean & Minimal) */}
-                      <div className="space-y-2 p-3 rounded-2xl bg-black/50 border border-white/10 text-xs font-sans mb-4">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-gray-400">التخصص:</span>
-                          <span className="font-bold text-[#3FE7E3]">
-                            {(matchedApp.major || '').replace(/^(تخصص\s+|كلية\s+)/i, '').trim()}
-                          </span>
+                      {/* Unified Member Details & Integrated Verification QR */}
+                      <div className="p-3.5 rounded-2xl bg-black/60 border border-white/10 text-xs font-sans mb-4 flex items-center justify-between gap-3 shadow-inner">
+                        <div className="space-y-2 flex-1 min-w-0 text-xs font-sans">
+                          <div>
+                            <div className="text-[10px] text-gray-400">التخصص:</div>
+                            <div className="font-bold text-[#3FE7E3] text-xs truncate">
+                              {(matchedApp.major || '').replace(/^(تخصص\s+|كلية\s+)/i, '').trim()}
+                            </div>
+                          </div>
+                          <div className="pt-1.5 border-t border-white/5">
+                            <div className="text-[10px] text-gray-400">اللجنة / المسار:</div>
+                            <div className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B] text-xs truncate">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse shrink-0" />
+                              <span className="truncate">{matchedApp.targetCommittee}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center text-xs pt-1.5 border-t border-white/5">
-                          <span className="text-gray-400">اللجنة / المسار:</span>
-                          <span className="inline-flex items-center gap-1.5 font-bold text-[#35BC2B]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B] animate-pulse" />
-                            {matchedApp.targetCommittee}
+
+                        {/* Scannable Verification QR Code (Integrated Side-by-Side) */}
+                        <div className="flex flex-col items-center justify-center shrink-0 border-r border-white/10 pr-3.5">
+                          <div className="p-1 rounded-xl bg-white shadow-md border border-white/90">
+                            <img
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(verifyUrl)}`}
+                              alt="Verification QR"
+                              className="w-14 h-14 object-contain"
+                            />
+                          </div>
+                          <span className="text-[8px] font-mono text-emerald-400 font-bold mt-1 tracking-wider uppercase">
+                            VERIFY PASS
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Scannable Verification QR Code */}
-                    <div className="pt-3 border-t border-dashed border-white/15 flex items-center justify-between gap-3">
-                      <div className="text-left flex-1 min-w-0" dir="ltr">
-                        <div className="text-[9px] text-gray-400 font-mono tracking-wider font-bold">
-                          PASS ID: <span className="text-[#3FE7E3] font-mono">{authCode}</span>
-                        </div>
-                        <div className="text-[8px] text-gray-500 font-mono tracking-tight mt-0.5 uppercase">
-                          OFFICIALLY REGISTERED PASS
-                        </div>
-                        <div className="inline-flex items-center gap-1 mt-1 text-[9px] text-[#35BC2B] font-sans font-bold" dir="rtl">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B]" />
-                          <span>عضوية معتمدة ومفعلة • 2026</span>
-                        </div>
+                    {/* Sleek Security Footer Ribbon */}
+                    <div className="pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 text-[9px] font-mono">
+                      <div className="text-left flex items-center gap-1.5" dir="ltr">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#35BC2B]" />
+                        <span className="text-[#3FE7E3] font-bold">{authCode}</span>
                       </div>
-
-                      <div className="p-1 rounded-xl bg-white flex items-center justify-center shadow shrink-0 border border-white/90">
-                        <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&format=svg&data=${encodeURIComponent(verifyUrl)}`}
-                          alt="Verification QR"
-                          className="w-11 h-11 object-contain"
-                        />
+                      <div className="text-gray-400 font-sans text-[9px] font-bold flex items-center gap-1" dir="rtl">
+                        <span>عضوية معتمدة ومفعلة • 2026</span>
                       </div>
                     </div>
                   </div>
@@ -277,7 +277,6 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          sound.playClick();
                           setShowCommitteeBadge(true);
                         }}
                         className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500/20 via-cyan-500/20 to-blue-500/20 hover:from-purple-500/30 hover:to-blue-500/30 border border-cyan-400/50 text-cyan-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow transition-all"
@@ -300,7 +299,6 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                       <button
                         type="button"
                         onClick={() => {
-                          sound.playSuccess();
                           navigator.clipboard.writeText(verifyUrl);
                           setCopied(true);
                           setTimeout(() => setCopied(false), 3000);
@@ -343,7 +341,6 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                 </p>
                 <button
                   onClick={() => {
-                    sound.playClick();
                     onClose();
                     const target = document.querySelector('#join');
                     target?.scrollIntoView({ behavior: 'smooth' });

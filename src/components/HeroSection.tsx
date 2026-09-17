@@ -21,101 +21,84 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
     };
   }, []);
 
+  const collegesCount = dataService.getColleges().length;
+  const majorsCount = dataService.getMajors().length;
+  const committeesCount = Object.keys(dataService.getRecruitmentSettings().committees).filter((id) => id !== 'general').length;
+
   const stats = [
-    { number: '03', label: 'كليات تخصصية', sub: 'برمجيات، تكنولوجيا، عمارة وهندسة' },
-    { number: '06', label: 'مسارات هندسية', sub: 'تخصصات متكاملة تغطي سوق العمل' },
-    { number: '03', label: 'لجان فاعلة', sub: 'أنشطة، تدريب وشراكات، إعلام' },
-    { number: '01', label: 'مظلة طلابية رائدة', sub: 'تجمع مهندسي المستقبل في فلسطين' },
+    { number: String(collegesCount), label: 'كليات مشاركة', sub: 'برمجيات، تكنولوجيا معلومات، هندسة تطبيقية' },
+    { number: String(majorsCount), label: 'تخصصات', sub: 'من البرمجة والذكاء الاصطناعي إلى العمارة والمدني' },
+    { number: String(committeesCount), label: 'لجان عمل', sub: 'فعاليات، علاقات وتدريب، إعلام' },
+    { number: 'مجاناً', label: 'العضوية', sub: 'مفتوحة لكل طلبة الكليات الهندسية والتقنية' },
   ];
 
+  const renderTitle = () => {
+    const { heroTitle, heroHighlight } = settings;
+    if (!heroHighlight || !heroTitle.includes(heroHighlight)) {
+      return heroTitle;
+    }
+    const [before, after] = heroTitle.split(heroHighlight);
+    return (
+      <>
+        {before.trim() && <span className="block text-white">{before.trim()}</span>}
+        <span className="block sm:whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-[#D1B5E3] via-[#3FE7E3] to-[#98F7F1] pb-2">
+          {heroHighlight}
+        </span>
+        {after.trim() && <span className="block text-white">{after.trim()}</span>}
+      </>
+    );
+  };
+
   return (
-    <section className="relative min-h-[88vh] flex flex-col justify-center items-center pt-28 pb-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      <div className="relative max-w-5xl mx-auto text-center flex flex-col items-center z-10">
-        
-        {/* Sleek Official Institutional Badge */}
-        <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-gradient-to-r from-[#532B6E]/60 via-[#7F1AB2]/30 to-[#08041D]/80 border border-[#3FE7E3]/35 text-xs sm:text-sm mb-8 backdrop-blur-md shadow-[0_0_25px_rgba(127,26,178,0.2)]">
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-          </span>
-          <span className="font-bold text-white tracking-wide">المنصة الهندسية الرسمية المعتمدة</span>
-          <span className="text-[#3FE7E3]/40">•</span>
-          <span className="font-semibold text-[#3FE7E3]">{settings.universityNameAr || "جامعة فلسطين"}</span>
-          <span className="hidden sm:inline text-[#3FE7E3]/40">•</span>
-          <span className="hidden sm:inline text-gray-300 font-light text-xs">الكليات الهندسية والتقنية</span>
+    <section className="relative min-h-[88vh] flex flex-col justify-center items-center pt-32 pb-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="relative max-w-6xl mx-auto text-center flex flex-col items-center z-10">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#532B6E]/40 border border-[#3FE7E3]/30 text-sm mb-8 backdrop-blur-md">
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+          <span className="font-bold text-white">{settings.clubNameAr || 'النادي الهندسي'}</span>
+          <span className="text-[#3FE7E3]/50">•</span>
+          <span className="font-semibold text-[#3FE7E3]">{settings.universityNameAr || 'جامعة فلسطين'}</span>
         </div>
 
-        {/* Main Title: Enhanced Typographical Lockup */}
-        <div className="relative mb-6 max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.18] text-center">
-            {settings.heroTitle.includes('نبني') ? (
-              <div className="inline-flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-5">
-                <span className="text-white drop-shadow-[0_2px_15px_rgba(0,0,0,0.6)]">
-                  نبني
-                </span>
-                <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#D1B5E3] via-[#3FE7E3] to-[#98F7F1] drop-shadow-[0_0_35px_rgba(63,231,227,0.3)]">
-                  مهندسي المستقبل
-                </span>
-              </div>
-            ) : settings.heroTitle.includes(settings.heroHighlight) ? (
-              <>
-                <span>{settings.heroTitle.split(settings.heroHighlight)[0]}</span>
-                <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#D1B5E3] via-[#3FE7E3] to-[#98F7F1] drop-shadow-[0_0_35px_rgba(63,231,227,0.3)]">
-                  {settings.heroHighlight}
-                </span>
-                <span>{settings.heroTitle.split(settings.heroHighlight)[1]}</span>
-              </>
-            ) : (
-              settings.heroTitle
-            )}
-          </h1>
-        </div>
+        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.15] text-center mb-6 drop-shadow-[0_2px_15px_rgba(0,0,0,0.6)]">
+          {renderTitle()}
+        </h1>
 
-        {/* Manifesto Sub-headline */}
-        <p className="max-w-2xl text-base sm:text-lg md:text-xl text-gray-300 font-light leading-relaxed mb-10 text-balance">
+        <p className="max-w-2xl text-lg md:text-xl text-gray-300 font-light leading-relaxed mb-10 text-balance">
           {settings.heroSubheadline1}
           <br />
           <span className="text-[#3FE7E3] font-normal">{settings.heroSubheadline2}</span>
         </p>
 
-        {/* Call to Actions */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-16">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto mb-16">
           <button
             onClick={onJoinClick}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-base text-white bg-gradient-to-r from-[#7F1AB2] via-[#6F3993] to-[#532B6E] hover:from-[#A26CC6] hover:to-[#7F1AB2] shadow-[0_10px_30px_rgba(127,26,178,0.35)] hover:shadow-[0_15px_35px_rgba(127,26,178,0.5)] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer group"
+            className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-base text-white bg-gradient-to-r from-[#7F1AB2] to-[#6F3993] hover:from-[#A26CC6] hover:to-[#7F1AB2] shadow-[0_10px_30px_rgba(127,26,178,0.35)] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer group"
           >
-            <span>انضم للنادي وابدأ مسيرتك</span>
+            <span>انضم للنادي</span>
             <ArrowLeft className="w-5 h-5 transition-transform duration-200 group-hover:-translate-x-1" />
           </button>
 
           <button
             onClick={onExploreClick}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-medium text-base text-gray-200 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#3FE7E3]/40 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer"
+            className="w-full sm:w-auto px-8 py-4 rounded-xl font-medium text-base text-gray-200 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#3FE7E3]/40 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer"
           >
             <Layers className="w-4 h-4 text-[#3FE7E3]" />
-            <span>استكشف الكليات والمسارات</span>
+            <span>استكشف الكليات والتخصصات</span>
           </button>
         </div>
 
-        {/* Live Metrics Cards */}
         <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-right">
-          {stats.map((stat, idx) => (
+          {stats.map((stat) => (
             <div
-              key={idx}
-              className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#7F1AB2]/40 hover:bg-white/[0.05] transition-all duration-300 backdrop-blur-sm"
+              key={stat.label}
+              className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#7F1AB2]/40 transition-all duration-300 backdrop-blur-sm"
             >
-              <div className="flex items-baseline justify-between mb-2">
-                <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                  {stat.number}
-                </span>
-                <span className="text-xs text-[#3FE7E3] font-semibold">0{idx + 1}</span>
-              </div>
-              <div className="text-sm font-bold text-gray-100 mb-1">{stat.label}</div>
-              <div className="text-xs text-gray-400 leading-relaxed font-light">{stat.sub}</div>
+              <div className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-1">{stat.number}</div>
+              <div className="text-base font-bold text-gray-100 mb-1">{stat.label}</div>
+              <div className="text-sm text-gray-400 leading-relaxed">{stat.sub}</div>
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

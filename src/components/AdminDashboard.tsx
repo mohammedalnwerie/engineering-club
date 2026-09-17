@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { dataService } from '../services/dataService';
-import { supabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from '../services/supabaseClient';
-import { sound } from '../utils/soundEngine';
+import { getSupabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from '../services/supabaseClient';
 import { ClubLogo } from './ClubLogo';
 import {
   downloadCsv,
@@ -9,7 +8,6 @@ import {
   logSecurityEvent,
   type SecurityAuditEntry
 } from '../utils/security';
-import { safeStorage } from '../services/safeStorage';
 import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
 import { CommitteeBadgeModal } from './CommitteeBadgeModal';
 import { exportCardAsImage, printCardAsPdf } from '../utils/cardExporter';
@@ -130,19 +128,8 @@ const processImageFile = (
   reader.readAsDataURL(file);
 };
 
-const AVATAR_PRESETS = [
-  { label: 'افتراضي هندسي', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80' },
-  { label: 'رسمي 1', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80' },
-  { label: 'رسمية 1', url: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&auto=format&fit=crop&q=80' },
-  { label: 'رسمي 2', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80' },
-  { label: 'رسمي 3', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80' },
-  { label: 'رسمي 4', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80' },
-  { label: 'رسمية 2', url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&auto=format&fit=crop&q=80' },
-  { label: 'رسمية 3', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80' },
-  { label: 'رسمي 5', url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&auto=format&fit=crop&q=80' },
-];
-
-const DEFAULT_AVATAR = AVATAR_PRESETS[0].url;
+// Shown in the dashboard when a person has no photo yet
+const DEFAULT_AVATAR = '/brand/emblem.png';
 
 const ROLE_TEMPLATES = [
   {
@@ -208,7 +195,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [authError, setAuthError] = useState<string | null>(null);
   const [isVerifyingAuth, setIsVerifyingAuth] = useState(false);
   const [auditLogs, setAuditLogs] = useState<SecurityAuditEntry[]>([]);
-  const [storageHealth, setStorageHealth] = useState(safeStorage.getHealth());
   const [currentAdminPass, setCurrentAdminPass] = useState('');
   const [newAdminPass, setNewAdminPass] = useState('');
   const [confirmAdminPass, setConfirmAdminPass] = useState('');
@@ -216,6 +202,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [appCommitteeFilter, setAppCommitteeFilter] = useState<string>('الكل');
   const [dispatchModalApp, setDispatchModalApp] = useState<StoredApplication | null>(null);
   const [emailConfig, setEmailConfig] = useState<EmailConfig>(emailService.getConfig());
+  const lastEmailConfig = useRef<EmailConfig | null>(null);
 
   const [activeTab, setActiveTab] = useState<'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud' | 'security'>('applications');
 
@@ -266,7 +253,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     role: '',
     tier: 'committee-lead',
     department: '',
-    avatar: AVATAR_PRESETS[0].url,
+    avatar: '',
     quote: '',
     email: '',
     linkedin: '',
@@ -342,6 +329,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setSpotlight(dataService.getSpotlight());
     setComplaints(dataService.getComplaints());
     setRecruitmentSettings(dataService.getRecruitmentSettings());
+    const savedEmailConfig = dataService.getEmailConfig();
+    if (savedEmailConfig && savedEmailConfig !== lastEmailConfig.current) {
+      lastEmailConfig.current = savedEmailConfig;
+      setEmailConfig(savedEmailConfig);
+    }
   };
 
   
@@ -380,7 +372,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       role: '',
       tier: 'committee-lead',
       department: '',
-      avatar: AVATAR_PRESETS[0].url,
+      avatar: '',
       quote: '',
       email: '',
       linkedin: '',
@@ -407,7 +399,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         const updated: LeaderMember = { ...leader, avatar: dataUrl };
         dataService.saveLeader(updated);
         setLeadership(dataService.getLeadership());
-        sound.playSuccess();
         showToast(`تم تحديث صورة المهندس (${leader.name}) بنجاح`);
       },
       (err) => showToast(err)
@@ -416,8 +407,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
   const handleResetLeaderAvatar = (leader: LeaderMember) => {
     if (window.confirm(`هل أنت متأكد من حذف صورة (${leader.name}) واستعادة الصورة الافتراضية؟`)) {
-      sound.playClick();
-      const updated: LeaderMember = { ...leader, avatar: DEFAULT_AVATAR };
+      const updated: LeaderMember = { ...leader, avatar: '' };
       dataService.saveLeader(updated);
       setLeadership(dataService.getLeadership());
       showToast(`تم حذف صورة (${leader.name}) وتعيين الصورة الافتراضية`);
@@ -439,7 +429,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       role: leaderForm.role || '',
       tier: leaderForm.tier || 'committee-lead',
       department: leaderForm.department || '',
-      avatar: leaderForm.avatar || AVATAR_PRESETS[0].url,
+      avatar: leaderForm.avatar || '',
       quote: leaderForm.quote || '',
       email: leaderForm.email || '',
       linkedin: leaderForm.linkedin,
@@ -449,7 +439,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
     dataService.saveLeader(saved);
     setLeadership(dataService.getLeadership());
-    sound.playSuccess();
     setShowLeaderModal(false);
     setEditingLeader(null);
     showToast(`تم حفظ بيانات المهندس (${saved.name}) بنجاح`);
@@ -459,7 +448,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     if (window.confirm(`هل أنت متأكد من حذف عضو الكادر (${name})؟`)) {
       dataService.deleteLeader(id);
       setLeadership(dataService.getLeadership());
-      sound.playClick();
       showToast(`تم حذف عضو الكادر (${name})`);
     }
   };
@@ -468,7 +456,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!editingCollege) return;
     dataService.saveCollege(editingCollege);
-    sound.playSuccess();
     setEditingCollege(null);
   };
 
@@ -476,14 +463,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!editingMajor) return;
     dataService.saveMajor(editingMajor);
-    sound.playSuccess();
     setEditingMajor(null);
   };
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     dataService.saveSettings(settings);
-    sound.playSuccess();
     setSettingsSavedMsg(true);
     setTimeout(() => setSettingsSavedMsg(false), 3000);
   };
@@ -491,7 +476,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const handleSaveSpotlight = (e: React.FormEvent) => {
     e.preventDefault();
     dataService.saveSpotlight(spotlight);
-    sound.playSuccess();
     setSpotlightSavedMsg(true);
     setTimeout(() => setSpotlightSavedMsg(false), 3000);
   };
@@ -503,13 +487,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     });
 
     const unsubscribeErrors = dataService.subscribeErrors((message) => {
-      sound.playError();
       showToast(`⚠️ ${message}`);
     });
 
     // Restore an existing admin session (Supabase keeps it in the browser)
-    if (supabase) {
-      supabase.auth.getSession().then(async ({ data }) => {
+    if (isSupabaseConfigured) {
+      getSupabase().then(async (supabase) => {
+        const { data } = await supabase.auth.getSession();
         if (data.session && (await checkIsAdmin())) {
           setIsAuthenticated(true);
           await dataService.loadAdminData().catch(() => undefined);
@@ -524,14 +508,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   }, []);
 
   async function checkIsAdmin(): Promise<boolean> {
-    if (!supabase) return false;
+    if (!isSupabaseConfigured) return false;
+    const supabase = await getSupabase();
     const { data, error } = await supabase.rpc('is_club_admin');
     return !error && data === true;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) {
+    if (!isSupabaseConfigured) {
       setAuthError('قاعدة البيانات غير مربوطة (متغيرات Supabase غير معرّفة).');
       return;
     }
@@ -539,9 +524,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setIsVerifyingAuth(true);
     setAuthError(null);
     try {
+      const supabase = await getSupabase();
       const { error } = await supabase.auth.signInWithPassword({ email: adminEmail.trim(), password: passcode });
       if (error) {
-        sound.playError();
         logSecurityEvent('LOGIN_FAILED', `محاولة دخول فاشلة للحساب ${adminEmail.trim()}`);
         setAuthError('الإيميل أو كلمة المرور غير صحيحة.');
         return;
@@ -549,18 +534,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
       if (!(await checkIsAdmin())) {
         await supabase.auth.signOut();
-        sound.playError();
         logSecurityEvent('LOGIN_FAILED', `حساب بدون صلاحية مشرف: ${adminEmail.trim()}`);
         setAuthError('هذا الحساب لا يملك صلاحية الإدارة.');
         return;
       }
 
-      sound.playSuccess();
       logSecurityEvent('LOGIN_SUCCESS', `تسجيل دخول إداري ناجح: ${adminEmail.trim()}`);
       setIsAuthenticated(true);
       setPasscode('');
       setAuditLogs(getSecurityAuditLogs());
-      setStorageHealth(safeStorage.getHealth());
       await dataService.loadAdminData().catch(() => undefined);
     } finally {
       setIsVerifyingAuth(false);
@@ -568,8 +550,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   };
 
   const handleLogout = async () => {
-    sound.playClick();
-    await supabase?.auth.signOut();
+    if (isSupabaseConfigured) await (await getSupabase()).auth.signOut();
     dataService.clearAdminData();
     setIsAuthenticated(false);
     setPasscode('');
@@ -577,7 +558,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   };
 
   const handleRefreshData = async () => {
-    sound.playClick();
     setIsRefreshingData(true);
     try {
       await dataService.loadAdminData();
@@ -592,17 +572,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newAdminPass !== confirmAdminPass) {
-      sound.playError();
       setChangePassStatus({ message: 'كلمة المرور الجديدة وتأكيدها غير متطابقين.', isError: true });
       return;
     }
     if (newAdminPass.length < 8) {
-      sound.playError();
       setChangePassStatus({ message: 'يجب أن تتكون كلمة المرور الجديدة من 8 خانات على الأقل.', isError: true });
       return;
     }
-    if (!supabase) return;
+    if (!isSupabaseConfigured) return;
 
+    const supabase = await getSupabase();
     const { data: userData } = await supabase.auth.getUser();
     const email = userData.user?.email;
     if (!email) {
@@ -612,19 +591,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
     const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentAdminPass });
     if (verifyError) {
-      sound.playError();
       setChangePassStatus({ message: 'كلمة المرور الحالية غير صحيحة.', isError: true });
       return;
     }
 
     const { error } = await supabase.auth.updateUser({ password: newAdminPass });
     if (error) {
-      sound.playError();
       setChangePassStatus({ message: `تعذر تغيير كلمة المرور: ${error.message}`, isError: true });
       return;
     }
 
-    sound.playSuccess();
     logSecurityEvent('PASSWORD_CHANGED', `تم تغيير كلمة مرور الحساب ${email}`);
     setChangePassStatus({ message: 'تم تحديث كلمة المرور بنجاح.', isError: false });
     setCurrentAdminPass('');
@@ -635,7 +611,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
   // Status update
   const handleUpdateAppStatus = (id: string, status: StoredApplication['status']) => {
-    sound.playClick();
     dataService.updateApplicationStatus(id, status);
     if (status === 'تم القبول') {
       const found = applications.find((a) => a.id === id);
@@ -648,7 +623,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   // Delete single application
   const handleDeleteApplication = (id: string, name: string) => {
     if (window.confirm(`هل أنت متأكد من حذف طلب الانضمام الخاص بـ (${name}) نهائياً؟`)) {
-      sound.playClick();
       dataService.deleteApplication(id);
       showToast(`تم حذف طلب (${name}) بنجاح`);
       if (inspectApp?.id === id) {
@@ -662,7 +636,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     const rejectedList = applications.filter((a) => a.status === 'مرفوض');
     if (rejectedList.length === 0) return;
     if (window.confirm(`هل أنت متأكد من حذف كافة الطلبات المرفوضة (${rejectedList.length} طلب) نهائياً من النظام؟`)) {
-      sound.playClick();
       const removedCount = dataService.deleteRejectedApplications();
       showToast(`تم حذف ${removedCount} طلب مرفوض بنجاح`);
       if (inspectApp?.status === 'مرفوض') {
@@ -676,7 +649,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!newProject.title?.trim()) return;
 
-    sound.playSuccess();
     const proj: ProjectCaseStudy = {
       id: `proj-${Date.now()}`,
       title: newProject.title || 'مشروع هندسي جديد',
@@ -713,7 +685,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!newEvent.title?.trim()) return;
 
-    sound.playSuccess();
     const ev: EventItem = {
       id: `event-${Date.now()}`,
       title: newEvent.title || 'فعالية هندسية',
@@ -735,7 +706,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
   // Edit Project Handlers
   const handleOpenEditProject = (proj: ProjectCaseStudy) => {
-    sound.playClick();
     setEditingProject({ ...proj });
     setEditingProjectTechStack((proj.techStack || []).join(', '));
   };
@@ -753,13 +723,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     dataService.saveProject(updated);
     setProjects(dataService.getProjects());
     setEditingProject(null);
-    sound.playSuccess();
     showToast(`تم حفظ وتحديث مشروع (${updated.title}) بنجاح`);
   };
 
   // Edit Event Handlers
   const handleOpenEditEvent = (ev: EventItem) => {
-    sound.playClick();
     setEditingEvent({ ...ev });
     setEditingEventPrereqs((ev.prerequisites || []).join(', '));
   };
@@ -778,14 +746,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     dataService.saveEvent(updated);
     setEvents(dataService.getEvents());
     setEditingEvent(null);
-    sound.playSuccess();
     showToast(`تم حفظ وتحديث فعالية (${updated.title}) بنجاح`);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#08041D] w-screen h-screen overflow-hidden text-right select-none animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#08041D] w-screen h-screen overflow-hidden text-right animate-in fade-in duration-200">
       <div
         className="relative w-full h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -797,9 +764,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-extrabold text-white text-base">لوحة الإدارة الهندسية المركزية</span>
-                <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#381C4A] text-[#3FE7E3] border border-[#3FE7E3]/30 font-bold">
-                  ENG-ADMIN v3.0
-                </span>
                 <span className="hidden md:inline-flex items-center gap-1 font-mono text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold">
                   {settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}
                 </span>
@@ -830,7 +794,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
             <button
               onClick={() => {
-                sound.playClick();
                 onClose();
               }}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/40 text-cyan-300 hover:text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-md"
@@ -858,7 +821,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 font-mono text-xs mb-3">
               <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-              <span>SECURE ACCESS // بوابة المشرفين المعتمدة</span>
+              <span>بوابة المشرفين</span>
             </div>
 
             <h3 className="text-2xl sm:text-3xl font-black text-white mb-2">تسجيل دخول إدارة النادي الهندسي</h3>
@@ -920,7 +883,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 min-w-0">
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('applications');
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -935,7 +897,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('projects');
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -950,7 +911,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('events');
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -965,7 +925,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('complaints');
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -985,7 +944,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('leadership');
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -1000,7 +958,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('colleges');
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -1015,7 +972,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('settings');
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -1030,7 +986,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('cloud');
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
@@ -1045,10 +1000,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <button
                   onClick={() => {
-                    sound.playClick();
                     setActiveTab('security');
                     setAuditLogs(getSecurityAuditLogs());
-                    setStorageHealth(safeStorage.getHealth());
                   }}
                   className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
                     activeTab === 'security'
@@ -1064,7 +1017,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               {/* Status Telemetry */}
               <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] text-gray-400 shrink-0 border-r border-white/10 pr-3">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>ONLINE</span>
+                <span>متصل بقاعدة البيانات</span>
               </div>
             </div>
 
@@ -1157,7 +1110,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         };
                         setRecruitmentSettings(updated);
                         dataService.saveRecruitmentSettings(updated);
-                        sound.playClick();
                       }}
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-red-950/50 hover:bg-red-900/60 border border-red-500/40 text-red-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
                     >
@@ -1208,7 +1160,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               };
                               setRecruitmentSettings(updated);
                               dataService.saveRecruitmentSettings(updated);
-                              sound.playClick();
                             }}
                             className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
                               isCommOpen
@@ -1288,7 +1239,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                     <button
                       onClick={() => {
-                        sound.playClick();
                         const headers = ['الاسم الكامل', 'الرقم الجامعي', 'الكلية', 'التخصص', 'السنة الدراسية', 'اللجنة المستهدفة', 'البريد الإلكتروني', 'رقم الهاتف', 'الحالة', 'تاريخ التقديم'];
                         const rows = applications.map((a) => [
                           a.fullName,
@@ -1649,7 +1599,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <button
                           onClick={() => {
                             if (window.confirm(`هل أنت متأكد من حذف مشروع (${proj.title})؟`)) {
-                              sound.playClick();
                               dataService.deleteProject(proj.id);
                               setProjects(dataService.getProjects());
                               showToast(`تم حذف مشروع (${proj.title})`);
@@ -1839,7 +1788,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                             <button
                               onClick={() => {
-                                sound.playClick();
                                 const headers = ['رقم التذكرة', 'اسم الحاضر', 'الرقم الجامعي', 'تاريخ التسجيل', 'حالة الحضور'];
                                 const rows = eventTickets.map((t) => [
                                   t.ticketNumber,
@@ -1870,7 +1818,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             <button
                               onClick={() => {
                                 if (window.confirm(`هل أنت متأكد من حذف فعالية (${ev.title})؟`)) {
-                                  sound.playClick();
                                   dataService.deleteEvent(ev.id);
                                   setEvents(dataService.getEvents());
                                   showToast(`تم حذف فعالية (${ev.title})`);
@@ -1940,7 +1887,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
-                        sound.playClick();
                         const headers = ['رقم التذكرة', 'الاسم', 'الرقم الجامعي', 'الكلية', 'التصنيف', 'الموضوع', 'الرسالة', 'الحالة', 'تاريخ الإرسال'];
                         const rows = complaints.map((c) => [
                           c.ticketNumber,
@@ -2451,7 +2397,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               {/* Avatar with Direct Upload & Delete Actions */}
                               <div className="relative group/avatar shrink-0">
                                 <img
-                                  src={leader.avatar}
+                                  src={leader.avatar || DEFAULT_AVATAR}
                                   alt={leader.name}
                                   className="w-16 h-16 rounded-2xl object-cover border-2 border-white/10 shadow-md group-hover/avatar:border-cyan-400/60 transition-all"
                                   onError={(e) => {
@@ -2576,7 +2522,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <div>
                       <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-950/70 border border-cyan-500/30 text-cyan-300 font-mono text-[11px] mb-1.5">
                         <Users className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>EXECUTIVE COMMITTEES TASKFORCE // فرق العمل المعتمدة</span>
+                        <span>فرق عمل اللجان</span>
                       </div>
                       <h4 className="text-base font-bold text-white">كوادر وأعضاء اللجان التنفيذية المعتمدين</h4>
                       <p className="text-xs text-gray-400">
@@ -2657,7 +2603,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    sound.playClick();
                                     setViewingCommitteeApp(member);
                                   }}
                                   className="w-full py-1.5 px-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
@@ -2735,12 +2680,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           {/* Coordinator Cardlet */}
                           <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 flex items-center gap-3 mb-3">
                             <img
-                              src={col.coordinator.avatar}
+                              src={col.coordinator.avatar || DEFAULT_AVATAR}
                               alt={col.coordinator.name}
                               className="w-10 h-10 rounded-xl object-cover border border-white/10 shrink-0"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+                                (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
                               }}
                             />
                             <div className="flex-1 min-w-0">
@@ -3027,7 +2971,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         type="button"
                         onClick={() => {
                           emailService.saveConfig(emailConfig);
-                          sound.playSuccess();
                           showToast('تم حفظ إعدادات إرسال الإيميلات بنجاح!');
                         }}
                         className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
@@ -3383,7 +3326,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                     file,
                                     (dataUrl) => {
                                       setSpotlight({ ...spotlight, avatar: dataUrl });
-                                      sound.playSuccess();
                                       showToast('تم تحميل صورة نجم الشهر بنجاح');
                                     },
                                     (err) => showToast(err)
@@ -3395,8 +3337,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <button
                             type="button"
                             onClick={() => {
-                              sound.playClick();
-                              setSpotlight({ ...spotlight, avatar: DEFAULT_AVATAR });
+                              setSpotlight({ ...spotlight, avatar: '' });
                               showToast('تم حذف صورة نجم الشهر وتعيين الصورة الافتراضية');
                             }}
                             className="px-2.5 py-1 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white text-xs flex items-center gap-1 cursor-pointer transition-all active:scale-95"
@@ -3419,7 +3360,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       <div className="flex items-center gap-3">
                         <div className="relative shrink-0">
                           <img
-                            src={spotlight.avatar}
+                            src={spotlight.avatar || DEFAULT_AVATAR}
                             alt={spotlight.name}
                             className="w-14 h-14 rounded-2xl object-cover border-2 border-amber-400/40 shrink-0"
                             onError={(e) => {
@@ -3445,7 +3386,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                     file,
                                     (dataUrl) => {
                                       setSpotlight({ ...spotlight, avatar: dataUrl });
-                                      sound.playSuccess();
                                       showToast('تم تحميل صورة نجم الشهر بنجاح');
                                     },
                                     (err) => showToast(err)
@@ -3457,8 +3397,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <button
                             type="button"
                             onClick={() => {
-                              sound.playClick();
-                              setSpotlight({ ...spotlight, avatar: DEFAULT_AVATAR });
+                              setSpotlight({ ...spotlight, avatar: '' });
                               showToast('تم استعادة الصورة الافتراضية');
                             }}
                             className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-red-950/90 hover:bg-red-800 border border-red-500/60 text-red-400 hover:text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95"
@@ -3476,28 +3415,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               className="w-full px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white font-mono"
                               placeholder="https://..."
                             />
-                          ) : (
-                            <div className="flex flex-wrap gap-1.5">
-                              {AVATAR_PRESETS.slice(0, 6).map((p, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => {
-                                    setSpotlight({ ...spotlight, avatar: p.url });
-                                    sound.playClick();
-                                  }}
-                                  className={`w-7 h-7 rounded-lg overflow-hidden border transition-all cursor-pointer ${
-                                    spotlight.avatar === p.url
-                                      ? 'border-amber-400 ring-2 ring-amber-400/40 scale-105'
-                                      : 'border-white/10 opacity-70 hover:opacity-100'
-                                  }`}
-                                  title={p.label}
-                                >
-                                  <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
-                                </button>
-                              ))}
-                            </div>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -3587,7 +3505,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   <div className="flex flex-wrap gap-2 pt-2">
                     <button
                       onClick={() => {
-                        sound.playClick();
                         const jsonStr = dataService.exportFullDatabaseJSON();
                         const blob = new Blob([jsonStr], { type: 'application/json' });
                         const link = document.createElement('a');
@@ -3605,7 +3522,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       onClick={() => {
                         if (window.confirm('سيتم حذف كل تعديلات محتوى الموقع (الإعدادات، المشاريع، الفعاليات، القيادة...) من قاعدة البيانات والرجوع للمحتوى الأصلي. الطلبات والشكاوى لن تُحذف. هل أنت متأكد؟')) {
                           dataService.resetDefaults();
-                          sound.playSuccess();
                         }
                       }}
                       className="px-4 py-2 rounded-xl bg-red-950/40 hover:bg-red-950/80 border border-red-500/30 text-xs font-mono text-red-300 cursor-pointer"
@@ -3623,98 +3539,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 font-mono text-xs mb-2">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>SECURITY & SYSTEM RESILIENCE // مركز الحماية والرقابة</span>
+                    <span>الأمان والحساب</span>
                   </div>
                   <h3 className="text-base font-bold text-white">إعدادات الأمان وسجل النظام والرقابة</h3>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    إدارة كلمة المرور المشفرة للوحة التحكم، مراقبة استهلاك سعة التخزين المحلي، وتتبع سجل العمليات الأمنية.
+                    تغيير كلمة مرور حسابك، ومراجعة سجل عمليات الدخول على هذا الجهاز.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Card: Email & WhatsApp Dispatch Configuration */}
-                  <div className="p-6 rounded-2xl bg-black/40 border border-cyan-500/30 space-y-4 lg:col-span-2">
-                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-cyan-400" />
-                        <div>
-                          <h4 className="text-sm font-bold text-white">إعدادات الإرسال التلقائي لإيميلات القبول (EmailJS Integration)</h4>
-                          <p className="text-[11px] text-gray-400">ربط المنصة بحساب إيميل النادي لإرسال رسائل القبول وبطاقات العضوية تلقائياً للطلبة</p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30">
-                        EMAIL DISPATCH
-                      </span>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-gray-300 leading-relaxed">
-                      💡 <strong>ملاحظة للمشرف:</strong> خيار الإرسال المباشر عبر <strong>Gmail</strong> وخيار <strong>واتساب</strong> يعملان فورياً وبنقرة واحدة لجميع الطلبة دون الحاجة لأي إعدادات. إذا رغبت بإرسال الإيميلات تلقائياً في الخلفية، يمكنك ربط حسابك المجاني في EmailJS وإدخال المفاتيح أدناه.
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                      <div>
-                        <label className="block text-gray-300 mb-1 font-mono">Service ID:</label>
-                        <input
-                          type="text"
-                          placeholder="service_xxxxxxx"
-                          value={emailConfig.serviceId}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, serviceId: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-1 font-mono">Template ID:</label>
-                        <input
-                          type="text"
-                          placeholder="template_xxxxxxx"
-                          value={emailConfig.templateId}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, templateId: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-1 font-mono">Public Key (User ID):</label>
-                        <input
-                          type="text"
-                          placeholder="user_xxxxxxx / xxxxx"
-                          value={emailConfig.publicKey}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, publicKey: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-300 mb-1 font-mono">إيميل مرسل النادي:</label>
-                        <input
-                          type="email"
-                          placeholder="eng.club@up.edu.ps"
-                          value={emailConfig.senderEmail}
-                          onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          emailService.saveConfig(emailConfig);
-                          sound.playSuccess();
-                          showToast('تم حفظ إعدادات إرسال الإيميلات بنجاح!');
-                        }}
-                        className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                        <span>حفظ إعدادات الإيميل</span>
-                      </button>
-                    </div>
-                  </div>
                   {/* Card 1: Change Master Password */}
                   <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-white/10">
                       <h4 className="text-sm font-bold text-white flex items-center gap-2">
                         <Lock className="w-4 h-4 text-cyan-400" />
-                        <span>تغيير الرمز السري الرئيسي للإدارة</span>
+                        <span>تغيير كلمة مرور حسابك</span>
                       </h4>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
                         SUPABASE AUTH
@@ -3780,76 +3619,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </form>
                   </div>
 
-                  {/* Card 2: Local Storage Health & Quota Safety */}
-                  <div className="p-6 rounded-2xl bg-black/40 border border-white/10 space-y-4 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                          <Database className="w-4 h-4 text-emerald-400" />
-                          <span>سلامة وسعة التخزين المحلي (Storage Health)</span>
-                        </h4>
-                        <span
-                          className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                            storageHealth.status === 'healthy'
-                              ? 'bg-emerald-950 text-emerald-300 border-emerald-500/30'
-                              : storageHealth.status === 'warning'
-                              ? 'bg-amber-950 text-amber-300 border-amber-500/30'
-                              : 'bg-red-950 text-red-300 border-red-500/30'
-                          }`}
-                        >
-                          {storageHealth.status === 'healthy'
-                            ? '🟢 وضع ممتاز وآمن'
-                            : storageHealth.status === 'warning'
-                            ? '🟡 يقترب من الحد'
-                            : '🔴 حرج'}
-                        </span>
-                      </div>
-
-                      <div className="space-y-3 text-xs">
-                        <div className="flex justify-between items-center text-gray-300">
-                          <span>المساحة المستهلكة حالياً:</span>
-                          <span className="font-mono font-bold text-white">
-                            {storageHealth.usedKb} KB من أصل {storageHealth.maxKb} KB ({storageHealth.percent}%)
-                          </span>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="w-full h-3 rounded-full bg-black/60 border border-white/10 overflow-hidden p-0.5">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              storageHealth.status === 'healthy'
-                                ? 'bg-emerald-400'
-                                : storageHealth.status === 'warning'
-                                ? 'bg-amber-400'
-                                : 'bg-red-500'
-                            }`}
-                            style={{ width: `${Math.max(4, storageHealth.percent)}%` }}
-                          />
-                        </div>
-
-                        <div className="flex justify-between items-center text-gray-400 text-[11px]">
-                          <span>عدد السجلات والمفاتيح النشطة:</span>
-                          <span className="font-mono text-cyan-300">{storageHealth.itemCount} ملف بيانات</span>
-                        </div>
-
-                        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-gray-400 leading-relaxed">
-                          🛡️ درع <strong className="text-white">SafeStorage</strong> مفعل تلقائياً لمنع أي انهيار تحت ضغط الاستخدام. يقوم النظام بحجب أخطاء سعة الذاكرة وحماية كافة البيانات.
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStorageHealth(safeStorage.getHealth());
-                        showToast('تم تحديث مؤشر صحة التخزين بنجاح');
-                      }}
-                      className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>إعادة فحص واختبار سعة التخزين الآن</span>
-                    </button>
-                  </div>
                 </div>
 
                 {/* Card 3: Security & Activity Audit Log */}
@@ -3869,7 +3638,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       type="button"
                       onClick={() => {
                         setAuditLogs(getSecurityAuditLogs());
-                        sound.playClick();
                       }}
                       className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs flex items-center gap-1 cursor-pointer"
                     >
@@ -4091,7 +3859,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               <div className="text-center mb-5">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-xs mb-1.5 shadow-sm">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>بطاقة عضوية رقمية معتمدة // CERTIFIED PASS</span>
+                  <span>بطاقة العضوية الرقمية</span>
                 </div>
                 <h3 className="text-lg sm:text-xl font-black text-white">بطاقة العضوية الرسمية</h3>
                 <p className="text-xs text-gray-400 mt-0.5">النادي الهندسي — جامعة فلسطين</p>
@@ -4223,7 +3991,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <button
                   type="button"
                   onClick={() => {
-                    sound.playSuccess();
                     const text = `🎉 تهانينا يا م. ${viewingBadgeApp.fullName}!\nتم قبول انضمامك رسمياً للنادي الهندسي بجامعة فلسطين.\nنوع العضوية: ${viewingBadgeApp.targetCommittee}\nرقم الاعتماد: UP-ENG-${(viewingBadgeApp.id || 'VALID').slice(-8).toUpperCase()}\nأهلاً بك معنا في صُنع أثر الغد! 🚀`;
                     navigator.clipboard.writeText(text);
                     showToast('تم نسخ رسالة القبول والاعتماد للحافظة بنجاح!');
@@ -4278,7 +4045,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         file,
                         (dataUrl) => {
                           setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
-                          sound.playSuccess();
                           showToast('تم سحب وإدراج الصورة بنجاح');
                         },
                         (err) => showToast(err)
@@ -4318,7 +4084,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               file,
                               (dataUrl) => {
                                 setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
-                                sound.playSuccess();
                                 showToast('تم تحميل وتحديث الصورة بنجاح');
                               },
                               (err) => showToast(err)
@@ -4334,8 +4099,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        sound.playClick();
-                        setLeaderForm((prev) => ({ ...prev, avatar: DEFAULT_AVATAR }));
+                        setLeaderForm((prev) => ({ ...prev, avatar: '' }));
                         showToast('تم حذف الصورة واستعادة الصورة الافتراضية');
                       }}
                       className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-red-950/90 hover:bg-red-800 border border-red-500/60 text-red-400 hover:text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95"
@@ -4370,7 +4134,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                 file,
                                 (dataUrl) => {
                                   setLeaderForm((prev) => ({ ...prev, avatar: dataUrl }));
-                                  sound.playSuccess();
                                   showToast('تم تحميل الصورة بنجاح');
                                 },
                                 (err) => showToast(err)
@@ -4384,8 +4147,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       <button
                         type="button"
                         onClick={() => {
-                          sound.playClick();
-                          setLeaderForm((prev) => ({ ...prev, avatar: DEFAULT_AVATAR }));
+                          setLeaderForm((prev) => ({ ...prev, avatar: '' }));
                           showToast('تم حذف الصورة واستعادة الصورة الافتراضية');
                         }}
                         className="px-3.5 py-1.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/40 text-red-300 hover:text-white text-xs flex items-center gap-1.5 cursor-pointer shadow-md transition-all active:scale-95"
@@ -4419,39 +4181,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       </div>
                     )}
 
-                    {/* Presets Row */}
-                    <div className="pt-2 border-t border-white/5">
-                      <div className="text-[10px] text-gray-300 mb-1.5 font-mono flex items-center justify-between">
-                        <span className="font-bold text-white">النماذج الافتراضية الجاهزة:</span>
-                        <span className="text-[9px] text-cyan-400">انقر لاختيار نموذج افتراضي</span>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
-                        {AVATAR_PRESETS.map((p, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => {
-                              setLeaderForm((prev) => ({ ...prev, avatar: p.url }));
-                              sound.playClick();
-                              showToast(`تم تعيين النموذج الافتراضي: ${p.label}`);
-                            }}
-                            className={`relative w-8 h-8 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                              leaderForm.avatar === p.url
-                                ? 'border-cyan-400 ring-2 ring-cyan-400/60 scale-110 z-10'
-                                : 'border-white/10 hover:border-cyan-400/50 opacity-70 hover:opacity-100 hover:scale-105'
-                            }`}
-                            title={p.label}
-                          >
-                            <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
-                            {leaderForm.avatar === p.url && (
-                              <div className="absolute inset-0 bg-cyan-500/25 flex items-center justify-center">
-                                <Check className="w-3 h-3 text-cyan-300 drop-shadow" />
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -4467,7 +4196,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         key={idx}
                         type="button"
                         onClick={() => {
-                          sound.playClick();
                           setLeaderForm((prev) => ({
                             ...prev,
                             role: tmpl.role,
@@ -4716,7 +4444,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                         ...editingCollege,
                                         coordinator: { ...editingCollege.coordinator, avatar: dataUrl },
                                       });
-                                      sound.playSuccess();
                                       showToast('تم تحديث صورة المنسق بنجاح');
                                     },
                                     (err) => showToast(err)
@@ -4729,10 +4456,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           <button
                             type="button"
                             onClick={() => {
-                              sound.playClick();
                               setEditingCollege({
                                 ...editingCollege,
-                                coordinator: { ...editingCollege.coordinator, avatar: DEFAULT_AVATAR },
+                                coordinator: { ...editingCollege.coordinator, avatar: '' },
                               });
                               showToast('تم استعادة الصورة الافتراضية');
                             }}
@@ -4766,27 +4492,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           />
                         )}
 
-                        {/* Presets */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-                          <span className="text-[10px] text-gray-500 font-mono shrink-0">نماذج جاهزة:</span>
-                          {AVATAR_PRESETS.slice(0, 5).map((preset, pIdx) => (
-                            <button
-                              key={pIdx}
-                              type="button"
-                              onClick={() => {
-                                sound.playClick();
-                                setEditingCollege({
-                                  ...editingCollege,
-                                  coordinator: { ...editingCollege.coordinator, avatar: preset.url },
-                                });
-                              }}
-                              className="w-6 h-6 rounded-lg overflow-hidden border border-white/10 hover:border-cyan-400 shrink-0 cursor-pointer"
-                              title={preset.label}
-                            >
-                              <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     </div>
                   </div>

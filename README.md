@@ -1,32 +1,63 @@
-# React + TypeScript + Vite
+# النادي الهندسي — جامعة فلسطين
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+الموقع الرسمي للنادي الهندسي: التعريف بالنادي والكليات والتخصصات، طلبات الانضمام، الشكاوى والمقترحات، التحقق من بطاقات العضوية، ولوحة إدارة للمشرفين.
 
-Currently, two official plugins are available:
+- الموقع: https://engineering-club-phi.vercel.app
+- لوحة الإدارة: https://engineering-club-phi.vercel.app/#/admin
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## التقنيات
 
-## React Compiler
+React 19 · TypeScript · Vite · Tailwind CSS 4 · Supabase (قاعدة البيانات وتسجيل دخول المشرفين) · Vercel
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## التشغيل محلياً
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+أنشئ ملف `.env.local` في جذر المشروع:
+
+```
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon / publishable key>
+```
+
+المفتاح هنا عام بطبيعته؛ الحماية الفعلية عبر سياسات RLS في قاعدة البيانات. لا تضع مفتاح `service_role` في المشروع أبداً.
+
+## قاعدة البيانات
+
+المخطط الكامل وسياسات الحماية في [`supabase/schema.sql`](supabase/schema.sql) — يُشغّل من Supabase → SQL Editor، وهو آمن لإعادة التشغيل.
+
+| الجدول / الدالة | الوصف | من يصل إليه |
+|---|---|---|
+| `club_content` | محتوى الموقع (الإعدادات، الفعاليات، المشاريع، القيادة...) كمفاتيح JSON | قراءة للجميع، كتابة للمشرف |
+| `club_applications` | طلبات الانضمام | المشرف فقط |
+| `club_complaints` | الشكاوى والمقترحات | المشرف فقط |
+| `club_admins` | حسابات المشرفين | — |
+| `submit_application` · `submit_complaint` | تقديم طلب / شكوى | الجميع |
+| `verify_member` | التحقق من العضوية بالرقم الجامعي أو كود `UP-ENG` (تطابق تام، بدون بيانات تواصل) | الجميع |
+| `track_complaint` | متابعة شكوى برقم التذكرة | الجميع |
+
+### إضافة مشرف
+
+1. Supabase → Authentication → Users → Add user.
+2. في SQL Editor:
+
+```sql
+insert into public.club_admins (user_id)
+select id from auth.users where email = 'admin@example.com'
+on conflict do nothing;
+```
+
+## النشر
+
+Vercel يبني الموقع تلقائياً عند كل push على `main`. متغيرات `VITE_SUPABASE_URL` و `VITE_SUPABASE_ANON_KEY` معرّفة في إعدادات المشروع على Vercel؛ أي تعديل عليها يحتاج Redeploy.
+
+## الأوامر
+
+| الأمر | الوظيفة |
+|---|---|
+| `npm run dev` | سيرفر التطوير |
+| `npm run build` | فحص TypeScript + بناء نسخة الإنتاج |
+| `npm run lint` | فحص الكود (oxlint) |

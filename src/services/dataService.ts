@@ -1,5 +1,6 @@
 import { safeStorage } from './safeStorage';
-import { supabase, requireSupabase } from './supabaseClient';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { getSupabase, isSupabaseConfigured, publicRpc, publicSelect } from './supabaseClient';
 import { sanitizeText, sanitizeUrl } from '../utils/security';
 import { FLAGSHIP_PROJECTS, CLUB_EVENTS, TRAINING_COURSES, LEADERSHIP_MEMBERS, COLLEGES, MAJORS, STUDENT_SPOTLIGHT } from '../data/clubData';
 import type {
@@ -17,6 +18,7 @@ import type {
   ComplaintItem,
   RecruitmentSettings
 } from '../types';
+import type { EmailConfig } from './emailService';
 
 
 
@@ -75,11 +77,12 @@ const CONTENT_KEYS = {
   spotlight: 'spotlight',
   recruitment: 'recruitment',
   tickets: 'tickets',
+  emailConfig: 'emailConfig',
 } as const;
 
 type ContentKey = (typeof CONTENT_KEYS)[keyof typeof CONTENT_KEYS];
 
-const PRIVATE_CONTENT_KEYS: ContentKey[] = ['tickets'];
+const PRIVATE_CONTENT_KEYS: ContentKey[] = ['tickets', 'emailConfig'];
 
 // Local copy of public content only, so the first paint uses the latest published content.
 const PUBLIC_CACHE_KEY = 'eng_club_public_cache_v1';
@@ -95,6 +98,7 @@ interface ContentCache {
   spotlight: StudentSpotlightData;
   recruitment: RecruitmentSettings;
   tickets: EventTicket[];
+  emailConfig: EmailConfig | null;
 }
 
 const defaultContent = (): ContentCache => ({
@@ -108,6 +112,7 @@ const defaultContent = (): ContentCache => ({
   spotlight: STUDENT_SPOTLIGHT,
   recruitment: DEFAULT_RECRUITMENT_SETTINGS,
   tickets: [],
+  emailConfig: null,
 });
 
 interface ApplicationRow {
@@ -213,19 +218,29 @@ class DataService {
   private readPublicCache() {
     const cached = safeStorage.get<Partial<ContentCache> | null>(PUBLIC_CACHE_KEY, null);
     if (cached && typeof cached === 'object') {
-      this.content = { ...this.content, ...cached, tickets: [] };
+      this.content = { ...this.content, ...cached, tickets: [], emailConfig: null };
     }
   }
 
   private writePublicCache() {
-    const { tickets: _private, ...publicContent } = this.content;
+    const publicContent: Partial<ContentCache> = { ...this.content };
+    for (const key of PRIVATE_CONTENT_KEYS) delete publicContent[key];
     safeStorage.set(PUBLIC_CACHE_KEY, publicContent);
   }
 
-  public async loadPublicContent(): Promise<void> {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('club_content').select('key, value');
-    if (error) {
+  /** Pass the admin client to also receive private keys. */
+  public async loadPublicContent(adminClient?: SupabaseClient): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    let data: { key: string; value: unknown }[] | null;
+    try {
+      if (adminClient) {
+        const res = await adminClient.from('club_content').select('key, value');
+        if (res.error) throw res.error;
+        data = res.data;
+      } else {
+        data = await publicSelect<{ key: string; value: unknown }[]>('club_content?select=key,value');
+      }
+    } catch (error) {
       this.reportError('تعذر تحميل محتوى الموقع', error);
       return;
     }
@@ -236,15 +251,20 @@ class DataService {
         (fresh as unknown as Record<string, unknown>)[row.key] = row.value;
       }
     }
-    fresh.tickets = this.content.tickets;
+    const returnedKeys = new Set((data || []).map((row) => row.key));
+    for (const key of PRIVATE_CONTENT_KEYS) {
+      if (!returnedKeys.has(key)) {
+        (fresh as unknown as Record<string, unknown>)[key] = this.content[key];
+      }
+    }
     this.content = fresh;
     this.writePublicCache();
     this.notify();
   }
 
-  /** Loads private data (applications, complaints, tickets). Requires an admin session. */
+  /** Loads private data (applications, complaints, private content). Requires an admin session. */
   public async loadAdminData(): Promise<void> {
-    const client = requireSupabase();
+    const client = await getSupabase();
     const [apps, complaints] = await Promise.all([
       client.from('club_applications').select('*').order('submitted_at', { ascending: false }),
       client.from('club_complaints').select('*').order('created_at', { ascending: false }),
@@ -253,11 +273,8 @@ class DataService {
     if (complaints.error) this.reportError('تعذر تحميل الشكاوى', complaints.error);
     this.applications = ((apps.data || []) as ApplicationRow[]).map(rowToApplication);
     this.complaints = ((complaints.data || []) as ComplaintRow[]).map(rowToComplaint);
-    await this.loadPublicContent();
-
-    const tickets = await client.from('club_content').select('value').eq('key', CONTENT_KEYS.tickets).maybeSingle();
-    if (tickets.error) this.reportError('تعذر تحميل التذاكر', tickets.error);
-    this.content.tickets = Array.isArray(tickets.data?.value) ? (tickets.data!.value as EventTicket[]) : [];
+    // With an admin session this also returns the private keys (tickets, email settings).
+    await this.loadPublicContent(client);
     this.notify();
   }
 
@@ -265,6 +282,7 @@ class DataService {
     this.applications = [];
     this.complaints = [];
     this.content.tickets = [];
+    this.content.emailConfig = null;
     this.notify();
   }
 
@@ -278,7 +296,7 @@ class DataService {
 
   private async persistContent(key: ContentKey, value: unknown) {
     try {
-      const { error } = await requireSupabase()
+      const { error } = await (await getSupabase())
         .from('club_content')
         .upsert({
           key,
@@ -418,31 +436,29 @@ class DataService {
       personalStatement: sanitizeText(app.personalStatement || ''),
       portfolioUrl: sanitizeUrl(app.portfolioUrl),
     };
-    const { data, error } = await requireSupabase().rpc('submit_application', { payload });
-    if (error) throw new Error(error.message);
-    return data as { id: string; status: StoredApplication['status'] };
+    return publicRpc<{ id: string; status: StoredApplication['status'] }>('submit_application', { payload });
   }
 
   public updateApplicationStatus(id: string, status: StoredApplication['status']) {
     this.applications = this.applications.map((a) => (a.id === id ? { ...a, status } : a));
     this.notify();
-    void this.runAdminWrite('فشل تحديث حالة الطلب', () =>
-      requireSupabase().from('club_applications').update({ status }).eq('id', id)
+    void this.runAdminWrite('فشل تحديث حالة الطلب', (client) =>
+      client.from('club_applications').update({ status }).eq('id', id)
     );
   }
 
   public deleteApplication(id: string) {
     this.applications = this.applications.filter((a) => a.id !== id);
     this.notify();
-    void this.runAdminWrite('فشل حذف الطلب', () => requireSupabase().from('club_applications').delete().eq('id', id));
+    void this.runAdminWrite('فشل حذف الطلب', (client) => client.from('club_applications').delete().eq('id', id));
   }
 
   public deleteRejectedApplications(): number {
     const removedCount = this.applications.filter((a) => a.status === 'مرفوض').length;
     this.applications = this.applications.filter((a) => a.status !== 'مرفوض');
     this.notify();
-    void this.runAdminWrite('فشل حذف الطلبات المرفوضة', () =>
-      requireSupabase().from('club_applications').delete().eq('status', 'مرفوض')
+    void this.runAdminWrite('فشل حذف الطلبات المرفوضة', (client) =>
+      client.from('club_applications').delete().eq('status', 'مرفوض')
     );
     return removedCount;
   }
@@ -451,19 +467,26 @@ class DataService {
   public async verifyMember(code: string): Promise<MemberLookup | null> {
     const clean = code.trim();
     if (!clean) return null;
-    const { data, error } = await requireSupabase().rpc('verify_member', { code: clean });
-    if (error) throw new Error(error.message);
-    return (data as MemberLookup | null) || null;
+    return (await publicRpc<MemberLookup | null>('verify_member', { code: clean })) || null;
   }
 
-  private async runAdminWrite(context: string, op: () => PromiseLike<{ error: unknown }>) {
+  private async runAdminWrite(context: string, op: (client: SupabaseClient) => PromiseLike<{ error: unknown }>) {
     try {
-      const { error } = await op();
+      const { error } = await op(await getSupabase());
       if (error) throw error;
     } catch (err) {
       this.reportError(context, err);
       await this.loadAdminData().catch(() => undefined);
     }
+  }
+
+  // --- EMAIL SETTINGS (admin only) ---
+  public getEmailConfig(): EmailConfig | null {
+    return this.content.emailConfig;
+  }
+
+  public saveEmailConfig(config: EmailConfig) {
+    this.setContent('emailConfig', config);
   }
 
   // --- TRAINING COURSES ---
@@ -511,9 +534,7 @@ class DataService {
       subject: sanitizeText(data.subject),
       message: sanitizeText(data.message),
     };
-    const { data: result, error } = await requireSupabase().rpc('submit_complaint', { payload });
-    if (error) throw new Error(error.message);
-    return result as ComplaintItem;
+    return publicRpc<ComplaintItem>('submit_complaint', { payload });
   }
 
   public updateComplaintStatus(id: string, status: ComplaintItem['status'], adminNotes?: string): ComplaintItem | undefined {
@@ -528,8 +549,8 @@ class DataService {
     this.notify();
     const patch: Record<string, unknown> = { status, updated_at: updatedAt };
     if (adminNotes !== undefined) patch.admin_notes = adminNotes;
-    void this.runAdminWrite('فشل تحديث الشكوى', () =>
-      requireSupabase().from('club_complaints').update(patch).eq('id', id)
+    void this.runAdminWrite('فشل تحديث الشكوى', (client) =>
+      client.from('club_complaints').update(patch).eq('id', id)
     );
     return updated;
   }
@@ -537,16 +558,14 @@ class DataService {
   public deleteComplaint(id: string): void {
     this.complaints = this.complaints.filter((c) => c.id !== id);
     this.notify();
-    void this.runAdminWrite('فشل حذف الشكوى', () => requireSupabase().from('club_complaints').delete().eq('id', id));
+    void this.runAdminWrite('فشل حذف الشكوى', (client) => client.from('club_complaints').delete().eq('id', id));
   }
 
   /** Public tracking by the secret ticket number only. */
   public async trackComplaint(ticketNumber: string): Promise<ComplaintItem | null> {
     const clean = ticketNumber.trim();
     if (!clean) return null;
-    const { data, error } = await requireSupabase().rpc('track_complaint', { ticket: clean });
-    if (error) throw new Error(error.message);
-    return (data as ComplaintItem | null) || null;
+    return (await publicRpc<ComplaintItem | null>('track_complaint', { ticket: clean })) || null;
   }
 
   public importDatabaseJSON(jsonStr: string): boolean {
@@ -601,12 +620,12 @@ class DataService {
 
   /** Restores the built-in site content. Applications and complaints are untouched. */
   public resetDefaults() {
-    this.content = { ...defaultContent(), tickets: this.content.tickets };
+    this.content = { ...defaultContent(), tickets: this.content.tickets, emailConfig: this.content.emailConfig };
     this.writePublicCache();
     this.notify();
     void (async () => {
       try {
-        const { error } = await requireSupabase()
+        const { error } = await (await getSupabase())
           .from('club_content')
           .delete()
           .in('key', Object.values(CONTENT_KEYS).filter((k) => !PRIVATE_CONTENT_KEYS.includes(k)));

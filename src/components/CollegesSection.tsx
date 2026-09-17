@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { College } from '../types';
-import { sound } from '../utils/soundEngine';
 import { Award, FlaskConical, BookOpen, Sparkles, CheckCircle2, ArrowLeft } from 'lucide-react';
+
+const majorsCountLabel = (n: number) => {
+  if (n === 1) return 'تخصص واحد';
+  if (n === 2) return 'تخصصان';
+  if (n >= 3 && n <= 10) return `${n} تخصصات`;
+  return `${n} تخصصاً`;
+};
 
 export const CollegesSection: React.FC = () => {
   const [collegesList, setCollegesList] = useState<College[]>([]);
@@ -40,27 +46,26 @@ export const CollegesSection: React.FC = () => {
   };
 
   const handleSelect = (id: string) => {
-    sound.playClick();
     setSelectedCollegeId(id);
   };
 
 
   return (
-    <section id="colleges" className="py-28 px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="colleges" className="py-16 sm:py-28 px-4 sm:px-6 lg:px-8 relative z-10">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 text-xs font-mono mb-3">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span>COLLEGES ARCHITECTURE // 01-03</span>
+              <span>الكليات المشاركة في النادي</span>
             </div>
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
               كليات المنظومة الهندسية
             </h2>
           </div>
           <p className="max-w-md text-sm sm:text-base text-gray-400 font-light">
-            ثلاث قلاع أكاديمية متكاملة تدمج النظم الصناعية، البرمجية، السيبرانية، والعمرانية لتكوين مهندس شامل.
+            ثلاث كليات تجمع البرمجيات والذكاء الاصطناعي، وتكنولوجيا المعلومات، والهندسة التطبيقية والتخطيط العمراني تحت مظلة نادٍ واحد.
           </p>
         </div>
 
@@ -73,7 +78,6 @@ export const CollegesSection: React.FC = () => {
               <button
                 key={college.id}
                 onClick={() => handleSelect(college.id)}
-                onMouseEnter={() => sound.playHover()}
                 className={`text-right p-6 rounded-2xl border transition-all duration-300 relative overflow-hidden cursor-pointer group ${
                   isActive
                     ? 'glass-panel border-cyan-400/60 shadow-[0_10px_35px_-10px_rgba(0,240,255,0.25)] bg-cyan-950/20 scale-[1.02]'
@@ -108,8 +112,8 @@ export const CollegesSection: React.FC = () => {
                   {college.tagline}
                 </p>
 
-                <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-gray-400">
-                  <span>{college.majors.length} تخصصات معتمدة</span>
+                <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs font-mono text-gray-400">
+                  <span>{majorsCountLabel(college.majors.length)}</span>
                   <span className="text-cyan-400">بيئة تدريبية ومشاريع</span>
                 </div>
               </button>
@@ -125,17 +129,12 @@ export const CollegesSection: React.FC = () => {
           }}
         >
           {/* Subtle blueprint accents */}
-          <div className="absolute top-4 left-6 font-mono text-xs text-cyan-500/30 hidden sm:block">
-            ACTIVE_SPEC :: {activeCollege.code}
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             {/* Main Info Column */}
             <div className="lg:col-span-7 flex flex-col justify-between">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-400/30 text-cyan-300 font-mono text-xs mb-4">
-                  <span>كود الكلية: {activeCollege.code}</span>
-                  <span className="text-cyan-500/50">|</span>
                   <span>{activeCollege.shortName}</span>
                 </div>
 
@@ -160,7 +159,7 @@ export const CollegesSection: React.FC = () => {
                 <div className="mb-8">
                   <h4 className="text-xs font-mono uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-2">
                     <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>التخصصات المعتمدة تحت الكلية:</span>
+                    <span>تخصصات الكلية:</span>
                   </h4>
                   <div className="flex flex-wrap gap-2.5">
                     {activeCollege.majors.map((major, i) => (
@@ -202,9 +201,9 @@ export const CollegesSection: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-xs font-mono uppercase text-cyan-400 tracking-wider flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>مسار الكلية داخل النادي // COLLEGE ROADMAP</span>
+                    <span>مسار الكلية داخل النادي</span>
                   </div>
-                  <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
                     متاح للجميع
                   </span>
                 </div>
@@ -231,7 +230,7 @@ export const CollegesSection: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/20 text-[11px] text-cyan-200 mb-6 flex items-center gap-2">
+                <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/20 text-xs text-cyan-200 mb-6 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
                   <span>عضوية مسار الكلية مفتوحة لجميع طلبة جامعة فلسطين بمختلف المستويات الدراسية.</span>
                 </div>
@@ -239,7 +238,6 @@ export const CollegesSection: React.FC = () => {
                 {/* Primary CTA */}
                 <button
                   onClick={() => {
-                    sound.playClick();
                     const target = document.querySelector('#join');
                     target?.scrollIntoView({ behavior: 'smooth' });
                   }}
