@@ -63,6 +63,12 @@ import {
   Sliders,
   Power,
   Unlock,
+  LayoutDashboard,
+  Activity,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 
 // Client-side image compressor & lightweight base64 converter
@@ -203,7 +209,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [appCommitteeFilter, setAppCommitteeFilter] = useState<string>('الكل');
   const [dispatchModalApp, setDispatchModalApp] = useState<StoredApplication | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud' | 'security'>('applications');
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'projects' | 'events' | 'leadership' | 'colleges' | 'complaints' | 'settings' | 'cloud' | 'security'>('overview');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Live Data states
   const [applications, setApplications] = useState<StoredApplication[]>([]);
@@ -880,208 +887,691 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             </form>
           </div>
         ) : (
-          /* Main Authenticated Dashboard */
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Nav Tabs */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-white/10 bg-black/40 text-xs gap-3">
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 min-w-0">
+          /* Main Authenticated Dashboard with Modern Categorized Sidebar */
+          <div className="flex-1 flex overflow-hidden">
+            {/* Categorized Sidebar Navigation (Right side in RTL) */}
+            <aside
+              className={`${
+                isSidebarCollapsed ? 'w-20' : 'w-64 sm:w-72'
+              } bg-[#0A0524] border-l border-white/10 flex flex-col justify-between shrink-0 transition-all duration-300 z-20 shadow-2xl relative select-none`}
+            >
+              {/* Sidebar Header */}
+              <div className="p-4 border-b border-white/10 flex items-center justify-between gap-2">
+                {!isSidebarCollapsed ? (
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-mono text-[#3FE7E3] font-bold tracking-wider uppercase flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3FE7E3] animate-pulse" />
+                      <span>غرفة القيادة والتحكم</span>
+                    </div>
+                    <div className="text-xs font-black text-white font-sans truncate mt-0.5">
+                      النادي الهندسي — UP
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mx-auto">
+                    <span className="w-2 h-2 rounded-full bg-[#3FE7E3] block animate-pulse" />
+                  </div>
+                )}
                 <button
-                  onClick={() => {
-                    setActiveTab('applications');
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'applications'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
+                  type="button"
+                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  title={isSidebarCollapsed ? 'توسيع القائمة' : 'تصغير القائمة'}
                 >
-                  <Users className="w-4 h-4 shrink-0" />
-                  <span>طلبات الانضمام ({applications.length})</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('projects');
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'projects'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <Layers className="w-4 h-4 shrink-0" />
-                  <span>المشاريع ودراسات الحالة ({projects.length})</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('events');
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'events'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <Calendar className="w-4 h-4 shrink-0" />
-                  <span>الفعاليات والحضور ({events.length})</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('complaints');
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'complaints'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <MessageSquare className="w-4 h-4 shrink-0" />
-                  <span>صندوق الشكاوى والمقترحات ({complaints.length})</span>
-                  {complaints.filter((c) => c.status === 'pending').length > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-mono font-black">
-                      {complaints.filter((c) => c.status === 'pending').length} جديد
-                    </span>
+                  {isSidebarCollapsed ? (
+                    <ChevronLeft className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
                   )}
                 </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('leadership');
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'leadership'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <Award className="w-4 h-4 shrink-0" />
-                  <span>الكادر القيادي ({leadership.length})</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('colleges');
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'colleges'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <Building2 className="w-4 h-4 shrink-0" />
-                  <span>الكليات والتخصصات</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('settings');
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'settings'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                  <span>الرؤية وهوية الموقع</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('cloud');
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'cloud'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <Database className="w-4 h-4 shrink-0" />
-                  <span>السحابة والنسخ الاحتياطي</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('security');
-                    setAuditLogs(getSecurityAuditLogs());
-                  }}
-                  className={`whitespace-nowrap shrink-0 px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    activeTab === 'security'
-                      ? 'bg-cyan-400 text-black shadow-md'
-                      : 'text-gray-300 hover:bg-white/5'
-                  }`}
-                >
-                  <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
-                  <span>الأمان وسجل النظام</span>
-                </button>
               </div>
 
-              {/* Status Telemetry */}
-              <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] text-gray-400 shrink-0 border-r border-white/10 pr-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>متصل بقاعدة البيانات</span>
-              </div>
-            </div>
-
-            {/* Quick Operational Telemetry Strip */}
-            <div className="px-4 sm:px-6 py-2.5 bg-[#080d1a]/80 border-b border-white/10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 text-xs shrink-0">
-              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+              {/* Sidebar Navigation Links */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-5 no-scrollbar">
+                {/* Group 1: Operations & Students */}
                 <div>
-                  <div className="text-[10px] text-gray-400 font-mono">طلبات الانضمام</div>
-                  <div className="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
-                    <span>{applications.length}</span>
-                    <span className="text-[10px] text-amber-400 font-normal">({applications.filter((a) => a.status === 'قيد المراجعة').length} معلق)</span>
+                  {!isSidebarCollapsed && (
+                    <div className="px-3 text-[10px] font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      العمليات والطلبة
+                    </div>
+                  )}
+                  <nav className="space-y-1">
+                    {/* Overview Hub */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('overview')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'overview'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="نظرة عامة والتحكم"
+                    >
+                      <LayoutDashboard className={`w-4 h-4 shrink-0 ${activeTab === 'overview' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && <span className="flex-1 text-right">نظرة عامة والتحكم</span>}
+                    </button>
+
+                    {/* Applications */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('applications')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'applications'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="طلبات الانضمام"
+                    >
+                      <Users className={`w-4 h-4 shrink-0 ${activeTab === 'applications' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && (
+                        <>
+                          <span className="flex-1 text-right">طلبات الانضمام</span>
+                          {applications.filter((a) => a.status === 'قيد المراجعة').length > 0 ? (
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-mono font-bold">
+                              {applications.filter((a) => a.status === 'قيد المراجعة').length} جديد
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-gray-500">
+                              {applications.length}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </button>
+
+                    {/* Events & Tickets */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('events')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'events'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="الفعاليات والحضور"
+                    >
+                      <Calendar className={`w-4 h-4 shrink-0 ${activeTab === 'events' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && (
+                        <>
+                          <span className="flex-1 text-right">الفعاليات والحضور</span>
+                          <span className="text-[10px] font-mono text-gray-500">{events.length}</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Complaints & Inquiries */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('complaints')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'complaints'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="صندوق الشكاوى والمقترحات"
+                    >
+                      <MessageSquare className={`w-4 h-4 shrink-0 ${activeTab === 'complaints' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && (
+                        <>
+                          <span className="flex-1 text-right">صندوق الشكاوى</span>
+                          {complaints.filter((c) => c.status === 'pending').length > 0 ? (
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-mono text-[10px] font-black">
+                              {complaints.filter((c) => c.status === 'pending').length}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-gray-500">{complaints.length}</span>
+                          )}
+                        </>
+                      )}
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Group 2: Content & CMS */}
+                <div>
+                  {!isSidebarCollapsed && (
+                    <div className="px-3 text-[10px] font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      محتوى الموقع
+                    </div>
+                  )}
+                  <nav className="space-y-1">
+                    {/* Projects */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('projects')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'projects'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="المشاريع ودراسات الحالة"
+                    >
+                      <Layers className={`w-4 h-4 shrink-0 ${activeTab === 'projects' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && (
+                        <>
+                          <span className="flex-1 text-right">المشاريع والمبادرات</span>
+                          <span className="text-[10px] font-mono text-gray-500">{projects.length}</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Leadership */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('leadership')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'leadership'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="الكادر القيادي والهيئة الإدارية"
+                    >
+                      <Award className={`w-4 h-4 shrink-0 ${activeTab === 'leadership' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && (
+                        <>
+                          <span className="flex-1 text-right">الكادر القيادي</span>
+                          <span className="text-[10px] font-mono text-gray-500">{leadership.length}</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Colleges & Majors */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('colleges')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'colleges'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="الكليات والتخصصات"
+                    >
+                      <Building2 className={`w-4 h-4 shrink-0 ${activeTab === 'colleges' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && <span className="flex-1 text-right">الكليات والتخصصات</span>}
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Group 3: System & Tech */}
+                <div>
+                  {!isSidebarCollapsed && (
+                    <div className="px-3 text-[10px] font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      إعدادات النظام والتقنية
+                    </div>
+                  )}
+                  <nav className="space-y-1">
+                    {/* Site Settings & Visibility */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('settings')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'settings'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="الرؤية وهوية الموقع"
+                    >
+                      <Sparkles className={`w-4 h-4 shrink-0 ${activeTab === 'settings' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && <span className="flex-1 text-right">الهوية وإعدادات العرض</span>}
+                    </button>
+
+                    {/* Cloud & Supabase */}
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('cloud')}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'cloud'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="السحابة والنسخ الاحتياطي والمشتركون"
+                    >
+                      <Database className={`w-4 h-4 shrink-0 ${activeTab === 'cloud' ? 'text-cyan-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && (
+                        <>
+                          <span className="flex-1 text-right">السحابة والمشتركون</span>
+                          <span className="text-[10px] font-mono text-gray-500">{subscribers.length}</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Security & Audit Logs */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('security');
+                        setAuditLogs(getSecurityAuditLogs());
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+                        activeTab === 'security'
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      title="الأمان وسجل النظام"
+                    >
+                      <ShieldCheck className={`w-4 h-4 shrink-0 ${activeTab === 'security' ? 'text-emerald-400' : 'text-gray-400'}`} />
+                      {!isSidebarCollapsed && <span className="flex-1 text-right">الأمان وسجل التدقيق</span>}
+                    </button>
+                  </nav>
+                </div>
+              </div>
+
+              {/* Sidebar Footer: Admin Status & Fast Refresh */}
+              <div className="p-3 border-t border-white/10 bg-black/40">
+                {!isSidebarCollapsed ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                        <div className="truncate">
+                          <div className="text-[11px] font-bold text-white truncate">
+                            {adminEmail || 'مشرف معتمد'}
+                          </div>
+                          <div className="text-[9px] font-mono text-emerald-400">جلسة نشطة</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={isRefreshingData}
+                        onClick={() => void handleRefreshData()}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-400 transition-all cursor-pointer"
+                        title="تحديث البيانات من السحابة"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <Users className="w-4 h-4 text-cyan-400/70" />
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] text-gray-400 font-mono">المشاريع المنشورة</div>
-                  <div className="text-sm font-bold text-white mt-0.5">{projects.length} مشاريع</div>
-                </div>
-                <Layers className="w-4 h-4 text-blue-400/70" />
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] text-gray-400 font-mono">الفعاليات والتذاكر</div>
-                  <div className="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
-                    <span>{events.length}</span>
-                    <span className="text-[10px] text-emerald-400 font-normal">({tickets.length} حجز)</span>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <button
+                      type="button"
+                      disabled={isRefreshingData}
+                      onClick={() => void handleRefreshData()}
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-400 transition-all cursor-pointer"
+                      title="تحديث البيانات"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                    </button>
                   </div>
-                </div>
-                <Calendar className="w-4 h-4 text-emerald-400/70" />
+                )}
               </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] text-gray-400 font-mono">الكادر القيادي</div>
-                  <div className="text-sm font-bold text-white mt-0.5">{leadership.length} قائد/ة</div>
-                </div>
-                <Award className="w-4 h-4 text-amber-400/70" />
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] text-gray-400 font-mono">الكليات والتخصصات</div>
-                  <div className="text-sm font-bold text-white mt-0.5">{colleges.length} كليات / {majors.length} تخصص</div>
-                </div>
-                <Building2 className="w-4 h-4 text-purple-400/70" />
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] text-gray-400 font-mono">الهوية الرسمية</div>
-                  <div className="text-xs font-bold text-emerald-400 mt-0.5 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>معتمدة (UP)</span>
-                  </div>
-                </div>
-                <Sparkles className="w-4 h-4 text-emerald-400/70" />
-              </div>
-            </div>
+            </aside>
 
-            {/* Tab 1: Applications */}
-            {activeTab === 'applications' && (
+            {/* Main Content Workspace */}
+            <main className="flex-1 flex flex-col overflow-hidden bg-[#070319]">
+              {/* Workspace Top Bar */}
+              <div className="flex items-center justify-between px-5 sm:px-8 py-3 border-b border-white/10 bg-black/30 backdrop-blur-md shrink-0">
+                <div className="flex items-center gap-2.5 font-sans">
+                  <span className="text-gray-400 text-xs">لوحة الإدارة</span>
+                  <span className="text-gray-600">/</span>
+                  <h2 className="text-sm sm:text-base font-extrabold text-white">
+                    {activeTab === 'overview' && 'نظرة عامة ومؤشرات القيادة'}
+                    {activeTab === 'applications' && 'إدارة طلبات الانضمام للجان'}
+                    {activeTab === 'projects' && 'المشاريع ودراسات الحالة الهندسية'}
+                    {activeTab === 'events' && 'أجندة الفعاليات والورش والتذاكر'}
+                    {activeTab === 'complaints' && 'صندوق الشكاوى والمقترحات'}
+                    {activeTab === 'leadership' && 'الهيكل والكادر القيادي'}
+                    {activeTab === 'colleges' && 'الكليات والتخصصات الهندسية'}
+                    {activeTab === 'settings' && 'هوية الموقع وإعدادات العرض'}
+                    {activeTab === 'cloud' && 'السحابة والمشتركون والنسخ الاحتياطي'}
+                    {activeTab === 'security' && 'الأمان وتغيير كلمة المرور وسجل التدقيق'}
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="hidden md:flex items-center gap-2 font-mono text-[11px] text-gray-400 bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Supabase Cloud: متصل</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isRefreshingData}
+                    onClick={() => void handleRefreshData()}
+                    className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${isRefreshingData ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">{isRefreshingData ? 'جاري التحديث...' : 'مزامنة البيانات'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 1. Overview Hub Tab */}
+              {activeTab === 'overview' && (
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-200">
+                    {/* Welcome & Fast Recruitment Switch Hero */}
+                    <div className="p-6 rounded-3xl bg-gradient-to-r from-[#1A0E42] via-[#120A30] to-[#0A0524] border border-[#7F1AB2]/40 shadow-[0_10px_35px_rgba(127,26,178,0.2)] flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+                      <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#3FE7E3]/10 rounded-full blur-3xl pointer-events-none" />
+                      
+                      <div className="space-y-1.5 relative z-10">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#3FE7E3]/10 border border-[#3FE7E3]/30 text-[#3FE7E3] font-mono text-xs">
+                          <Activity className="w-3.5 h-3.5" />
+                          <span>غرفة العمليات المركزية // LIVE HUB</span>
+                        </div>
+                        <h1 className="text-xl sm:text-2xl font-black text-white">
+                          مرحباً بك في لوحة تحكم النادي الهندسي
+                        </h1>
+                        <p className="text-xs sm:text-sm text-gray-300 font-light max-w-xl leading-relaxed">
+                          متابعة وإدارة فورية لطلبات الانضمام، الفعاليات، المشاريع، وصندوق الشكاوى من مكان واحد متصل بالسحابة.
+                        </p>
+                      </div>
+
+                      {/* Recruitment Quick Switch Card */}
+                      <div className="p-4 rounded-2xl bg-black/50 border border-white/10 shrink-0 flex flex-col sm:flex-row sm:items-center gap-4 relative z-10">
+                        <div>
+                          <div className="text-[11px] text-gray-400 font-mono">حالة استقبال طلبات الانضمام:</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`w-2 h-2 rounded-full ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-[#35BC2B] animate-pulse' : 'bg-red-400'}`} />
+                            <span className="font-bold text-sm text-white">
+                              {recruitmentSettings.isGlobalRecruitmentOpen ? 'التسجيل مفتوح رسمياً' : 'التسجيل مغلق حالياً'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !recruitmentSettings.isGlobalRecruitmentOpen;
+                            const updated = {
+                              ...recruitmentSettings,
+                              isGlobalRecruitmentOpen: next,
+                            };
+                            setRecruitmentSettings(updated);
+                            dataService.saveRecruitmentSettings(updated);
+                            showToast(next ? 'تم فتح باب الانضمام رسمياً في الموقع' : 'تم إغلاق باب الانضمام في الموقع مؤقتاً');
+                          }}
+                          className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-2 shadow-md ${
+                            recruitmentSettings.isGlobalRecruitmentOpen
+                              ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40'
+                              : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                          }`}
+                        >
+                          <Power className="w-3.5 h-3.5" />
+                          <span>{recruitmentSettings.isGlobalRecruitmentOpen ? 'إغلاق التسجيل' : 'فتح التسجيل الآن'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 4 Key Metrics KPI Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* KPI 1: Applications */}
+                      <div
+                        onClick={() => setActiveTab('applications')}
+                        className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-cyan-400/40 transition-all cursor-pointer group shadow-lg flex flex-col justify-between"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-400">طلبات الانضمام</span>
+                          <div className="p-2.5 rounded-xl bg-cyan-950/70 border border-cyan-500/30 text-cyan-400 group-hover:scale-110 transition-transform">
+                            <Users className="w-4 h-4" />
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <div className="text-2xl sm:text-3xl font-black text-white">
+                            {applications.length}
+                          </div>
+                          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                            <span className="text-emerald-400 font-bold">{applications.filter((a) => a.status === 'تم القبول').length} مقبول</span>
+                            <span>•</span>
+                            <span className="text-amber-400 font-bold">{applications.filter((a) => a.status === 'قيد المراجعة').length} معلق</span>
+                          </div>
+                        </div>
+                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-cyan-400 group-hover:translate-x-[-2px] transition-transform">
+                          <span>إدارة الطلبات</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+
+                      {/* KPI 2: Complaints & Inquiries */}
+                      <div
+                        onClick={() => setActiveTab('complaints')}
+                        className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-amber-400/40 transition-all cursor-pointer group shadow-lg flex flex-col justify-between"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-400">صندوق الشكاوى والمقترحات</span>
+                          <div className="p-2.5 rounded-xl bg-amber-950/70 border border-amber-500/30 text-amber-400 group-hover:scale-110 transition-transform">
+                            <MessageSquare className="w-4 h-4" />
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <div className="text-2xl sm:text-3xl font-black text-white">
+                            {complaints.length}
+                          </div>
+                          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                            <span className="text-amber-400 font-bold">
+                              {complaints.filter((c) => c.status === 'pending').length} بلاغ بانتظار الرد
+                            </span>
+                          </div>
+                        </div>
+                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-amber-400 group-hover:translate-x-[-2px] transition-transform">
+                          <span>فتح الصندوق</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+
+                      {/* KPI 3: Events & RSVPs */}
+                      <div
+                        onClick={() => setActiveTab('events')}
+                        className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-purple-400/40 transition-all cursor-pointer group shadow-lg flex flex-col justify-between"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-400">الفعاليات والتذاكر</span>
+                          <div className="p-2.5 rounded-xl bg-purple-950/70 border border-purple-500/30 text-purple-400 group-hover:scale-110 transition-transform">
+                            <Calendar className="w-4 h-4" />
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <div className="text-2xl sm:text-3xl font-black text-white">
+                            {events.length}
+                          </div>
+                          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                            <span className="text-purple-300 font-bold">{tickets.length} تذكرة مسجلة</span>
+                          </div>
+                        </div>
+                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-purple-400 group-hover:translate-x-[-2px] transition-transform">
+                          <span>جدول الفعاليات</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+
+                      {/* KPI 4: Cloud Subscribers */}
+                      <div
+                        onClick={() => setActiveTab('cloud')}
+                        className="p-5 rounded-2xl bg-black/40 border border-white/10 hover:border-emerald-400/40 transition-all cursor-pointer group shadow-lg flex flex-col justify-between"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-400">مشتركو النشرة البريدية</span>
+                          <div className="p-2.5 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-400 group-hover:scale-110 transition-transform">
+                            <Send className="w-4 h-4" />
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <div className="text-2xl sm:text-3xl font-black text-white">
+                            {subscribers.length}
+                          </div>
+                          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+                            <span className="text-emerald-400 font-bold">قائمة المهندسين المسجلة</span>
+                          </div>
+                        </div>
+                        <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-emerald-400 group-hover:translate-x-[-2px] transition-transform">
+                          <span>السحابة والمشتركون</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Shortcuts & Quick Operations */}
+                    <div className="p-4 rounded-2xl bg-black/30 border border-white/5 flex flex-wrap items-center justify-between gap-3">
+                      <div className="text-xs font-bold text-gray-300 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                        <span>إجراءات سريعة:</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddProject(true);
+                            setActiveTab('projects');
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>إضافة مشروع جديد</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddEvent(true);
+                            setActiveTab('events');
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-purple-400" />
+                          <span>إضافة ورشة / فعالية</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowLeaderModal(true);
+                            setActiveTab('leadership');
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-amber-400" />
+                          <span>إضافة عضو كادر</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const accepted = applications.filter((a) => a.status === 'تم القبول');
+                            const headers = ['الاسم الكامل', 'الرقم الجامعي', 'الكلية', 'التخصص', 'السنة الدراسية', 'اللجنة', 'البريد', 'الهاتف', 'الحالة', 'تاريخ التقديم'];
+                            const rows = accepted.map((a) => [
+                              a.fullName,
+                              a.studentId,
+                              a.college,
+                              a.major,
+                              a.academicYear,
+                              a.targetCommittee,
+                              a.email,
+                              a.phone || '',
+                              a.status,
+                              a.submittedAt ? new Date(a.submittedAt).toLocaleDateString('ar-SA') : '',
+                            ]);
+                            downloadCsv(`UP-Accepted-Engineers-${new Date().toISOString().slice(0, 10)}`, headers, rows);
+                            showToast(`تم تصدير كشف (${accepted.length}) مهندس مقبول بنجاح`);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>تصدير المقبولين (CSV)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Pending Applications Queue */}
+                    <div className="rounded-2xl bg-black/40 border border-white/10 p-5 space-y-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-400" />
+                          <h3 className="text-sm font-bold text-white">آخر طلبات الانضمام المعلقة (تتطلب قراراً)</h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('applications')}
+                          className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>عرض كافة الطلبات ({applications.length})</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {applications.filter((a) => a.status === 'قيد المراجعة').length === 0 ? (
+                        <div className="p-6 text-center text-xs text-gray-400 font-sans flex flex-col items-center justify-center gap-2">
+                          <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                          <div className="font-bold text-white">جميع الطلبات معالجة ومكتملة!</div>
+                          <div>لا توجد طلبات انضمام جديدة قيد الانتظار حالياً.</div>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-white/5">
+                          {applications
+                            .filter((a) => a.status === 'قيد المراجعة')
+                            .slice(0, 4)
+                            .map((app) => (
+                              <div
+                                key={app.id}
+                                className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/[0.02] px-2 rounded-xl transition-colors"
+                              >
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-extrabold text-white text-sm">{app.fullName}</span>
+                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                      قيد المراجعة
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-gray-400 flex flex-wrap items-center gap-2">
+                                    <span className="text-[#3FE7E3] font-medium">{app.major}</span>
+                                    <span>•</span>
+                                    <span>الرقم الجامعي: <span className="font-mono text-gray-300">{app.studentId}</span></span>
+                                    <span>•</span>
+                                    <span className="text-gray-300">اللجنة: {app.targetCommittee}</span>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectApp(app)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shrink-0"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>معاينة واتخاذ قرار</span>
+                                </button>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* System Infrastructure & Security Summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-sans">
+                      <div className="p-4 rounded-2xl bg-black/30 border border-white/5 flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 shrink-0">
+                          <Database className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-white">قاعدة بيانات Supabase</div>
+                          <div className="text-[11px] text-gray-400 truncate mt-0.5">متصلة وجاهزة للمزامنة السحابية</div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-black/30 border border-white/5 flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-cyan-400 shrink-0">
+                          <Send className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-white">سيرفر الإيميل (Edge Function)</div>
+                          <div className="text-[11px] text-gray-400 truncate mt-0.5">إرسال القبول عبر Gmail مفعل</div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-black/30 border border-white/5 flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/30 text-purple-400 shrink-0">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-white">جلسة المشرف المعتمدة</div>
+                          <div className="text-[11px] text-gray-400 truncate mt-0.5 font-mono">{adminEmail || 'admin-authenticated'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 1: Applications */}
+                {activeTab === 'applications' && (
               <div className="flex-1 overflow-y-auto p-6">
                 {/* Committee Recruitment & Intake Controls (إدارة استقطاب اللجان) */}
                 <div className="p-5 rounded-2xl bg-black/40 border border-white/10 mb-6 space-y-4">
@@ -3658,8 +4148,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
               </div>
             )}
-          </div>
-        )}
+          </main>
+        </div>
+      )}
 
         {/* Inspect Applicant Detail Modal */}
         {inspectApp && (
