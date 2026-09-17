@@ -72,7 +72,16 @@ Deno.serve(async (req) => {
   const committee = String(data.assignedCommittee || data.targetCommittee || '');
   const role = String(data.organizationalRole || '');
   const verifyUrl = `${siteUrl}/?verify=${encodeURIComponent(app.student_id)}`;
-  const authCode = `UP-ENG-${String(app.id).slice(-8).toUpperCase()}`;
+  // Private member code (update-005). Older databases fall back to the legacy public code.
+  const memberCode = String(app.member_code || `UP-ENG-${String(app.id).slice(-8).toUpperCase()}`);
+  const accountUrl = `${siteUrl}/?member=1`;
+  const { data: membershipRow } = await supabase.from('club_content').select('value').eq('key', 'membership').maybeSingle();
+  const membership = (membershipRow?.value || {}) as Record<string, unknown>;
+  const fee = membership.semesterFee ?? 20;
+  const currency = String(membership.currency || '₪');
+  const validUntil = app.valid_until
+    ? new Date(app.valid_until).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '';
   const isGeneral = !committee || committee.includes('عامة');
 
   const subject = `تم قبول عضويتك في النادي الهندسي — جامعة فلسطين`;
@@ -83,7 +92,8 @@ Deno.serve(async (req) => {
     'يسعدنا إبلاغك بقبول طلب انضمامك إلى النادي الهندسي في جامعة فلسطين.',
     isGeneral ? 'نوع العضوية: عضوية عامة' : `اللجنة: ${committee}`,
     role ? `المسمى: ${role}` : '',
-    `كود التحقق: ${authCode}`,
+    `رمز العضو (سري): ${memberCode}`,
+    validUntil ? `بطاقتك مؤقتة وصالحة حتى ${validUntil}. بعدها اطلب العضوية الفصلية (${fee} ${currency}) من صفحة حسابي: ${accountUrl}` : '',
     '',
     `بطاقة عضويتك الرقمية: ${verifyUrl}`,
     '',
@@ -119,12 +129,21 @@ Deno.serve(async (req) => {
         ${row(isGeneral ? 'نوع العضوية' : 'اللجنة', isGeneral ? 'عضوية عامة' : committee)}
         ${row('المسمى', role)}
         ${row('الرقم الجامعي', app.student_id)}
-        ${row('كود التحقق', authCode)}
+        ${row('رمز العضو', memberCode)}
+        ${row('صلاحية البطاقة', validUntil ? `مؤقتة حتى ${validUntil}` : '')}
       </table>
     </td></tr>
     <tr><td style="padding:24px 28px;text-align:center;">
       <a href="${escapeHtml(verifyUrl)}" style="display:inline-block;background:#7F1AB2;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:15px;padding:14px 28px;border-radius:12px;">عرض بطاقة العضوية</a>
       <p style="margin:14px 0 0;color:#9CA3AF;font-size:12px;">يمكنك حفظ البطاقة كصورة أو طباعتها من نفس الصفحة.</p>
+    </td></tr>
+    <tr><td style="padding:0 28px 24px;text-align:right;">
+      <div style="padding:16px;border-radius:14px;background:rgba(127,26,178,0.15);border:1px solid rgba(162,108,198,0.4);color:#E5E7EB;font-size:14px;line-height:1.9;">
+        <strong style="color:#FFFFFF;">رمز العضو سري — لا تشاركه مع أحد.</strong><br>
+        تستخدمه مع رقمك الجامعي لدخول <strong style="color:#FFFFFF;">حسابي</strong> والتسجيل في الورش والدورات والهاكاثونات.
+        ${validUntil ? `<br>بطاقتك الحالية <strong style="color:#FFFFFF;">مؤقتة حتى ${escapeHtml(validUntil)}</strong>، وبعدها يمكنك طلب <strong style="color:#FFFFFF;">العضوية الفصلية (${escapeHtml(fee)} ${escapeHtml(currency)})</strong> من صفحة حسابي.` : ''}
+        <div style="margin-top:12px;"><a href="${escapeHtml(accountUrl)}" style="color:#98F7F1;">الدخول إلى حسابي</a></div>
+      </div>
     </td></tr>
     <tr><td style="padding:16px 28px 24px;border-top:1px solid rgba(255,255,255,0.1);color:#9CA3AF;font-size:12px;text-align:right;">
       إدارة النادي الهندسي — جامعة فلسطين
