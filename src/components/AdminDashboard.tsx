@@ -18,6 +18,7 @@ import { TrashPanel } from './admin/TrashPanel';
 import { Button, SidebarNavItem } from './admin/ui';
 import { useConfirm } from './admin/controls';
 import { ApplicationsTable } from './admin/ApplicationsTable';
+import { QuickNav, type QuickNavItem } from './admin/QuickNav';
 import {
   fetchMyRole,
   hasFullAccess,
@@ -51,6 +52,9 @@ import {
   Calendar,
   Layers,
   CheckCircle,
+  Menu,
+  Crown,
+  Zap,
   XCircle,
   Clock,
   Search,
@@ -238,7 +242,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [appCommitteeFilter, setAppCommitteeFilter] = useState<string>('الكل');
   const [dispatchModalApp, setDispatchModalApp] = useState<StoredApplication | null>(null);
 
-  const [activeTab, setActiveTab] = useState<
+  type AdminTab =
     | 'overview'
     | 'applications'
     | 'members'
@@ -252,8 +256,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     | 'team'
     | 'activity'
     | 'trash'
-    | 'security'
-  >('overview');
+    | 'security';
+
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
   // On phones/tablets the expanded sidebar covers the page, so fold it after navigating.
   useEffect(() => {
@@ -324,6 +329,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [appSearch, setAppSearch] = useState('');
   const [appStatusFilter, setAppStatusFilter] = useState<string>('all');
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [quickNavOpen, setQuickNavOpen] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
 
   // Selected application for detail modal
@@ -760,6 +767,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setAuditLogs(getSecurityAuditLogs());
   };
 
+  // Sections offered by the Ctrl+K jump list (only the ones this role can open).
+  const quickNavItems = useMemo<QuickNavItem[]>(() => {
+    const items: (QuickNavItem & { needsFullAccess?: boolean })[] = [
+      { id: 'overview', label: 'نظرة عامة والتحكم', group: 'العمليات' },
+      { id: 'applications', label: 'طلبات الانضمام', group: 'العمليات' },
+      { id: 'members', label: 'العضويات والمدفوعات', group: 'العمليات', needsFullAccess: true },
+      { id: 'events', label: 'الفعاليات والتسجيل', group: 'العمليات' },
+      { id: 'complaints', label: 'صندوق الشكاوى', group: 'العمليات', needsFullAccess: true },
+      { id: 'projects', label: 'المشاريع والمبادرات', group: 'محتوى الموقع', needsFullAccess: true },
+      { id: 'leadership', label: 'الكادر القيادي', group: 'محتوى الموقع', needsFullAccess: true },
+      { id: 'colleges', label: 'الكليات والتخصصات', group: 'محتوى الموقع', needsFullAccess: true },
+      { id: 'settings', label: 'الهوية وإعدادات العرض', group: 'الإعدادات', needsFullAccess: true },
+      { id: 'cloud', label: 'السحابة والمشتركون', group: 'الإعدادات', needsFullAccess: true },
+      { id: 'team', label: 'فريق الإدارة والصلاحيات', group: 'الإعدادات', needsFullAccess: true },
+      { id: 'activity', label: 'سجل النشاط', group: 'الإعدادات', needsFullAccess: true },
+      { id: 'trash', label: 'سلة المحذوفات', group: 'الإعدادات', needsFullAccess: true },
+      { id: 'security', label: 'الأمان وسجل التدقيق', group: 'الإعدادات' },
+    ];
+    return items
+      .filter((i) => !i.needsFullAccess || fullAccess)
+      .map(({ id, label, group }) => ({ id, label, group }));
+  }, [fullAccess]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setQuickNavOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // The applications the list is currently showing (search + both filters).
   const filteredApplications = useMemo(() => {
     const q = appSearch.trim().toLowerCase();
@@ -1016,6 +1057,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
         {confirmDialog}
 
+        <QuickNav
+          open={quickNavOpen}
+          items={quickNavItems}
+          onPick={(id) => setActiveTab(id as AdminTab)}
+          onClose={() => setQuickNavOpen(false)}
+        />
+
         {/* Global Toast Notification */}
         {toastMsg && (
           <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-cyan-950/90 border border-cyan-400/50 text-cyan-300 text-xs font-mono shadow-2xl flex items-center gap-2 backdrop-blur-md animate-in fade-in slide-in-from-top-2">
@@ -1134,10 +1182,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
           /* Main Authenticated Dashboard with Modern Categorized Sidebar */
           <div className="flex-1 flex overflow-hidden">
             {/* Categorized Sidebar Navigation (Right side in RTL) */}
+            {mobileNavOpen && (
+              <div
+                className="md:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
+                onClick={() => setMobileNavOpen(false)}
+                aria-hidden="true"
+              />
+            )}
             <aside
-              className={`${
-                isSidebarCollapsed ? 'w-20' : 'w-64 sm:w-72'
-              } bg-[#0A0524] border-l border-white/10 flex flex-col justify-between shrink-0 transition-all duration-300 z-20 shadow-2xl relative select-none`}
+              onClick={() => setMobileNavOpen(false)}
+              className={`fixed md:static inset-y-0 right-0 z-40 md:z-20 w-72 ${
+                isSidebarCollapsed ? 'md:w-20' : 'md:w-64 lg:w-72'
+              } ${
+                mobileNavOpen ? 'translate-x-0' : 'translate-x-full'
+              } md:translate-x-0 bg-[#0A0524] border-l border-white/10 flex flex-col justify-between shrink-0 transition-transform md:transition-all duration-300 shadow-2xl select-none`}
             >
               {/* Sidebar Header */}
               <div className="p-4 border-b border-white/10 flex items-center justify-between gap-2">
@@ -1158,8 +1216,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 )}
                 <button
                   type="button"
-                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSidebarCollapsed(!isSidebarCollapsed);
+                  }}
+                  className="hidden md:inline-flex p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  aria-label={isSidebarCollapsed ? 'توسيع القائمة' : 'تصغير القائمة'}
                   title={isSidebarCollapsed ? 'توسيع القائمة' : 'تصغير القائمة'}
                 >
                   {isSidebarCollapsed ? (
@@ -1485,7 +1547,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               {/* Workspace Top Bar */}
               <div className="flex items-center justify-between px-5 sm:px-8 py-3 border-b border-white/10 bg-black/30 backdrop-blur-md shrink-0">
                 <div className="flex items-center gap-2.5 font-sans">
-                  <span className="text-gray-400 text-xs">لوحة الإدارة</span>
+                  <button
+                    type="button"
+                    onClick={() => setMobileNavOpen(true)}
+                    className="md:hidden p-2 -mr-1 rounded-xl bg-white/5 hover:bg-white/10 text-white cursor-pointer"
+                    aria-label="فتح قائمة الأقسام"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
+                  <span className="text-gray-400 text-xs hidden sm:inline">لوحة الإدارة</span>
                   <span className="text-gray-600">/</span>
                   <h2 className="text-sm sm:text-base font-extrabold text-white">
                     {activeTab === 'overview' && 'نظرة عامة ومؤشرات القيادة'}
@@ -1506,7 +1576,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="hidden md:flex items-center gap-2 font-mono text-xs text-gray-400 bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => setQuickNavOpen(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-300 hover:text-white text-xs transition-colors cursor-pointer"
+                    aria-label="بحث سريع في أقسام اللوحة"
+                  >
+                    <Search className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="hidden sm:inline">بحث سريع</span>
+                    <span className="hidden lg:inline font-mono text-gray-500">Ctrl K</span>
+                  </button>
+
+                  <div className="hidden lg:flex items-center gap-2 font-mono text-xs text-gray-400 bg-white/[0.03] px-3 py-1.5 rounded-xl border border-white/5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>Supabase Cloud: متصل</span>
                   </div>
@@ -1999,9 +2080,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       className="px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-cyan-300 focus:outline-none cursor-pointer font-medium"
                     >
                       <option value="الكل">كافة اللجان</option>
-                      <option value="فعاليات">لجنة الفعاليات ⚡</option>
-                      <option value="علاقات">لجنة العلاقات والتدريب 🤝</option>
-                      <option value="إعلام">اللجنة الإعلامية 🎨</option>
+                      <option value="فعاليات">لجنة الفعاليات</option>
+                      <option value="علاقات">لجنة العلاقات والتدريب</option>
+                      <option value="إعلام">اللجنة الإعلامية</option>
                       <option value="عامة">عضوية عامة</option>
                     </select>
                   </div>
@@ -2729,8 +2810,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         {leadership.filter((l) => l.tier === 'executive').length} قيادات
                       </div>
                     </div>
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-sm">
-                      👑
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                      <Crown className="w-4 h-4" />
                     </div>
                   </div>
 
@@ -2741,8 +2822,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         {leadership.filter((l) => l.tier === 'committee-lead').length} لجان
                       </div>
                     </div>
-                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-sm">
-                      ⚡
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                      <Zap className="w-4 h-4" />
                     </div>
                   </div>
 
@@ -2904,10 +2985,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                   }`}
                                 >
                                   {isPresident
-                                    ? '👑 رئيس النادي'
+                                    ? 'رئيس النادي'
                                     : leader.tier === 'executive'
-                                    ? '🏛️ الهيئة الإدارية'
-                                    : '⚡ رئيس لجنة تنفيذي'}
+                                    ? 'الهيئة الإدارية'
+                                    : 'رئيس لجنة تنفيذي'}
                                 </span>
                               </div>
                             </div>
@@ -2946,7 +3027,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                               title="عرض وطباعة بطاقة التكليف والاعتماد القيادي"
                             >
                               <CreditCard className="w-3.5 h-3.5" />
-                              <span>بطاقة التكليف 🪪</span>
+                              <span>بطاقة التكليف</span>
                             </button>
                             <button
                               onClick={() => handleOpenEditLeader(leader)}
@@ -3015,10 +3096,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     });
 
                     const commTitle = isEvt
-                      ? 'لجنة الفعاليات والأنشطة الهندسية ⚡'
+                      ? 'لجنة الفعاليات والأنشطة الهندسية'
                       : isRel
-                      ? 'لجنة العلاقات العامة والتدريب 🤝'
-                      : 'اللجنة الإعلامية والإنتاج المرئي 🎨';
+                      ? 'لجنة العلاقات العامة والتدريب'
+                      : 'اللجنة الإعلامية والإنتاج المرئي';
 
                     const borderAccent = isEvt
                       ? 'border-cyan-500/30'
@@ -3072,7 +3153,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                   className="w-full py-1.5 px-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                                 >
                                   <Award className="w-3.5 h-3.5" />
-                                  <span>عرض كرت عضو اللجنة 🪪</span>
+                                  <span>عرض كرت عضو اللجنة</span>
                                 </button>
                               </div>
                             ))}
@@ -4328,7 +4409,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     className="w-full mb-2 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600/30 via-teal-600/30 to-cyan-600/30 hover:from-emerald-600/40 hover:to-cyan-600/40 border border-emerald-500/40 text-emerald-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow-lg transition-all"
                   >
                     <Send className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>إرسال رسالة القبول والبطاقة للطالب (إيميل / واتساب) 🚀</span>
+                    <span>إرسال رسالة القبول والبطاقة للطالب (إيميل / واتساب)</span>
                   </button>
                 )}
                 <button
@@ -4437,7 +4518,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600/40 via-teal-600/40 to-cyan-600/40 hover:from-emerald-600/50 hover:to-cyan-600/50 border border-emerald-500/40 text-emerald-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 transition-all shadow-md"
                 >
                   <Send className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>إرسال البطاقة للطالب عبر واتساب / الإيميل 🚀</span>
+                  <span>إرسال البطاقة للطالب عبر واتساب / الإيميل</span>
                 </button>
 
                 <button
