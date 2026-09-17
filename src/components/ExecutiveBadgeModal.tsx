@@ -16,13 +16,18 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
 
   if (!isOpen || !leader) return null;
 
-  const badgeSerial = `UP-EXEC-2026-${leader.id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`;
+  const badgeSerial = `UP-EXEC-2026-${leader.id.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toUpperCase()}`;
+  // The department only earns its own block when the title doesn't already say it.
+  const department = (leader.department || '').trim();
+  const roleSaysDepartment = Boolean(department) && (leader.role || '').includes(department);
   const card: CardData = {
     name: leader.name || leader.role,
     role: leader.name ? leader.role : undefined,
     photoUrl: leader.avatar || undefined,
-    highlight: { label: 'الجهة', value: leader.department },
-    fields: [{ label: 'البريد', value: leader.email }],
+    highlight: department && !roleSaysDepartment ? { label: 'الجهة', value: department } : undefined,
+    fields: [
+      ...(leader.email ? [{ label: 'البريد', value: leader.email }] : []),
+    ],
     qrValue: `${window.location.origin}/#leadership`,
     code: badgeSerial,
     accent: 'green',
