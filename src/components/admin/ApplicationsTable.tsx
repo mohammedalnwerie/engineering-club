@@ -1,7 +1,8 @@
 import React from 'react';
-import { Eye, Send, CreditCard, Award, CheckCircle, Clock, Trash2, XCircle, Link as LinkIcon, UserCog } from 'lucide-react';
+import { Eye, Send, CreditCard, Award, CheckCircle, Clock, Trash2, XCircle, Link as LinkIcon, UserCog, Crown } from 'lucide-react';
 import type { StoredApplication } from '../../types';
 import { effectiveCommittee } from '../../data/committees';
+import { isExecutiveLeader } from '../../utils/memberCard';
 import { ActionMenu, CheckBox, type ActionItem } from './controls';
 import { Button, EmptyState, Badge } from './ui';
 
@@ -17,6 +18,7 @@ export interface ApplicationsTableProps {
   onDispatch: (app: StoredApplication) => void;
   onBadge: (app: StoredApplication) => void;
   onCommitteeBadge: (app: StoredApplication) => void;
+  onExecutiveBadge?: (app: StoredApplication) => void;
   onStatus: (app: StoredApplication, status: StoredApplication['status']) => void;
   onSchedule: (app: StoredApplication) => void;
   onAssign: (app: StoredApplication) => void;
@@ -57,6 +59,7 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   onDispatch,
   onBadge,
   onCommitteeBadge,
+  onExecutiveBadge,
   onStatus,
   onSchedule,
   onAssign,
@@ -68,6 +71,7 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   const menuFor = (app: StoredApplication): ActionItem[] => {
     const accepted = app.status === 'تم القبول';
     const inCommittee = Boolean(app.targetCommittee) && !app.targetCommittee.includes('عامة');
+    const isExec = isExecutiveLeader(app);
     return [
       {
         label: 'إرسال رسالة القبول والبطاقة',
@@ -80,6 +84,12 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
         icon: <CreditCard className="w-4 h-4 text-cyan-300" />,
         onClick: () => onBadge(app),
         hidden: !accepted,
+      },
+      {
+        label: 'بطاقة التكليف القيادي',
+        icon: <Crown className="w-4 h-4 text-amber-300" />,
+        onClick: () => onExecutiveBadge?.(app),
+        hidden: !accepted || !isExec,
       },
       {
         label: 'كرت عضو اللجنة',

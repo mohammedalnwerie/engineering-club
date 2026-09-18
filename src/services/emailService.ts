@@ -1,6 +1,7 @@
 import { dataService } from './dataService';
 import { getSupabase } from './supabaseClient';
 import { effectiveCommittee } from '../data/committees';
+import { isExecutiveLeader } from '../utils/memberCard';
 import type { StoredApplication } from '../types';
 
 export const emailService = {
@@ -10,9 +11,15 @@ export const emailService = {
     const accountUrl = `${origin}/?member=1`;
     const memberCode = app.memberCode || `UP-MEM-${(app.studentId || app.id || '00123').slice(-5)}`;
     const committee = effectiveCommittee(app);
+    const isExec = isExecutiveLeader(app);
     const validUntilStr = app.validUntil
       ? new Date(app.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })
       : '';
+    const validityLine = isExec
+      ? '• صفة الاعتماد: تكليف قيادي وعضوية معتمدة للعام الأكاديمي 2026/2027\n'
+      : validUntilStr
+        ? `• صلاحية البطاقة الأولى: حتى ${validUntilStr} (يمكنك تجديدها لاحقاً إلى عضوية فصلية من حسابك)\n`
+        : '';
 
     const subject = `تهانينا يا م. ${app.fullName}! تم قبول عضويتك في النادي الهندسي — جامعة فلسطين 🎓`;
     const body = `السلام عليكم ورحمة الله وبركاته،
@@ -27,7 +34,7 @@ export const emailService = {
 • الرقم الجامعي: ${app.studentId}
 • الكلية: ${app.college}
 • التخصص: ${app.major}
-${validUntilStr ? `• صلاحية البطاقة الأولى: حتى ${validUntilStr} (يمكنك تجديدها لاحقاً إلى عضوية فصلية من حسابك)\n` : ''}
+${validityLine}
 🔐 خطوتك الأولى — تفعيل حسابك وتعيين كلمة المرور:
 ادخل إلى صفحة «حسابي» برقمك الجامعي ورمز العضو أعلاه، لتعيين كلمة مرور خاصة بك، والتسجيل في الورش والفعاليات ومتابعة عضويتك:
 🔗 ${accountUrl}
@@ -52,9 +59,15 @@ ${origin}
     const accountUrl = `${origin}/?member=1`;
     const memberCode = app.memberCode || `UP-MEM-${(app.studentId || app.id || '00123').slice(-5)}`;
     const committee = effectiveCommittee(app);
+    const isExec = isExecutiveLeader(app);
     const validUntilStr = app.validUntil
       ? new Date(app.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })
       : '';
+    const validityLine = isExec
+      ? '• صفة الاعتماد: *تكليف قيادي وعضوية معتمدة للعام الأكاديمي 2026/2027*\n'
+      : validUntilStr
+        ? `• صلاحية البطاقة الأولى: حتى ${validUntilStr}\n`
+        : '';
 
     const message = `🎉 *تهانينا يا م. ${app.fullName}!*
 يسر إدارة *النادي الهندسي بجامعة فلسطين* إعلامك بقبول عضويتك رسمياً ضمن *${committee}*${app.organizationalRole ? ` بمسمى (${app.organizationalRole})` : ''}.
@@ -64,7 +77,7 @@ ${origin}
 • الرقم الجامعي: ${app.studentId}
 • الكلية: ${app.college}
 • التخصص: ${app.major}
-${validUntilStr ? `• صلاحية البطاقة الأولى: حتى ${validUntilStr}\n` : ''}
+${validityLine}
 🔐 *خطوتك الأولى — تفعيل حسابك:*
 ادخل إلى صفحة «حسابي» برقمك الجامعي ورمز العضو أعلاه لتعيين كلمة مرورك الخاصة والتسجيل في ورش وفعاليات النادي:
 ${accountUrl}

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getSupabase, isSupabaseConfigured, publicRpc, publicSelect } from './supabaseClient';
 import { sanitizeText, sanitizeUrl } from '../utils/security';
 import { normalizeCode, normalizePhone, toLatinDigits } from '../utils/validation';
+import { isExecutivePosition } from '../data/committees';
 import { FLAGSHIP_PROJECTS, CLUB_EVENTS, TRAINING_COURSES, LEADERSHIP_MEMBERS, COLLEGES, MAJORS, STUDENT_SPOTLIGHT } from '../data/clubData';
 import type {
   ProjectCaseStudy,
@@ -158,11 +159,11 @@ interface ApplicationRow {
   email: string | null;
   phone: string | null;
   status: StoredApplication['status'];
-  data: Partial<ClubApplication> | null;
+  data: Partial<StoredApplication> | null;
   submitted_at: string;
   member_code?: string | null;
   accepted_at?: string | null;
-  membership_type?: 'temporary' | 'semester' | null;
+  membership_type?: 'temporary' | 'semester' | 'executive' | null;
   valid_until?: string | null;
   suspended_at?: string | null;
   suspend_reason?: string | null;
@@ -198,39 +199,52 @@ export interface MemberLookup {
   interviewTimeTbd?: boolean;
   /** Last 4 characters of the private member code */
   codeHint?: string;
-  membershipType?: 'temporary' | 'semester';
+  membershipType?: 'temporary' | 'semester' | 'executive';
   validUntil?: string;
   suspendedAt?: string;
   suspendReason?: string;
-  membershipState?: 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member';
+  membershipState?: 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member' | 'accredited';
 }
 
 const rowToApplication = (row: ApplicationRow): StoredApplication => {
   const isSuspended = Boolean(row.suspended_at);
   const isExpired = Boolean(row.valid_until && new Date(row.valid_until).getTime() < Date.now());
+  const rowData = (row.data || {}) as Partial<StoredApplication>;
+  const role = (rowData.organizationalRole || '').trim();
+  const isExec =
+    row.membership_type === 'executive' ||
+    isExecutivePosition({
+      organizationalRole: role,
+      assignedCommittee: rowData.assignedCommittee,
+      targetCommittee: rowData.targetCommittee,
+      membershipType: row.membership_type || undefined,
+    });
+
   const membershipState =
     row.status !== 'تم القبول'
       ? 'not_member'
       : isSuspended
         ? 'suspended'
-        : isExpired
-          ? 'expired'
-          : (row.membership_type || 'temporary');
+        : isExec
+          ? 'semester'
+          : isExpired
+            ? 'expired'
+            : (row.membership_type === 'executive' ? 'semester' : (row.membership_type || 'temporary'));
 
   return {
-    ...(row.data as ClubApplication),
+    ...((rowData || {}) as ClubApplication),
     id: row.id,
     studentId: row.student_id,
     fullName: row.full_name,
     email: row.email || '',
     phone: row.phone || '',
-    skills: row.data?.skills || [],
+    skills: rowData.skills || [],
     status: row.status,
     submittedAt: row.submitted_at,
     memberCode: row.member_code || undefined,
     acceptedAt: row.accepted_at || undefined,
-    membershipType: row.membership_type || undefined,
-    validUntil: row.valid_until || undefined,
+    membershipType: isExec ? 'executive' : (row.membership_type || undefined),
+    validUntil: isExec ? undefined : (row.valid_until || undefined),
     suspendedAt: row.suspended_at || undefined,
     suspendReason: row.suspend_reason || undefined,
     membershipState,
@@ -353,6 +367,54 @@ class DataService {
     this.complaints = ((complaints.data || []) as ComplaintRow[]).map(rowToComplaint);
     // With an admin session this also returns the private keys (tickets, email settings).
     await this.loadPublicContent(client);
+
+    // Enrich applications missing photoUrl with Leadership Cadre or College Coordinator avatars
+    const leaders = this.getLeadership();
+    const colleges = this.getColleges();
+    this.applications = this.applications.map((a) => {
+      const cleanA = (a.fullName || '').trim().replace(/^م\.\s*/, '');
+      const cleanSid = (a.studentId || '').replace(/[^0-9]/g, '');
+
+      const match = leaders.find((l) => {
+        const cleanL = (l.name || '').trim().replace(/^م\.\s*/, '');
+        if (cleanA && cleanL && (cleanA === cleanL || cleanA.includes(cleanL) || cleanL.includes(cleanA))) return true;
+        if (cleanSid && l.id && l.id.includes(cleanSid)) return true;
+        if (a.email && l.email && a.email.toLowerCase() === l.email.toLowerCase()) return true;
+        return false;
+      });
+
+      if (match) {
+        const isExecTier = match.tier === 'executive' || match.tier === 'committee-lead' || match.tier === 'college-lead';
+        return {
+          ...a,
+          photoUrl: a.photoUrl || match.avatar || undefined,
+          organizationalRole: a.organizationalRole || match.role,
+          membershipType: isExecTier ? 'executive' : a.membershipType,
+          membershipState: isExecTier ? (a.suspendedAt ? 'suspended' : 'semester') : a.membershipState,
+        };
+      }
+
+      // Check matching college coordinator
+      const matchCol = colleges.find((c) => {
+        const coord = c.coordinator;
+        if (!coord?.name) return false;
+        const cleanCoord = coord.name.trim().replace(/^م\.\s*/, '');
+        return cleanA && cleanCoord && (cleanA === cleanCoord || cleanA.includes(cleanCoord) || cleanCoord.includes(cleanA));
+      });
+
+      if (matchCol?.coordinator) {
+        return {
+          ...a,
+          photoUrl: a.photoUrl || matchCol.coordinator.avatar || undefined,
+          organizationalRole: a.organizationalRole || matchCol.coordinator.role,
+          membershipType: 'executive',
+          membershipState: a.suspendedAt ? 'suspended' : 'semester',
+        };
+      }
+
+      return a;
+    });
+
     this.notify();
   }
 
@@ -430,6 +492,42 @@ class DataService {
         };
         this.setContent('colleges', this.upsertById(colleges, updatedCollege));
       }
+    }
+
+    // Bi-directionally synchronize with matching application in club_applications
+    const cleanMemberName = (member.name || '').trim().replace(/^م\.\s*/, '');
+    const cleanMemberSid = (member.id || '').replace(/[^0-9]/g, '');
+
+    const matchingApp = this.applications.find((a) => {
+      const cleanA = (a.fullName || '').trim().replace(/^م\.\s*/, '');
+      const cleanSid = (a.studentId || '').replace(/[^0-9]/g, '');
+      if (cleanMemberName && cleanA && (cleanA === cleanMemberName || cleanA.includes(cleanMemberName) || cleanMemberName.includes(cleanA))) return true;
+      if (cleanMemberSid && cleanSid && cleanSid === cleanMemberSid) return true;
+      if (member.email && a.email && member.email.trim().toLowerCase() === a.email.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    if (matchingApp) {
+      const isExecTier = member.tier === 'executive' || member.tier === 'committee-lead' || member.tier === 'college-lead';
+      const updatedApp: StoredApplication = {
+        ...matchingApp,
+        photoUrl: member.avatar?.trim() || matchingApp.photoUrl,
+        organizationalRole: member.role?.trim() || matchingApp.organizationalRole,
+        assignedCommittee: member.department?.trim() || matchingApp.assignedCommittee,
+        membershipType: isExecTier ? 'executive' : matchingApp.membershipType,
+        membershipState: isExecTier ? (matchingApp.suspendedAt ? 'suspended' : 'semester') : matchingApp.membershipState,
+      };
+      this.applications = this.applications.map((a) => (a.id === matchingApp.id ? updatedApp : a));
+      this.notify();
+
+      // Persist to Supabase club_applications
+      const { id, studentId, fullName, email, phone, status, submittedAt, ...data } = updatedApp;
+      void this.runAdminWrite('فشل تحديث بيانات العضو من الكادر القيادي', (client) =>
+        client.from('club_applications').update({
+          data,
+          membership_type: updatedApp.membershipType || null,
+        }).eq('id', matchingApp.id)
+      );
     }
   }
 
@@ -659,12 +757,15 @@ class DataService {
     this.applications = this.applications.map((a) => {
       if (a.id !== id) return a;
       const isAccepted = status === 'تم القبول';
-      const validUntil =
-        a.validUntil || (isAccepted ? new Date(Date.now() + 14 * 86_400_000).toISOString() : a.validUntil);
-      const membershipType =
-        a.membershipType || (isAccepted ? 'temporary' : a.membershipType);
+      const isExec = isExecutivePosition(a);
+      const validUntil = isExec
+        ? undefined
+        : (a.validUntil || (isAccepted ? new Date(Date.now() + 14 * 86_400_000).toISOString() : a.validUntil));
+      const membershipType = isExec
+        ? 'executive'
+        : (a.membershipType || (isAccepted ? 'temporary' : a.membershipType));
       const acceptedAt = a.acceptedAt || (isAccepted ? new Date().toISOString() : undefined);
-      const membershipState = isAccepted ? (a.suspendedAt ? 'suspended' : 'temporary') : 'not_member';
+      const membershipState = isAccepted ? (a.suspendedAt ? 'suspended' : isExec ? 'semester' : 'temporary') : 'not_member';
       return { ...a, status, validUntil, membershipType, acceptedAt, membershipState };
     });
     this.notify();
@@ -678,7 +779,11 @@ class DataService {
       if (a.id !== id) return a;
       const suspendedAt = suspended ? new Date().toISOString() : undefined;
       const suspendReason = suspended ? reason?.trim() || undefined : undefined;
-      const membershipState = suspended ? 'suspended' : a.membershipType || 'temporary';
+      const membershipState = suspended
+        ? 'suspended'
+        : a.membershipType === 'executive'
+          ? 'semester'
+          : (a.membershipType || 'temporary');
       return { ...a, suspendedAt, suspendReason, membershipState };
     });
     this.notify();
@@ -829,7 +934,16 @@ class DataService {
   public async verifyMember(code: string): Promise<MemberLookup | null> {
     const clean = normalizeCode(code);
     if (!clean) return null;
-    return (await publicRpc<MemberLookup | null>('verify_member', { code: clean })) || null;
+    const lookup = (await publicRpc<MemberLookup | null>('verify_member', { code: clean })) || null;
+    if (!lookup) return null;
+
+    if (isExecutivePosition(lookup)) {
+      lookup.membershipType = 'executive';
+      if (lookup.status === 'تم القبول' && !lookup.suspendedAt) {
+        lookup.membershipState = 'semester';
+      }
+    }
+    return lookup;
   }
 
   private async runAdminWrite(context: string, op: (client: SupabaseClient) => PromiseLike<{ error: unknown }>) {

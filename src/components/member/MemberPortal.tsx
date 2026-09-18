@@ -39,7 +39,7 @@ import { dataService } from '../../services/dataService';
 import { memberCardFor } from '../../utils/memberCard';
 import { downloadCardPng, printCard } from '../../utils/cardRenderer';
 import { compressImage } from '../../utils/image';
-import { findCommittee, effectiveCommittee } from '../../data/committees';
+import { findCommittee, effectiveCommittee, isExecutivePosition } from '../../data/committees';
 import type { StoredApplication, LeaderMember } from '../../types';
 
 interface MemberPortalProps {
@@ -48,30 +48,41 @@ interface MemberPortalProps {
 }
 
 /** Shapes the member profile like an application so the shared card builders can use it. */
-const asApplication = (p: MemberProfile): StoredApplication => ({
-  id: p.id,
-  fullName: p.fullName,
-  studentId: p.studentId,
-  email: p.email,
-  phone: '',
-  academicYear: p.academicYear || '',
-  college: p.college || '',
-  major: p.major || '',
-  skills: [],
-  personalStatement: '',
-  targetCommittee: p.targetCommittee || '',
-  assignedCommittee: p.assignedCommittee || undefined,
-  organizationalRole: p.organizationalRole || undefined,
-  photoUrl: p.photoUrl || undefined,
-  weeklyCommitmentHours: 0,
-  status: 'تم القبول',
-  submittedAt: '',
-  memberCode: p.memberCode,
-  membershipType: p.membershipType || undefined,
-  validUntil: p.validUntil || undefined,
-  membershipState: p.membershipState,
-  suspendedAt: p.membershipState === 'suspended' ? (p.acceptedAt || 'suspended') : undefined,
-});
+const asApplication = (p: MemberProfile): StoredApplication => {
+  const isExec =
+    p.membershipType === 'executive' ||
+    isExecutivePosition({
+      organizationalRole: p.organizationalRole || undefined,
+      assignedCommittee: p.assignedCommittee || undefined,
+      targetCommittee: p.targetCommittee || undefined,
+      membershipType: p.membershipType || undefined,
+    });
+
+  return {
+    id: p.id,
+    fullName: p.fullName,
+    studentId: p.studentId,
+    email: p.email,
+    phone: '',
+    academicYear: p.academicYear || '',
+    college: p.college || '',
+    major: p.major || '',
+    skills: [],
+    personalStatement: '',
+    targetCommittee: p.targetCommittee || '',
+    assignedCommittee: p.assignedCommittee || undefined,
+    organizationalRole: p.organizationalRole || undefined,
+    photoUrl: p.photoUrl || undefined,
+    weeklyCommitmentHours: 0,
+    status: 'تم القبول',
+    submittedAt: '',
+    memberCode: p.memberCode,
+    membershipType: isExec ? 'executive' : (p.membershipType || undefined),
+    validUntil: isExec ? undefined : (p.validUntil || undefined),
+    membershipState: isExec ? (p.membershipState === 'suspended' ? 'suspended' : 'semester') : p.membershipState,
+    suspendedAt: p.membershipState === 'suspended' ? (p.acceptedAt || 'suspended') : undefined,
+  };
+};
 
 export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) => {
   const [profile, setProfile] = useState<MemberProfile | null>(memberService.currentProfile);
@@ -334,7 +345,7 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
               </section>
 
               {/* Membership validity & semester renewal */}
-              <MembershipPanel profile={profile} />
+              <MembershipPanel profile={profile} onOpenExecutiveCard={matchedLeader ? () => setShowExecutiveCard(true) : undefined} />
 
               {/* Events & Registrations */}
               <RegistrationsPanel profile={profile} onBrowseEvents={onClose} />
@@ -494,7 +505,7 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
 
 // ---------------------------------------------------------------------------
 
-const MembershipPanel: React.FC<{ profile: MemberProfile }> = ({ profile }) => {
+const MembershipPanel: React.FC<{ profile: MemberProfile; onOpenExecutiveCard?: () => void }> = ({ profile, onOpenExecutiveCard }) => {
   const settings = dataService.getMembershipSettings();
   const [showForm, setShowForm] = useState(false);
   const [method, setMethod] = useState(settings.paymentMethods[0] || '');
@@ -503,6 +514,48 @@ const MembershipPanel: React.FC<{ profile: MemberProfile }> = ({ profile }) => {
   const [receipt, setReceipt] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+
+  const isExec =
+    profile.membershipType === 'executive' ||
+    isExecutivePosition({
+      organizationalRole: profile.organizationalRole || undefined,
+      assignedCommittee: profile.assignedCommittee || undefined,
+      targetCommittee: profile.targetCommittee || undefined,
+      membershipType: profile.membershipType || undefined,
+    });
+
+  if (isExec) {
+    return (
+      <section className="p-5 rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/[0.08] via-amber-500/[0.02] to-cyan-500/[0.05] space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Crown className="w-5 h-5 text-amber-400" />
+            <h3 className="text-lg font-bold text-white">العضوية والتكليف القيادي</h3>
+          </div>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            اعتماد قيادي 2026/2027
+          </span>
+        </div>
+
+        <p className="text-sm text-gray-200 leading-relaxed">
+          أنت عضو معتمد في الهيئة القيادية للنادي الهندسي ({profile.organizationalRole || profile.assignedCommittee || 'الهيئة الإدارية والتنفيذية'}). عضويتك مفعلة وسارية طوال الدورة النقابية للعام الأكاديمي 2026 / 2027 مع كامل صلاحيات المشاركة والقيادة.
+        </p>
+
+        {onOpenExecutiveCard && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={onOpenExecutiveCard}
+              className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
+              <span>عرض بطاقة التكليف القيادي</span>
+            </button>
+          </div>
+        )}
+      </section>
+    );
+  }
 
   const remaining = daysLeft(profile.validUntil);
   const state = profile.membershipState;

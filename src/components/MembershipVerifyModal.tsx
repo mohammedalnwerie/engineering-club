@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/dataService';
 import type { StoredApplication } from '../types';
 import { downloadCardPng, printCard } from '../utils/cardRenderer';
-import { memberCardFor } from '../utils/memberCard';
+import { memberCardFor, isExecutiveLeader, resolveCardPhoto } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
 import { normalizeCode } from '../utils/validation';
 import { effectiveCommittee, findCommittee } from '../data/committees';
@@ -17,9 +17,11 @@ import {
   Copy,
   Download,
   ArrowLeft,
-  Award
+  Award,
+  Crown,
 } from 'lucide-react';
 import { CommitteeBadgeModal } from './CommitteeBadgeModal';
+import { ExecutiveBadgeModal } from './ExecutiveBadgeModal';
 
 interface MembershipVerifyModalProps {
   isOpen: boolean;
@@ -38,6 +40,7 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showCommitteeBadge, setShowCommitteeBadge] = useState(false);
+  const [showExecutiveBadge, setShowExecutiveBadge] = useState(false);
 
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -198,6 +201,13 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                         يستطيع العضو تجديدها من صفحة «حسابي».
                       </span>
                     </div>
+                  ) : isExecutiveLeader(matchedApp) ? (
+                    <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-sm font-bold text-amber-300">
+                      <Crown className="w-5 h-5 text-amber-400 shrink-0" />
+                      <span>
+                        عضوية وتكليف قيادي معتمد — {matchedApp.organizationalRole || 'الهيئة الإدارية والتنفيذية'} (2026 / 2027)
+                      </span>
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center gap-2 text-sm font-bold text-emerald-300">
                       <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
@@ -233,6 +243,17 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                           <Download className="w-4 h-4" />
                           <span>{isExporting ? 'جاري تجهيز الصورة…' : 'حفظ البطاقة كصورة'}</span>
                         </button>
+
+                        {isExecutiveLeader(matchedApp) && (
+                          <button
+                            type="button"
+                            onClick={() => setShowExecutiveBadge(true)}
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 border border-amber-500/40 text-amber-300 font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all shadow-md"
+                          >
+                            <Crown className="w-4 h-4 text-amber-400" />
+                            <span>بطاقة التكليف القيادي الرسمي</span>
+                          </button>
+                        )}
 
                         {findCommittee(effectiveCommittee(matchedApp))?.id !== 'general' && effectiveCommittee(matchedApp) && (
                           <button
@@ -363,6 +384,24 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
           isOpen={showCommitteeBadge}
           app={matchedApp}
           onClose={() => setShowCommitteeBadge(false)}
+        />
+      )}
+
+      {showExecutiveBadge && matchedApp && (
+        <ExecutiveBadgeModal
+          isOpen={showExecutiveBadge}
+          leader={{
+            id: matchedApp.id,
+            name: matchedApp.fullName,
+            role: matchedApp.organizationalRole || 'عضو الهيئة الإدارية والتنفيذية',
+            tier: 'executive',
+            department: matchedApp.assignedCommittee || 'الهيئة الإدارية والتنفيذية',
+            avatar: resolveCardPhoto(matchedApp) || matchedApp.photoUrl || '',
+            email: matchedApp.email || '',
+            skills: matchedApp.skills?.length ? matchedApp.skills : ['القيادة الهندسية', 'التنسيق والتخطيط'],
+            quote: 'خدمة طلبة كلية الهندسة وتكنولوجيا المعلومات وتطوير العمل الطلابي الهندسي.',
+          }}
+          onClose={() => setShowExecutiveBadge(false)}
         />
       )}
     </div>

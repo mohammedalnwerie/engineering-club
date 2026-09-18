@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import { effectiveCommittee, findCommittee } from '../data/committees';
 import type { LeaderMember, StoredApplication } from '../types';
+import { dataService } from '../services/dataService';
 
 export interface CardField {
   label: string;
@@ -144,6 +145,103 @@ export function memberCodeFor(app: CardApplication, reveal = false): string {
   return `UP-MEM-2026-${cleanId.length >= 5 ? cleanId.slice(-5) : cleanId.padStart(5, '0')}`;
 }
 
+/** Identifies executive leaders, board members, and leadership cadre appointees. */
+export function isExecutiveLeader(app: CardApplication): boolean {
+  const comm = `${app.assignedCommittee || ''} ${app.targetCommittee || ''}`.trim();
+  const role = (app.organizationalRole || '').trim();
+  const type = (app.membershipType || '').trim();
+
+  if (type === 'executive' || type === 'accredited') return true;
+  if (
+    comm.includes('إدارية') ||
+    comm.includes('مجلس الإدارة') ||
+    comm.includes('رئاسة النادي') ||
+    comm.includes('الهيئة التنفيذية')
+  ) {
+    return true;
+  }
+  if (
+    role.includes('رئيس') ||
+    role.includes('نائب') ||
+    role.includes('أمين سر') ||
+    role.includes('أمين صندوق') ||
+    role.includes('ممثل كلية') ||
+    role.includes('منسق كلية')
+  ) {
+    return true;
+  }
+
+  // Check matching against stored leadership members
+  try {
+    const leaders = dataService.getLeadership();
+    const cleanApp = (app.fullName || '').trim().replace(/^م\.\s*/, '');
+    const cleanId = (app.studentId || '').replace(/[^0-9]/g, '');
+
+    const found = leaders.find((l) => {
+      const cleanLeader = (l.name || '').trim().replace(/^م\.\s*/, '');
+      if (cleanApp && cleanLeader && (cleanApp === cleanLeader || cleanApp.includes(cleanLeader) || cleanLeader.includes(cleanApp))) {
+        return true;
+      }
+      if (cleanId && l.id && l.id.includes(cleanId)) return true;
+      return false;
+    });
+
+    if (found && (found.tier === 'executive' || found.tier === 'college-lead' || found.tier === 'committee-lead')) {
+      return true;
+    }
+  } catch {
+    // Ignore in case dataService is loading
+  }
+
+  return false;
+}
+
+/** Resolves member photo, falling back to Leadership Cadre or College Coordinator avatar if missing on application. */
+export function resolveCardPhoto(app: CardApplication): string | undefined {
+  if (app.photoUrl && app.photoUrl.trim()) return app.photoUrl.trim();
+
+  try {
+    const leaders = dataService.getLeadership();
+    const cleanApp = (app.fullName || '').trim().replace(/^م\.\s*/, '');
+    const cleanId = (app.studentId || '').replace(/[^0-9]/g, '');
+
+    const matchingLeader = leaders.find((l) => {
+      if (!l.avatar || !l.avatar.trim()) return false;
+      const cleanLeader = (l.name || '').trim().replace(/^م\.\s*/, '');
+      if (cleanApp && cleanLeader && (cleanApp === cleanLeader || cleanApp.includes(cleanLeader) || cleanLeader.includes(cleanApp))) {
+        return true;
+      }
+      if (cleanId && l.id && l.id.includes(cleanId)) {
+        return true;
+      }
+      return false;
+    });
+
+    if (matchingLeader?.avatar?.trim()) {
+      return matchingLeader.avatar.trim();
+    }
+
+    const colleges = dataService.getColleges();
+    const matchingCollege = colleges.find((c) => {
+      const coord = c.coordinator;
+      if (!coord?.avatar?.trim()) return false;
+      const cleanCoord = (coord.name || '').trim().replace(/^م\.\s*/, '');
+      if (cleanApp && cleanCoord && (cleanApp === cleanCoord || cleanApp.includes(cleanCoord) || cleanCoord.includes(cleanApp))) {
+        return true;
+      }
+      return false;
+    });
+
+    if (matchingCollege?.coordinator?.avatar?.trim()) {
+      return matchingCollege.coordinator.avatar.trim();
+    }
+  } catch {
+    // Ignore during early load
+  }
+
+  return undefined;
+}
+
 /** Computes accurate validity status, pill text, and subline for member cards. */
 export function computeCardValidity(app: CardApplication): {
   status: 'active' | 'temporary' | 'expired' | 'suspended' | 'accredited';
@@ -160,6 +258,17 @@ export function computeCardValidity(app: CardApplication): {
       badgeText: 'عضوية معلّقة',
       cardletTitle: 'العضوية معلّقة',
       validitySubtext: reasonText ? `السبب: ${reasonText}` : 'راجع إدارة النادي لإعادة التفعيل',
+    };
+  }
+
+  // 1. Accredited Executive Leadership & Board Members
+  if (isExecutiveLeader(app)) {
+    const roleTitle = app.organizationalRole || 'عضو الهيئة الإدارية';
+    return {
+      status: 'accredited',
+      badgeText: `اعتماد قيادي ${currentAcademicYear()}`,
+      cardletTitle: roleTitle,
+      validitySubtext: `صالحة طوال الدورة النقابية ${currentAcademicYear()}`,
     };
   }
 
@@ -197,7 +306,7 @@ export function computeCardValidity(app: CardApplication): {
     };
   }
 
-  // Temporary Membership (فور قبول الطلب: 14 يوماً مؤقتة لحين التثبيت)
+  // Temporary Membership (فور قبول الطلب: 14 يوماً مؤقتة لحين التثبيت للطلبة الجدد)
   if (app.validUntil) {
     const d = new Date(app.validUntil);
     const dateFormatted = d.toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -236,24 +345,28 @@ function committeeAccent(committeeName: string): CardAccent {
 
 /** Card for a member of the club at large. */
 export function memberCardFor(app: CardApplication, options: CardOptions = {}): CardData {
+  const isExec = isExecutiveLeader(app);
   const committeeName = effectiveCommittee(app);
   const committee = findCommittee(committeeName);
-  if (committee && committee.id !== 'general') return committeeCardFor(app, options);
+  if (committee && committee.id !== 'general' && !isExec) return committeeCardFor(app, options);
 
   const validity = computeCardValidity(app);
+  const photoUrl = resolveCardPhoto(app);
+  const accent: CardAccent = isExec ? 'gold' : statusAccent(validity.status, 'cyan');
+
   return {
     name: app.fullName,
-    role: app.organizationalRole || 'عضو في النادي الهندسي',
-    photoUrl: app.photoUrl || undefined,
+    role: app.organizationalRole || (isExec ? 'الهيئة الإدارية' : 'عضو في النادي الهندسي'),
+    photoUrl,
     fields: [
-      { label: 'الرقم الجامعي', value: app.studentId || '—' },
-      { label: 'التخصص', value: cleanMajor(app.major) || '—' },
+      { label: isExec ? 'الصفة' : 'الرقم الجامعي', value: isExec ? (app.assignedCommittee || 'الهيئة الإدارية والتنفيذية') : (app.studentId || '—') },
+      { label: isExec ? 'الرقم الجامعي' : 'التخصص', value: isExec ? (app.studentId || '—') : (cleanMajor(app.major) || '—') },
     ],
     highlight: { label: 'العضوية', value: validity.cardletTitle, subvalue: validity.validitySubtext },
     qrValue: memberVerifyUrl(app),
     code: memberCodeFor(app, options.revealCode),
     badge: validity.badgeText,
-    accent: statusAccent(validity.status, 'cyan'),
+    accent,
     validityStatus: validity.status,
     validitySubtext: validity.validitySubtext,
   };
@@ -261,22 +374,25 @@ export function memberCardFor(app: CardApplication, options: CardOptions = {}): 
 
 /** Card for a member serving on one of the committees. */
 export function committeeCardFor(app: CardApplication, options: CardOptions = {}): CardData {
+  const isExec = isExecutiveLeader(app);
   const committeeName = effectiveCommittee(app);
   const validity = computeCardValidity(app);
+  const photoUrl = resolveCardPhoto(app);
+  const accent: CardAccent = isExec ? 'gold' : statusAccent(validity.status, committeeAccent(committeeName));
 
   return {
     name: app.fullName,
-    role: app.organizationalRole || 'عضو باللجنة',
-    photoUrl: app.photoUrl || undefined,
+    role: app.organizationalRole || (isExec ? 'عضو الهيئة الإدارية' : 'عضو باللجنة'),
+    photoUrl,
     fields: [
-      { label: 'اللجنة', value: committeeName },
+      { label: isExec ? 'الصفة' : 'اللجنة', value: isExec ? (app.assignedCommittee || 'الهيئة الإدارية') : committeeName },
       { label: 'الرقم الجامعي', value: app.studentId || '—' },
     ],
     highlight: { label: 'العضوية', value: validity.cardletTitle, subvalue: validity.validitySubtext },
     qrValue: memberVerifyUrl(app),
     code: memberCodeFor(app, options.revealCode),
     badge: validity.badgeText,
-    accent: statusAccent(validity.status, committeeAccent(committeeName)),
+    accent,
     validityStatus: validity.status,
     validitySubtext: validity.validitySubtext,
   };

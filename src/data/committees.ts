@@ -52,3 +52,36 @@ export function findCommittee(nameOrText?: string): CommitteeDefinition | undefi
 export function effectiveCommittee(app: { assignedCommittee?: string; targetCommittee?: string }): string {
   return app.assignedCommittee || app.targetCommittee || '';
 }
+
+/** Determines if an assignment or title belongs to executive leadership / board of directors. */
+export function isExecutivePosition(item?: {
+  organizationalRole?: string;
+  assignedCommittee?: string;
+  targetCommittee?: string;
+  membershipType?: string;
+} | null): boolean {
+  if (!item) return false;
+  if (item.membershipType === 'executive' || item.membershipType === 'accredited') return true;
+  const role = (item.organizationalRole || '').trim();
+  const comm = (item.assignedCommittee || item.targetCommittee || '').trim();
+
+  if (
+    comm.includes('إدارية') ||
+    comm.includes('مجلس الإدارة') ||
+    comm.includes('رئاسة النادي') ||
+    comm.includes('الهيئة التنفيذية')
+  ) {
+    return true;
+  }
+  if (
+    role.includes('رئيس') ||
+    role.includes('نائب') ||
+    role.includes('أمين سر') ||
+    role.includes('أمين صندوق') ||
+    role.includes('ممثل كلية') ||
+    role.includes('منسق كلية')
+  ) {
+    return true;
+  }
+  return false;
+}

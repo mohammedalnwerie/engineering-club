@@ -28,12 +28,24 @@ import {
 import { Badge, Button, EmptyState, ErrorNote, Field, LoadingRows, PageHeader, Panel, formatDate, formatDateTime, inputClass } from './ui';
 import { dataService } from '../../services/dataService';
 import { downloadCsv } from '../../utils/security';
+import { isExecutivePosition } from '../../data/committees';
 import type { MembershipSettings } from '../../types';
 
 type View = 'payments' | 'members' | 'settings';
 
-const stateOf = (m: MemberRow): 'temporary' | 'semester' | 'expired' | 'suspended' => {
+const isExecutiveMember = (m: MemberRow): boolean => {
+  if (m.membership_type === 'executive') return true;
+  return isExecutivePosition({
+    organizationalRole: m.data?.organizationalRole,
+    assignedCommittee: m.data?.assignedCommittee,
+    targetCommittee: m.data?.targetCommittee,
+    membershipType: m.membership_type || undefined,
+  });
+};
+
+const stateOf = (m: MemberRow): 'temporary' | 'semester' | 'expired' | 'suspended' | 'accredited' => {
   if (m.suspended_at) return 'suspended';
+  if (isExecutiveMember(m)) return 'accredited';
   if (!m.valid_until || new Date(m.valid_until).getTime() < Date.now()) return 'expired';
   return m.membership_type === 'semester' ? 'semester' : 'temporary';
 };
@@ -67,12 +79,12 @@ export const MembersPanel: React.FC<{ showToast: (msg: string) => void }> = ({ s
 
   const pendingCount = payments.filter((p) => p.status === 'pending').length;
   const stats = useMemo(() => {
-    const s = { temporary: 0, semester: 0, expired: 0, suspended: 0, expiringSoon: 0 };
+    const s = { temporary: 0, semester: 0, expired: 0, suspended: 0, expiringSoon: 0, accredited: 0 };
     for (const m of members) {
       const state = stateOf(m);
       s[state]++;
       const left = daysLeft(m.valid_until);
-      if (state !== 'expired' && left !== null && left <= 3) s.expiringSoon++;
+      if (state !== 'expired' && state !== 'accredited' && left !== null && left <= 3) s.expiringSoon++;
     }
     return s;
   }, [members]);
@@ -89,11 +101,12 @@ export const MembersPanel: React.FC<{ showToast: (msg: string) => void }> = ({ s
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         {[
           { label: 'طلبات دفع بانتظارك', value: pendingCount, tone: 'text-amber-300' },
+          { label: 'اعتماد قيادي', value: stats.accredited, tone: 'text-amber-400' },
           { label: 'عضوية فصلية', value: stats.semester, tone: 'text-emerald-300' },
-          { label: 'بطاقة أولى', value: stats.temporary, tone: 'text-cyan-200', sub: stats.expiringSoon ? `${stats.expiringSoon} تنتهي خلال 3 أيام` : undefined },
+          { label: 'بطاقة أولى (مؤقتة)', value: stats.temporary, tone: 'text-cyan-200', sub: stats.expiringSoon ? `${stats.expiringSoon} تنتهي خلال 3 أيام` : undefined },
           {
             label: 'منتهية',
             value: stats.expired,
@@ -262,14 +275,14 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
   showToast,
 }) => {
   const [search, setSearch] = useState('');
-  const [stateFilter, setStateFilter] = useState<'all' | 'temporary' | 'semester' | 'expired' | 'suspended'>('all');
+  const [stateFilter, setStateFilter] = useState<'all' | 'temporary' | 'semester' | 'expired' | 'suspended' | 'accredited'>('all');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resetSuccessModal, setResetSuccessModal] = useState<{ name: string; memberCode: string; studentId: string } | null>(null);
   const settings = dataService.getMembershipSettings();
 
   const counts = useMemo(() => {
-    const c = { all: members.length, semester: 0, temporary: 0, expired: 0, suspended: 0 };
+    const c = { all: members.length, semester: 0, temporary: 0, expired: 0, suspended: 0, accredited: 0 };
     for (const m of members) {
       c[stateOf(m)]++;
     }
@@ -306,7 +319,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
         m.email || '',
         m.phone || '',
         m.data?.assignedCommittee || m.data?.targetCommittee || '',
-        { temporary: 'أولى', semester: 'فصلية', expired: 'منتهية', suspended: 'معلّقة' }[stateOf(m)],
+        { temporary: 'أولى', semester: 'فصلية', expired: 'منتهية', suspended: 'معلّقة', accredited: 'اعتماد قيادي' }[stateOf(m)],
         formatDate(m.valid_until),
         m.member_code || '',
       ])
@@ -318,6 +331,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
       <div className="flex flex-wrap items-center gap-1.5 pb-1">
         {[
           { id: 'all', label: 'كل الأعضاء', count: counts.all },
+          { id: 'accredited', label: 'اعتماد قيادي', count: counts.accredited, tone: 'text-amber-300' },
           { id: 'semester', label: 'عضوية فصلية', count: counts.semester, tone: 'text-emerald-300' },
           { id: 'temporary', label: 'بطاقة أولى سارية', count: counts.temporary, tone: 'text-cyan-300' },
           { id: 'expired', label: 'منتهية', count: counts.expired, tone: 'text-red-300' },
@@ -354,6 +368,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
         </div>
         <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value as typeof stateFilter)} className={`${inputClass} sm:w-44`}>
           <option value="all">كل الأعضاء ({counts.all})</option>
+          <option value="accredited">اعتماد قيادي ({counts.accredited})</option>
           <option value="semester">فصلية ({counts.semester})</option>
           <option value="temporary">بطاقة أولى ({counts.temporary})</option>
           <option value="expired">منتهية ({counts.expired})</option>
@@ -378,6 +393,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold text-white">{m.full_name}</span>
+                      {state === 'accredited' && <Badge tone="amber">اعتماد قيادي</Badge>}
                       {state === 'semester' && <Badge tone="green">فصلية</Badge>}
                       {state === 'temporary' && <Badge tone="cyan">سارية</Badge>}
                       {state === 'expired' && <Badge tone="red">منتهية</Badge>}
@@ -386,10 +402,14 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                     <div className="text-sm text-gray-400 mt-1 flex flex-wrap gap-x-4 gap-y-1">
                       <span dir="ltr">{m.student_id}</span>
                       <span>{m.data?.assignedCommittee || m.data?.targetCommittee}</span>
-                      <span>
-                        {state === 'expired' ? 'انتهت' : 'حتى'} {formatDate(m.valid_until)}
-                        {state !== 'expired' && left !== null && ` (${left} يوم)`}
-                      </span>
+                      {state === 'accredited' ? (
+                        <span className="text-amber-300/90 font-medium">صالحة طوال الدورة النقابية 2026/2027</span>
+                      ) : (
+                        <span>
+                          {state === 'expired' ? 'انتهت' : 'حتى'} {formatDate(m.valid_until)}
+                          {state !== 'expired' && left !== null && ` (${left} يوم)`}
+                        </span>
+                      )}
                       {m.member_code && (
                         <span className="font-mono text-cyan-300" dir="ltr">
                           {m.member_code}
@@ -416,7 +436,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                     >
                       {state === 'suspended' ? 'رفع التعليق' : 'تعليق'}
                     </Button>
-                    {state !== 'semester' && state !== 'suspended' && (
+                    {state !== 'semester' && state !== 'suspended' && state !== 'accredited' && (
                       <Button
                         size="sm"
                         variant="success"
@@ -429,18 +449,20 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                         تفعيل فصلي (دفع نقداً)
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      icon={<CalendarPlus className="w-4 h-4" />}
-                      disabled={busy === m.id}
-                      onClick={() => {
-                        const base = m.valid_until && new Date(m.valid_until).getTime() > Date.now() ? new Date(m.valid_until) : new Date();
-                        base.setDate(base.getDate() + 7);
-                        void act(m.id, () => extendMembership(m.id, base.toISOString()), `تم تمديد عضوية ${m.full_name} 7 أيام`);
-                      }}
-                    >
-                      تمديد 7 أيام
-                    </Button>
+                    {state !== 'accredited' && (
+                      <Button
+                        size="sm"
+                        icon={<CalendarPlus className="w-4 h-4" />}
+                        disabled={busy === m.id}
+                        onClick={() => {
+                          const base = m.valid_until && new Date(m.valid_until).getTime() > Date.now() ? new Date(m.valid_until) : new Date();
+                          base.setDate(base.getDate() + 7);
+                          void act(m.id, () => extendMembership(m.id, base.toISOString()), `تم تمديد عضوية ${m.full_name} 7 أيام`);
+                        }}
+                      >
+                        تمديد 7 أيام
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"

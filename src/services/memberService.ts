@@ -7,7 +7,7 @@ import { safeStorage } from './safeStorage';
 // a password exists the database stops accepting the code.
 // There is no server session: every call sends the credentials, and the database checks them.
 
-export type MembershipState = 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member';
+export type MembershipState = 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member' | 'accredited';
 export type EventType = 'workshop' | 'course' | 'hackathon' | 'lecture' | 'visit' | 'other';
 
 export interface MemberRegistration {
@@ -46,7 +46,7 @@ export interface MemberProfile {
   photoUrl?: string | null;
   memberCode: string;
   acceptedAt: string | null;
-  membershipType: 'temporary' | 'semester' | null;
+  membershipType: 'temporary' | 'semester' | 'executive' | null;
   validUntil: string | null;
   membershipState: MembershipState;
   /** false = العضو لسه ما عيّن كلمة مرور، وبيدخل برمز البطاقة */

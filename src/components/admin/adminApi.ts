@@ -73,7 +73,7 @@ export interface MemberRow {
   email: string | null;
   phone: string | null;
   member_code: string | null;
-  membership_type: 'temporary' | 'semester' | null;
+  membership_type: 'temporary' | 'semester' | 'executive' | null;
   valid_until: string | null;
   suspended_at: string | null;
   suspend_reason: string | null;

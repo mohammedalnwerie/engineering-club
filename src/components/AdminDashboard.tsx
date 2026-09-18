@@ -37,7 +37,7 @@ import {
 } from './admin/adminApi';
 import { COMMITTEES, effectiveCommittee, findCommittee } from '../data/committees';
 import { downloadCardPng, printCard } from '../utils/cardRenderer';
-import { memberCardFor } from '../utils/memberCard';
+import { memberCardFor, isExecutiveLeader, resolveCardPhoto } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
 import { AcceptanceDispatchModal } from './AcceptanceDispatchModal';
 import { emailService } from '../services/emailService';
@@ -70,6 +70,7 @@ import {
   Eye,
   EyeOff,
   Award,
+  Crown,
   Sparkles,
   Building2,
   Edit3,
@@ -511,6 +512,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         const updated: LeaderMember = { ...leader, avatar: dataUrl };
         dataService.saveLeader(updated);
         setLeadership(dataService.getLeadership());
+        setApplications(dataService.getApplications());
         showToast(`تم تحديث صورة المهندس (${leader.name}) بنجاح`);
       },
       (err) => showToast(err)
@@ -2277,6 +2279,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   onDispatch={setDispatchModalApp}
                   onBadge={setViewingBadgeApp}
                   onCommitteeBadge={setViewingCommitteeApp}
+                  onExecutiveBadge={(app) => {
+                    const leaders = dataService.getLeadership();
+                    const cleanApp = (app.fullName || '').trim().replace(/^م\.\s*/, '');
+                    const cleanSid = (app.studentId || '').replace(/[^0-9]/g, '');
+                    const matchedLeader = leaders.find((l) => {
+                      const cleanL = (l.name || '').trim().replace(/^م\.\s*/, '');
+                      if (cleanApp && cleanL && (cleanApp === cleanL || cleanApp.includes(cleanL) || cleanL.includes(cleanApp))) return true;
+                      if (cleanSid && l.id && l.id.includes(cleanSid)) return true;
+                      if (app.email && l.email && app.email.toLowerCase() === l.email.toLowerCase()) return true;
+                      return false;
+                    }) || {
+                      id: app.id,
+                      name: app.fullName,
+                      role: app.organizationalRole || 'عضو الهيئة الإدارية والتنفيذية',
+                      tier: 'executive' as const,
+                      department: app.assignedCommittee || 'الهيئة الإدارية والتنفيذية',
+                      avatar: app.photoUrl || resolveCardPhoto(app) || '',
+                      email: app.email || '',
+                      skills: app.skills?.length ? app.skills : ['القيادة الهندسية', 'التنسيق والتخطيط'],
+                      quote: 'خدمة طلبة كلية الهندسة وتكنولوجيا المعلومات وتطوير العمل الطلابي الهندسي.',
+                    };
+                    setViewingLeaderBadge(matchedLeader);
+                  }}
                   onStatus={(app, status) => handleUpdateAppStatus(app.id, status)}
                   onSchedule={(app) => setInterviewApp(app)}
                   onAssign={(app) => setAssignApp(app)}
@@ -4147,6 +4172,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   >
                     <Award className="w-4 h-4 text-cyan-400" />
                     <span>بطاقة عضو اللجنة ({effectiveCommittee(inspectApp)})</span>
+                  </button>
+                )}
+
+                {isExecutiveLeader(inspectApp) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const leaders = dataService.getLeadership();
+                      const cleanApp = (inspectApp.fullName || '').trim().replace(/^م\.\s*/, '');
+                      const cleanSid = (inspectApp.studentId || '').replace(/[^0-9]/g, '');
+                      const matchedLeader = leaders.find((l) => {
+                        const cleanL = (l.name || '').trim().replace(/^م\.\s*/, '');
+                        if (cleanApp && cleanL && (cleanApp === cleanL || cleanApp.includes(cleanL) || cleanL.includes(cleanApp))) return true;
+                        if (cleanSid && l.id && l.id.includes(cleanSid)) return true;
+                        if (inspectApp.email && l.email && inspectApp.email.toLowerCase() === l.email.toLowerCase()) return true;
+                        return false;
+                      }) || {
+                        id: inspectApp.id,
+                        name: inspectApp.fullName,
+                        role: inspectApp.organizationalRole || 'عضو الهيئة الإدارية والتنفيذية',
+                        tier: 'executive' as const,
+                        department: inspectApp.assignedCommittee || 'الهيئة الإدارية والتنفيذية',
+                        avatar: inspectApp.photoUrl || resolveCardPhoto(inspectApp) || '',
+                        email: inspectApp.email || '',
+                        skills: inspectApp.skills?.length ? inspectApp.skills : ['القيادة الهندسية', 'التنسيق والتخطيط'],
+                        quote: 'خدمة طلبة كلية الهندسة وتكنولوجيا المعلومات وتطوير العمل الطلابي الهندسي.',
+                      };
+                      setViewingLeaderBadge(matchedLeader);
+                    }}
+                    className="w-full mt-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-2 shadow-lg transition-all"
+                  >
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    <span>بطاقة التكليف القيادي الرسمي (Executive Badge)</span>
                   </button>
                 )}
               </div>

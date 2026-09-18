@@ -141,11 +141,11 @@ export interface StoredApplication extends ClubApplication {
   /** Private code issued on acceptance (database update-005) */
   memberCode?: string;
   acceptedAt?: string;
-  membershipType?: 'temporary' | 'semester';
+  membershipType?: 'temporary' | 'semester' | 'executive';
   validUntil?: string;
   suspendedAt?: string;
   suspendReason?: string;
-  membershipState?: 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member';
+  membershipState?: 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member' | 'accredited';
   status: 'قيد المراجعة' | 'مقابلة مجدولة' | 'تم القبول' | 'مرفوض';
   submittedAt: string;
 }
