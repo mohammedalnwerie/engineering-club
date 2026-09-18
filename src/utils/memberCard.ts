@@ -43,7 +43,7 @@ export interface CardData {
   validitySubtext?: string;
 }
 
-export type CardAccent = 'purple' | 'cyan' | 'green' | 'gold';
+export type CardAccent = 'purple' | 'cyan' | 'green' | 'gold' | 'red';
 
 export const CARD_ACCENTS: Record<
   CardAccent,
@@ -75,6 +75,15 @@ export const CARD_ACCENTS: Record<
     bar: '#35BC2B',
     bandBg: 'rgba(53,188,43,0.12)',
     bandBorder: 'rgba(92,214,83,0.35)',
+  },
+  red: {
+    pillBg: 'rgba(239,68,68,0.18)',
+    pillBorder: 'rgba(239,68,68,0.55)',
+    pillText: '#FCA5A5',
+    role: '#FCA5A5',
+    bar: '#EF4444',
+    bandBg: 'rgba(239,68,68,0.12)',
+    bandBorder: 'rgba(239,68,68,0.40)',
   },
   gold: {
     pillBg: 'rgba(245,158,11,0.20)',
@@ -232,7 +241,7 @@ export function memberCardFor(app: CardApplication, options: CardOptions = {}): 
     qrValue: memberVerifyUrl(app),
     code: memberCodeFor(app, options.revealCode),
     badge: validity.badgeText,
-    accent: validity.status === 'suspended' || validity.status === 'expired' ? 'gold' : 'purple',
+    accent: validity.status === 'suspended' || validity.status === 'expired' ? 'red' : 'purple',
     layoutVariant: 'general',
     cardletIcon: 'users',
     validityStatus: validity.status,
@@ -265,7 +274,7 @@ export function committeeCardFor(app: CardApplication, options: CardOptions = {}
     qrValue: memberVerifyUrl(app),
     code,
     badge: validity.badgeText,
-    accent: validity.status === 'suspended' || validity.status === 'expired' ? 'gold' : isMedia ? 'green' : isEvents ? 'cyan' : 'purple',
+    accent: validity.status === 'suspended' || validity.status === 'expired' ? 'red' : isMedia ? 'green' : isEvents ? 'cyan' : 'purple',
     layoutVariant: 'executive',
     cardletIcon: isMedia ? 'megaphone' : 'zap',
     validityStatus: validity.status,

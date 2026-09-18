@@ -1,539 +1,70 @@
-import React, { useEffect, useState } from 'react';
-import {
-  CARD_ACCENTS,
-  cardNameFontSize,
-  cardQrDataUrl,
-  currentAcademicYear,
-  type CardData,
-} from '../utils/memberCard';
-import {
-  Calendar,
-  Users,
-  Megaphone,
-  Zap,
-  GraduationCap,
-  Crown,
-  ShieldCheck,
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { renderCardPng } from '../utils/cardRenderer';
+import type { CardData } from '../utils/memberCard';
 
 export type { CardData, CardField } from '../utils/memberCard';
 
 /**
- * Blueprint vector background: Isometric grid, gear blueprint, and university facade.
+ * The club ID card. What you see here is the exact image that gets downloaded
+ * and printed: the card used to be drawn twice — once in CSS and once on a
+ * canvas — and the two drifted apart, so the screen now shows the canvas.
  */
-const BlueprintBackground: React.FC = () => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
-    {/* Technical Isometric Grid */}
-    <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <pattern id="card-blueprint-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-          <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#3FE7E3" strokeWidth="0.75" />
-          <circle cx="24" cy="24" r="0.75" fill="#3FE7E3" />
-          <circle cx="0" cy="0" r="0.75" fill="#3FE7E3" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#card-blueprint-grid)" />
-    </svg>
-
-    {/* Top-Left Cyber Neon Corner Slash */}
-    <div className="absolute top-0 left-0 w-24 h-24 overflow-hidden">
-      <div className="absolute -top-12 -left-12 w-24 h-24 rotate-45 bg-gradient-to-r from-[#35BC2B] via-[#3FE7E3] to-[#7F1AB2] opacity-80 shadow-[0_0_15px_rgba(63,231,227,0.5)]" />
-    </div>
-
-    {/* Mechanical Blueprint Gear (Middle Left) */}
-    <svg
-      className="absolute -left-10 top-32 w-44 h-44 text-[#3FE7E3] opacity-[0.14]"
-      viewBox="0 0 200 200"
-      fill="none"
-      stroke="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Outer Pitch Circle */}
-      <circle cx="100" cy="100" r="75" strokeWidth="1.5" strokeDasharray="4 3" />
-      {/* Root Circle */}
-      <circle cx="100" cy="100" r="55" strokeWidth="1" />
-      {/* Center Hub */}
-      <circle cx="100" cy="100" r="22" strokeWidth="2" />
-      <circle cx="100" cy="100" r="8" fill="currentColor" fillOpacity="0.4" />
-      {/* Crosshairs */}
-      <line x1="10" y1="100" x2="190" y2="100" strokeWidth="0.75" strokeDasharray="3 3" />
-      <line x1="100" y1="10" x2="100" y2="190" strokeWidth="0.75" strokeDasharray="3 3" />
-      {/* Gear Teeth */}
-      {Array.from({ length: 12 }).map((_, i) => (
-        <rect
-          key={i}
-          x="94"
-          y="15"
-          width="12"
-          height="16"
-          rx="2"
-          strokeWidth="1.2"
-          transform={`rotate(${i * 30} 100 100)`}
-        />
-      ))}
-      {/* Spoke Rays */}
-      {Array.from({ length: 6 }).map((_, i) => (
-        <line
-          key={`spoke-${i}`}
-          x1="100"
-          y1="100"
-          x2="100"
-          y2="45"
-          strokeWidth="1"
-          transform={`rotate(${i * 60} 100 100)`}
-        />
-      ))}
-    </svg>
-
-    {/* Architectural University Campus Blueprint (Bottom Right) */}
-    <svg
-      className="absolute -right-8 bottom-12 w-52 h-44 text-[#3FE7E3] opacity-[0.13]"
-      viewBox="0 0 240 180"
-      fill="none"
-      stroke="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Perspective Ground Grid */}
-      <line x1="10" y1="160" x2="230" y2="160" strokeWidth="1" />
-      <line x1="30" y1="170" x2="210" y2="170" strokeWidth="0.5" strokeDasharray="4 2" />
-      <line x1="40" y1="160" x2="120" y2="60" strokeWidth="0.75" strokeDasharray="3 3" />
-      <line x1="200" y1="160" x2="120" y2="60" strokeWidth="0.75" strokeDasharray="3 3" />
-      {/* Main Building Block */}
-      <polygon points="40,160 40,90 120,50 200,90 200,160" strokeWidth="1.2" />
-      {/* Slabs & Floors */}
-      <line x1="40" y1="135" x2="200" y2="135" strokeWidth="0.75" />
-      <line x1="40" y1="112" x2="200" y2="112" strokeWidth="0.75" />
-      {/* Central Atrium / Dome */}
-      <polygon points="100,50 120,30 140,50" strokeWidth="1" />
-      {/* Structural Pillars */}
-      <line x1="70" y1="160" x2="70" y2="105" strokeWidth="0.75" />
-      <line x1="100" y1="160" x2="100" y2="60" strokeWidth="0.75" />
-      <line x1="140" y1="160" x2="140" y2="60" strokeWidth="0.75" />
-      <line x1="170" y1="160" x2="170" y2="105" strokeWidth="0.75" />
-      {/* Dimension Lines */}
-      <line x1="215" y1="90" x2="215" y2="160" strokeWidth="0.5" strokeDasharray="2 2" />
-      <circle cx="215" cy="90" r="1.5" fill="currentColor" />
-      <circle cx="215" cy="160" r="1.5" fill="currentColor" />
-    </svg>
-  </div>
-);
-
-/**
- * On-screen club ID card with Unified Blueprint Identity (2026-2027).
- * Strictly mirrors utils/cardRenderer.ts for pixel-perfect PNG downloads and print.
- */
-export const MemberCard: React.FC<CardData & { className?: string }> = ({
-  name,
-  role,
-  highlight,
-  photoUrl,
-  qrValue,
-  code,
-  accent = 'purple',
-  badge,
-  layoutVariant = 'general',
-  cardletIcon,
-  validityStatus,
-  validitySubtext,
-  className = '',
-}) => {
-  const [qrDataUrl, setQrDataUrl] = useState('');
-  const colors = CARD_ACCENTS[accent];
+export const MemberCard: React.FC<CardData & { className?: string }> = ({ className = '', ...card }) => {
+  const [src, setSrc] = useState('');
+  const [failed, setFailed] = useState(false);
+  // Redraw only when something printed on the card actually changes.
+  const signature = JSON.stringify(card);
+  const cardRef = useRef(card);
+  cardRef.current = card;
 
   useEffect(() => {
     let cancelled = false;
-    cardQrDataUrl(qrValue)
-      .then((url) => !cancelled && setQrDataUrl(url))
-      .catch(() => !cancelled && setQrDataUrl(''));
+    setFailed(false);
+    renderCardPng(cardRef.current)
+      .then((url) => {
+        if (!cancelled) setSrc(url);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, [qrValue]);
+  }, [signature]);
 
-  // Determine icon for the middle cardlet
-  const renderCardletIcon = () => {
-    const iconType =
-      cardletIcon ||
-      (layoutVariant === 'general'
-        ? 'users'
-        : accent === 'green'
-          ? 'megaphone'
-          : accent === 'gold'
-            ? 'crown'
-            : 'zap');
+  const label = [card.name, card.role].filter(Boolean).join(' — ');
 
-    switch (iconType) {
-      case 'users':
-        return <Users className="w-6 h-6 text-[#98F7F1]" />;
-      case 'megaphone':
-        return <Megaphone className="w-6 h-6 text-[#35BC2B]" />;
-      case 'crown':
-        return <Crown className="w-6 h-6 text-[#FBBF24]" />;
-      case 'graduation':
-        return <GraduationCap className="w-6 h-6 text-[#3FE7E3]" />;
-      case 'zap':
-      default:
-        return <Zap className="w-6 h-6 text-[#3FE7E3]" />;
-    }
-  };
+  if (failed) {
+    return (
+      <div
+        dir="rtl"
+        className={`w-[360px] max-w-full mx-auto rounded-3xl border border-white/10 bg-[#090521] p-6 text-right ${className}`}
+      >
+        <div className="text-base font-black text-white">{card.name}</div>
+        {card.role && <div className="text-sm text-gray-300 mt-1">{card.role}</div>}
+        <div className="text-sm text-gray-500 mt-3">تعذر رسم البطاقة. حدّث الصفحة وحاول مرة أخرى.</div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      dir="rtl"
-      className={`w-[360px] max-w-full mx-auto rounded-[28px] overflow-hidden text-right shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(63,231,227,0.12)] relative border border-white/10 ${className}`}
-      style={{ background: '#090521' }}
-    >
-      {/* Top Triple-Color Brand Strip */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-[#35BC2B] via-[#3FE7E3] to-[#7F1AB2]" />
+    <div dir="rtl" className={`w-[360px] max-w-full mx-auto ${className}`}>
+      {src ? (
+        <img src={src} alt={`بطاقة ${label}`} className="w-full h-auto rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.55)]" />
+      ) : (
+        <div
+          className="w-full rounded-3xl bg-[#090521] border border-white/10 animate-pulse"
+          style={{ aspectRatio: '360 / 500' }}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Blueprint Vector Graphics Overlay */}
-      <BlueprintBackground />
-
-      {/* Card Content (Elevated above background) */}
-      <div className="relative z-10">
-        {/* Header: Club & University Branding (Right) + Academic Year Pill (Left) */}
-        <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-2 border-b border-white/10">
-          {/* Right: Club & University Branding with Hexagon Emblem */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            {/* Official Isometric Hexagon Emblem */}
-            <img
-              src="/brand/emblem-on-dark.png"
-              alt="النادي الهندسي"
-              className="w-10 h-10 object-contain shrink-0 drop-shadow-[0_0_12px_rgba(63,231,227,0.35)]"
-            />
-
-            <div className="text-right">
-              <div className="text-base sm:text-lg font-black text-white leading-tight">
-                النادي الهندسي
-              </div>
-              <div className="text-xs font-semibold text-[#98F7F1]/80 leading-none mt-1">
-                جامعة فلسطين
-              </div>
-              <div className="text-[8px] font-mono tracking-widest text-[#3FE7E3]/70 uppercase mt-0.5" dir="ltr">
-                — ENGINEERING CLUB —
-              </div>
-              <div className="text-[7.5px] text-gray-400 font-sans tracking-tight leading-none mt-0.5" dir="ltr">
-                University of Palestine
-              </div>
-            </div>
-          </div>
-
-          {/* Left: Academic Year / Validity Pill */}
-          <div
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-[11px] font-bold shrink-0 transition-colors ${
-              validityStatus === 'suspended'
-                ? 'bg-amber-950/90 border-amber-500/80 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                : validityStatus === 'expired'
-                ? 'bg-red-950/80 border-red-500/60 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.25)]'
-                : validityStatus === 'temporary'
-                ? 'bg-[#08041D]/90 border-amber-400/50 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                : validityStatus === 'accredited'
-                ? 'bg-[#08041D]/90 border-[#FBBF24]/50 text-[#FDE68A] shadow-[0_0_10px_rgba(251,191,36,0.2)]'
-                : 'bg-[#08041D]/90 border-[#3FE7E3]/40 text-white shadow-[0_0_10px_rgba(63,231,227,0.15)]'
-            }`}
-          >
-            <Calendar
-              className={`w-3 h-3 ${
-                validityStatus === 'suspended'
-                  ? 'text-amber-400'
-                  : validityStatus === 'expired'
-                  ? 'text-red-400'
-                  : validityStatus === 'temporary'
-                  ? 'text-amber-400'
-                  : validityStatus === 'accredited'
-                  ? 'text-[#FBBF24]'
-                  : 'text-[#3FE7E3]'
-              }`}
-            />
-            <span>{badge || currentAcademicYear()}</span>
-          </div>
-        </div>
-
-        {/* Identity Section — Diverges based on layoutVariant */}
-        {layoutVariant === 'general' ? (
-          /* ==================================================================== */
-          /* Variant 1: General Member (Centered Layout)                          */
-          /* ==================================================================== */
-          <div className="px-5 pt-5 pb-3 flex flex-col items-center text-center">
-            {/* Centered Portrait Photo or Official Emblem Placeholder with Glowing Frame */}
-            {photoUrl ? (
-              <div className="relative">
-                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-[#7F1AB2] via-[#3FE7E3] to-[#35BC2B] opacity-70 blur-[3px]" />
-                <img
-                  src={photoUrl}
-                  alt={name}
-                  className="relative w-28 h-28 rounded-3xl object-cover border-2 border-[#3FE7E3]/60 shadow-xl"
-                />
-              </div>
-            ) : (
-              <div className="relative">
-                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-[#7F1AB2] via-[#3FE7E3] to-[#35BC2B] opacity-75 blur-[3px]" />
-                <div className="relative w-28 h-28 rounded-3xl bg-[#090526] border-2 border-[#3FE7E3]/50 flex flex-col items-center justify-center p-2 overflow-hidden shadow-2xl">
-                  {/* Subtle Blueprint Crosshair Overlay */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-25" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 2" />
-                    <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 2" />
-                    <circle cx="50%" cy="40%" r="28" fill="none" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 3" />
-                  </svg>
-                  <img
-                    src="/brand/emblem-on-dark.png"
-                    alt="النادي الهندسي"
-                    className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(63,231,227,0.4)] relative z-10"
-                  />
-                  <span className="text-[10px] font-bold text-[#98F7F1] tracking-tight mt-1 text-center leading-none relative z-10">
-                    عضو النادي الهندسي
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Centered Name */}
-            <h2
-              className="font-black text-white mt-3.5 tracking-tight break-words max-w-full"
-              style={{
-                fontSize: cardNameFontSize(name, true) + 2,
-                lineHeight: `${cardNameFontSize(name, true) + 8}px`,
-              }}
-            >
-              {name}
-            </h2>
-
-            {/* Centered Role */}
-            <p className="text-sm font-bold text-[#3FE7E3] mt-1">
-              {role || 'عضو في النادي الهندسي'}
-            </p>
-
-            {/* Centered Gradient Accent Line */}
-            <div className="h-0.5 w-24 mx-auto mt-2 rounded-full bg-gradient-to-r from-transparent via-[#3FE7E3] to-transparent shadow-[0_0_8px_rgba(63,231,227,0.4)]" />
-          </div>
-        ) : (
-          /* ==================================================================== */
-          /* Variant 2: Executive / Committee Member (Side-by-Side Layout)        */
-          /* ==================================================================== */
-          <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-4">
-            {/* Right Side: Photo or Official Emblem Placeholder with Glowing Frame */}
-            {photoUrl ? (
-              <div className="relative shrink-0">
-                <div
-                  className="absolute -inset-1 rounded-2xl opacity-75 blur-[3px]"
-                  style={{
-                    background: `linear-gradient(135deg, ${colors.bar}, #3FE7E3, #35BC2B)`,
-                  }}
-                />
-                <img
-                  src={photoUrl}
-                  alt={name}
-                  className="relative w-24 h-24 rounded-2xl object-cover border-2 border-white/25 shadow-xl"
-                />
-              </div>
-            ) : (
-              <div className="relative shrink-0">
-                <div
-                  className="absolute -inset-1 rounded-2xl opacity-75 blur-[3px]"
-                  style={{
-                    background: `linear-gradient(135deg, ${colors.bar}, #3FE7E3, #35BC2B)`,
-                  }}
-                />
-                <div className="relative w-24 h-24 rounded-2xl bg-[#090526] border-2 border-[#3FE7E3]/50 flex flex-col items-center justify-center p-1.5 overflow-hidden shadow-2xl">
-                  {/* Subtle Blueprint Crosshair Overlay */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-25" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 2" />
-                    <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 2" />
-                    <circle cx="50%" cy="38%" r="22" fill="none" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 3" />
-                  </svg>
-                  <img
-                    src="/brand/emblem-on-dark.png"
-                    alt="النادي الهندسي"
-                    className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(63,231,227,0.4)] relative z-10"
-                  />
-                  <span className="text-[9px] font-bold text-[#98F7F1] tracking-tight mt-1 text-center leading-none relative z-10">
-                    {role || 'كادر قيادي'}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Left Side: Name, Vibrant Role, and Glowing Accent Line */}
-            <div className="min-w-0 flex-1 text-right">
-              <h2
-                className="font-black text-white break-words"
-                style={{
-                  fontSize: cardNameFontSize(name, true),
-                  lineHeight: `${cardNameFontSize(name, true) + 6}px`,
-                }}
-              >
-                {name}
-              </h2>
-
-              <div
-                className="font-black text-sm sm:text-base mt-1.5 break-words"
-                style={{ color: colors.role }}
-              >
-                {role || 'كادر تنظيمي قيادي'}
-              </div>
-
-              {/* Glowing Underline */}
-              <div
-                className="h-1 w-24 mt-2.5 rounded-full"
-                style={{
-                  background: colors.bar,
-                  boxShadow: `0 0 10px ${colors.bar}`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Middle Cardlet (Highlighted Box) with Diagonal Cyber Accent */}
-        {highlight?.value && (
-          <div className="mx-5 my-2.5">
-            <div className="relative rounded-2xl bg-[#0D082E]/80 border border-white/10 p-3.5 backdrop-blur-md overflow-hidden flex items-center justify-between gap-3 shadow-inner">
-              {/* Corner Cyber Neon Accent Ribbon */}
-              <div className="absolute bottom-0 left-0 w-8 h-8 pointer-events-none overflow-hidden">
-                <div className="absolute -bottom-4 -left-4 w-8 h-8 rotate-45 bg-gradient-to-r from-[#35BC2B] to-[#3FE7E3] opacity-80" />
-              </div>
-
-              {/* Right Side: Label, Value and Validity Subline */}
-              <div className="text-right min-w-0 flex-1">
-                <div className="text-[11px] text-gray-400 font-medium">
-                  {highlight.label}
-                </div>
-                <div className="text-sm sm:text-base font-black text-white mt-0.5 break-words leading-snug">
-                  {highlight.value}
-                </div>
-                {(highlight.subvalue || validitySubtext) && (
-                  <div
-                    className={`text-[10px] sm:text-[10.5px] mt-1 font-semibold flex items-center gap-1.5 break-words leading-tight ${
-                      validityStatus === 'suspended'
-                        ? 'text-amber-300 font-bold'
-                        : validityStatus === 'expired'
-                        ? 'text-red-300'
-                        : validityStatus === 'temporary'
-                        ? 'text-amber-300'
-                        : validityStatus === 'accredited'
-                        ? 'text-[#FDE68A]'
-                        : 'text-[#98F7F1]'
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        validityStatus === 'suspended'
-                          ? 'bg-amber-400'
-                          : validityStatus === 'expired'
-                          ? 'bg-red-400'
-                          : validityStatus === 'temporary'
-                          ? 'bg-amber-400 animate-pulse'
-                          : validityStatus === 'accredited'
-                          ? 'bg-[#FBBF24]'
-                          : 'bg-emerald-400 animate-pulse'
-                      }`}
-                    />
-                    <span>{highlight.subvalue || validitySubtext}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Center Divider & Left Side: Icon */}
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="h-8 w-px bg-white/10" />
-                <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
-                  {renderCardletIcon()}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Technical Tagline */}
-        <div className="px-5 py-2 text-center">
-          {layoutVariant === 'general' ? (
-            <div
-              className="text-[9px] font-mono tracking-widest text-[#3FE7E3]/65 uppercase flex items-center justify-center gap-2"
-              dir="ltr"
-            >
-              <span className="w-6 h-px bg-[#3FE7E3]/30" />
-              <span>ENGINEERING BUILDS A BETTER TOMORROW</span>
-              <span className="w-6 h-px bg-[#3FE7E3]/30" />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-0.5" dir="ltr">
-              <div className="text-[9px] font-mono tracking-widest text-[#3FE7E3]/65 uppercase flex items-center justify-center gap-2">
-                <span className="w-6 h-px bg-[#3FE7E3]/30" />
-                <span>ENGINEERING TODAY</span>
-                <span className="w-6 h-px bg-[#3FE7E3]/30" />
-              </div>
-              <div className="text-[8px] font-mono tracking-widest text-[#3FE7E3]/50 uppercase">
-                FOR A BETTER TOMORROW
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Verification Strip (Footer) — ZERO EMAIL, HUD QR, Shield & Official Signature */}
-        <div className="px-5 pt-3.5 pb-4 bg-[#050214]/90 border-t border-white/10 relative backdrop-blur-md">
-          <div className="flex items-center justify-between gap-3">
-            {/* Right: Palestine University & Club Signature */}
-            <div className="text-right shrink-0 min-w-[78px]">
-              <div className="text-xs font-bold text-gray-200 leading-tight">
-                النادي الهندسي
-              </div>
-              <div className="text-[11px] text-[#98F7F1]/75 leading-tight mt-0.5">
-                جامعة فلسطين
-              </div>
-            </div>
-
-            {/* Center: Shield Verification Badge & Code Pill */}
-            <div className="flex flex-col items-center justify-center text-center px-1">
-              <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-300">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#35BC2B]" />
-                <span>كود التحقق</span>
-              </div>
-              <div
-                className="mt-1 px-2.5 py-0.5 rounded-full bg-[#0A0524] border border-[#3FE7E3]/45 text-[#3FE7E3] font-mono text-[11px] font-bold tracking-wide whitespace-nowrap shadow-[0_0_10px_rgba(63,231,227,0.18)]"
-                dir="ltr"
-              >
-                {code}
-              </div>
-            </div>
-
-            {/* Left: QR Code with 4 Cyber HUD Corner Brackets */}
-            <div className="relative p-1 shrink-0">
-              {/* HUD Brackets */}
-              <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-[#3FE7E3]" />
-              <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-[#3FE7E3]" />
-              <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-[#3FE7E3]" />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-[#3FE7E3]" />
-
-              <div className="w-[58px] h-[58px] rounded-lg bg-white p-1 flex items-center justify-center shadow-md">
-                {qrDataUrl ? (
-                  <img src={qrDataUrl} alt="QR Code" className="w-full h-full object-contain" />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 animate-pulse rounded" />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Subtext Bar */}
-          <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-center gap-3">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#3FE7E3]/30" />
-            <span className="text-[8px] font-mono tracking-widest text-[#3FE7E3]/60 uppercase" dir="ltr">
-              PALESTINE UNIVERSITY
-            </span>
-            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#3FE7E3]/30" />
-          </div>
-        </div>
-
-        {/* Suspension Security HUD Watermark Stamp */}
-        {validityStatus === 'suspended' && (
-          <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center overflow-hidden p-4">
-            <div className="rotate-[-16deg] px-6 py-2.5 rounded-2xl bg-[#090521]/90 border-2 border-dashed border-amber-500 text-amber-300 font-black text-xs sm:text-sm tracking-wider uppercase shadow-[0_0_35px_rgba(245,158,11,0.55)] backdrop-blur-[2px] flex items-center gap-2 select-none">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span>عضوية معلّقة — SUSPENDED</span>
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-            </div>
-          </div>
-        )}
+      {/* The image carries the design; this keeps the details readable by screen readers. */}
+      <div className="sr-only">
+        {label}
+        {card.highlight?.value ? ` — ${card.highlight.label}: ${card.highlight.value}` : ''}
+        {card.validitySubtext ? ` — ${card.validitySubtext}` : ''}
+        {` — كود التحقق: ${card.code}`}
       </div>
     </div>
   );
