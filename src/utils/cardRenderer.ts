@@ -10,6 +10,12 @@ const P = 20;
 const SANS = "'Alexandria', 'IBM Plex Sans Arabic', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
+/** Any Arabic letter — decides a string's base direction on the canvas. */
+const ARABIC = /[؀-ۿ]/;
+
+/** Every card in the family prints at the same height. */
+const MIN_HEIGHT = 500;
+
 const loadImage = (src: string) =>
   new Promise<HTMLImageElement | null>((resolve) => {
     const img = new Image();
@@ -84,93 +90,6 @@ function drawBlueprintBackground(ctx: CanvasRenderingContext2D, height: number) 
   cornerGrad.addColorStop(1, '#7F1AB2');
   ctx.fillStyle = cornerGrad;
   ctx.fill();
-
-  // 3. Mechanical Blueprint Gear (Middle Left)
-  const gx = 10;
-  const gy = 200;
-  ctx.strokeStyle = 'rgba(63, 231, 227, 0.12)';
-  ctx.fillStyle = 'rgba(63, 231, 227, 0.12)';
-
-  // Pitch Circle (Dashed)
-  ctx.beginPath();
-  ctx.arc(gx, gy, 70, 0, Math.PI * 2);
-  ctx.setLineDash([4, 3]);
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Root Circle
-  ctx.beginPath();
-  ctx.arc(gx, gy, 50, 0, Math.PI * 2);
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // Hub Circle
-  ctx.beginPath();
-  ctx.arc(gx, gy, 20, 0, Math.PI * 2);
-  ctx.lineWidth = 1.8;
-  ctx.stroke();
-
-  // Inner Hub Dot
-  ctx.beginPath();
-  ctx.arc(gx, gy, 7, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Spokes
-  for (let i = 0; i < 6; i++) {
-    const rad = (i * 60 * Math.PI) / 180;
-    ctx.beginPath();
-    ctx.moveTo(gx + Math.cos(rad) * 20, gy + Math.sin(rad) * 20);
-    ctx.lineTo(gx + Math.cos(rad) * 50, gy + Math.sin(rad) * 50);
-    ctx.stroke();
-  }
-
-  // Gear Teeth
-  for (let i = 0; i < 12; i++) {
-    const rad = (i * 30 * Math.PI) / 180;
-    ctx.save();
-    ctx.translate(gx, gy);
-    ctx.rotate(rad);
-    ctx.strokeRect(-5, -78, 10, 12);
-    ctx.restore();
-  }
-
-  // 4. Architectural Building Facade (Bottom Right)
-  const bx = 280;
-  const by = height - 120;
-  ctx.strokeStyle = 'rgba(63, 231, 227, 0.11)';
-  ctx.lineWidth = 0.8;
-
-  // Ground lines
-  ctx.beginPath();
-  ctx.moveTo(bx - 140, by + 80);
-  ctx.lineTo(bx + 70, by + 80);
-  ctx.stroke();
-
-  // Building wireframe block
-  ctx.beginPath();
-  ctx.moveTo(bx - 120, by + 80);
-  ctx.lineTo(bx - 120, by + 20);
-  ctx.lineTo(bx - 40, by - 15);
-  ctx.lineTo(bx + 40, by + 20);
-  ctx.lineTo(bx + 40, by + 80);
-  ctx.stroke();
-
-  // Slabs
-  ctx.beginPath();
-  ctx.moveTo(bx - 120, by + 60);
-  ctx.lineTo(bx + 40, by + 60);
-  ctx.moveTo(bx - 120, by + 40);
-  ctx.lineTo(bx + 40, by + 40);
-  ctx.stroke();
-
-  // Pillars
-  ctx.beginPath();
-  ctx.moveTo(bx - 80, by + 80);
-  ctx.lineTo(bx - 80, by + 30);
-  ctx.moveTo(bx, by + 80);
-  ctx.lineTo(bx, by + 30);
-  ctx.stroke();
 
   ctx.restore();
 }
@@ -342,7 +261,14 @@ function drawShieldCheck(ctx: CanvasRenderingContext2D, cx: number, cy: number) 
 }
 
 /** Lays out the card; draws only when `draw` is true. Returns the total height. */
-function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, draw: boolean): number {
+function layout(
+  ctx: CanvasRenderingContext2D,
+  card: CardData,
+  assets: Assets,
+  draw: boolean,
+  /** Final height when drawing, so every card in the family prints the same size. */
+  fixedHeight?: number
+): number {
   const colors = CARD_ACCENTS[card.accent || 'purple'];
   const right = W - P;
   const isGeneral = card.layoutVariant === 'general';
@@ -363,7 +289,26 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
     ctx.fillStyle = color;
     ctx.textAlign = align;
     ctx.textBaseline = 'top';
+    // Each string gets its own base direction: an Arabic sentence containing
+    // digits, brackets or bullets reorders wrongly under a global LTR base.
+    ctx.direction = ARABIC.test(value) ? 'rtl' : 'ltr';
     ctx.fillText(value, x, y);
+  };
+
+  /** Shrinks, then truncates, so a long title never spills out of its box. */
+  const fit = (value: string, maxWidth: number, weight: number, size: number, family = SANS, minSize = 9) => {
+    let current = size;
+    ctx.font = `${weight} ${current}px ${family}`;
+    while (ctx.measureText(value).width > maxWidth && current > minSize) {
+      current -= 0.5;
+      ctx.font = `${weight} ${current}px ${family}`;
+    }
+    let out = value;
+    if (ctx.measureText(out).width > maxWidth) {
+      while (out.length > 4 && ctx.measureText(`${out}…`).width > maxWidth) out = out.slice(0, -1);
+      out = `${out}…`;
+    }
+    return { text: out, font: `${weight} ${current}px ${family}` };
   };
 
   let y = 6; // Below the brand gradient strip
@@ -494,7 +439,8 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
         }
 
         // Emblem Subtext
-        text('عضو النادي الهندسي', photoX + PHOTO / 2, photoY + 68, `700 10px ${SANS}`, '#98F7F1', 'center');
+        const caption = fit('عضو النادي الهندسي', PHOTO - 12, 700, 10, SANS, 7);
+        text(caption.text, photoX + PHOTO / 2, photoY + 68, caption.font, '#98F7F1', 'center');
       }
       ctx.restore();
     }
@@ -506,7 +452,8 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
 
     // Centered Role
     const roleY = nameY + nameSize + 6;
-    text(card.role || 'عضو في النادي الهندسي', W / 2, roleY, `700 13px ${SANS}`, '#3FE7E3', 'center');
+    const generalRole = fit(card.role || 'عضو في النادي الهندسي', W - 2 * P - 20, 700, 13);
+    text(generalRole.text, W / 2, roleY, generalRole.font, '#3FE7E3', 'center');
 
     // Centered Gradient Accent Line
     if (draw) {
@@ -577,7 +524,8 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
           ctx.drawImage(assets.emblem, photoX + (PHOTO - 38) / 2, photoY + 10, 38, 38);
         }
 
-        text(card.role || 'كادر قيادي', photoX + PHOTO / 2, photoY + 58, `700 9px ${SANS}`, '#98F7F1', 'center');
+        const execCaption = fit(card.role || 'كادر قيادي', PHOTO - 10, 700, 9, SANS, 7);
+        text(execCaption.text, photoX + PHOTO / 2, photoY + 58, execCaption.font, '#98F7F1', 'center');
       }
       ctx.restore();
     }
@@ -590,7 +538,8 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
     nameLines.forEach((l, i) => text(l, textX, photoY + 6 + i * (nameSize + 6), `900 ${nameSize}px ${SANS}`, '#FFFFFF', 'right'));
 
     const roleY = photoY + 6 + nameLines.length * (nameSize + 6) + 2;
-    text(card.role || 'كادر تنظيمي قيادي', textX, roleY, `800 13.5px ${SANS}`, colors.role, 'right');
+    const execRole = fit(card.role || 'كادر تنظيمي قيادي', textX - P, 800, 13.5);
+    text(execRole.text, textX, roleY, execRole.font, colors.role, 'right');
 
     // Glowing Underline Bar
     if (draw) {
@@ -665,9 +614,12 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
 
     // Right Side: Label, Value, and Validity Subvalue
     const contentX = right - 14;
+    const cardletTextW = cardletW - 80;
     if (hasSubvalue) {
-      text(card.highlight.label, contentX, cardletY + 11, `500 10px ${SANS}`, '#9CA3AF', 'right');
-      text(card.highlight.value, contentX, cardletY + 28, `800 14px ${SANS}`, '#FFFFFF', 'right');
+      const lbl = fit(card.highlight.label, cardletTextW, 500, 10);
+      const val = fit(card.highlight.value, cardletTextW, 800, 14);
+      text(lbl.text, contentX, cardletY + 11, lbl.font, '#9CA3AF', 'right');
+      text(val.text, contentX, cardletY + 28, val.font, '#FFFFFF', 'right');
       const subtextColor =
         card.validityStatus === 'suspended'
           ? '#FDE68A'
@@ -678,10 +630,13 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
               : card.validityStatus === 'accredited'
                 ? '#FDE68A'
                 : '#98F7F1';
-      text(`● ${card.highlight.subvalue}`, contentX, cardletY + 47, `600 10px ${SANS}`, subtextColor, 'right');
+      const sub = fit(`● ${card.highlight.subvalue}`, cardletTextW, 600, 10);
+      text(sub.text, contentX, cardletY + 47, sub.font, subtextColor, 'right');
     } else {
-      text(card.highlight.label, contentX, cardletY + 13, `500 11px ${SANS}`, '#9CA3AF', 'right');
-      text(card.highlight.value, contentX, cardletY + 30, `800 15px ${SANS}`, '#FFFFFF', 'right');
+      const lbl = fit(card.highlight.label, cardletTextW, 500, 11);
+      const val = fit(card.highlight.value, cardletTextW, 800, 15);
+      text(lbl.text, contentX, cardletY + 13, lbl.font, '#9CA3AF', 'right');
+      text(val.text, contentX, cardletY + 30, val.font, '#FFFFFF', 'right');
     }
 
     y = cardletY + cardletH + 8;
@@ -731,8 +686,9 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   // =========================================================================
   // 5. Verification Footer (Zero Overlap, Guaranteed Separation)
   // =========================================================================
-  const footerTop = y + 8;
   const footerH = 100;
+  // Pin the footer to the bottom of the fixed height; short cards gain air above it.
+  const footerTop = fixedHeight ? Math.max(y + 8, fixedHeight - footerH) : y + 8;
 
   if (draw) {
     // Footer Background & Top Divider
@@ -801,7 +757,14 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   return footerTop + footerH;
 }
 
-function drawSuspensionStamp(ctx: CanvasRenderingContext2D, width: number, height: number) {
+function drawStatusStamp(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  label: string,
+  border: string,
+  textColor: string
+) {
   ctx.save();
   ctx.translate(width / 2, height * 0.44);
   ctx.rotate((-16 * Math.PI) / 180);
@@ -814,19 +777,20 @@ function drawSuspensionStamp(ctx: CanvasRenderingContext2D, width: number, heigh
   ctx.fillStyle = 'rgba(9, 5, 33, 0.92)';
   ctx.fill();
 
-  // Dashed amber border
+  // Dashed border in the status colour
   ctx.setLineDash([6, 4]);
-  ctx.strokeStyle = '#F59E0B';
+  ctx.strokeStyle = border;
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.setLineDash([]);
 
   // Bold text
   ctx.font = `900 13px ${SANS}`;
-  ctx.fillStyle = '#FDE68A';
+  ctx.fillStyle = textColor;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('عضوية معلّقة — SUSPENDED', 0, 0);
+  ctx.direction = 'rtl';
+  ctx.fillText(label, 0, 0);
 
   ctx.restore();
 }
@@ -848,7 +812,7 @@ export async function renderCardPng(card: CardData, scale = 3): Promise<string> 
   const assets = { emblem, qr, photo };
 
   const measureCtx = document.createElement('canvas').getContext('2d')!;
-  const height = layout(measureCtx, card, assets, false);
+  const height = Math.max(MIN_HEIGHT, layout(measureCtx, card, assets, false));
 
   const canvas = document.createElement('canvas');
   canvas.width = W * scale;
@@ -877,11 +841,13 @@ export async function renderCardPng(card: CardData, scale = 3): Promise<string> 
   ctx.fillRect(0, 0, W, 6);
 
   // 4. Draw Card Content
-  layout(ctx, card, assets, true);
+  layout(ctx, card, assets, true, height);
 
-  // 5. Suspension Security Watermark Stamp
+  // 5. A card that cannot be used says so across its face
   if (card.validityStatus === 'suspended') {
-    drawSuspensionStamp(ctx, W, height);
+    drawStatusStamp(ctx, W, height, 'عضوية معلّقة — SUSPENDED', '#F59E0B', '#FDE68A');
+  } else if (card.validityStatus === 'expired') {
+    drawStatusStamp(ctx, W, height, 'عضوية منتهية — EXPIRED', '#EF4444', '#FCA5A5');
   }
 
   ctx.restore();
