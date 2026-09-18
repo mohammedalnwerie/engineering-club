@@ -45,7 +45,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
   onViewLeaderBadge,
   onViewCommitteeCard,
 }) => {
-  const [leaderFilter, setLeaderFilter] = useState<'all' | 'executive' | 'committee-lead'>('all');
+  const [leaderFilter, setLeaderFilter] = useState<'all' | 'executive' | 'committee-lead' | 'college-lead'>('all');
   const [leaderSearch, setLeaderSearch] = useState('');
 
   return (
@@ -136,6 +136,14 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
         الرئاسة والإدارة ({leadership.filter((l) => l.tier === 'executive').length})
       </button>
       <button
+        onClick={() => setLeaderFilter('college-lead')}
+        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          leaderFilter === 'college-lead' ? 'bg-cyan-300 text-black shadow-sm' : 'text-gray-400 hover:text-white'
+        }`}
+      >
+        ممثلو الكليات ({leadership.filter((l) => l.tier === 'college-lead').length})
+      </button>
+      <button
         onClick={() => setLeaderFilter('committee-lead')}
         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
           leaderFilter === 'committee-lead'
@@ -165,6 +173,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
       .filter((l) => {
         if (leaderFilter === 'executive') return l.tier === 'executive';
         if (leaderFilter === 'committee-lead') return l.tier === 'committee-lead';
+        if (leaderFilter === 'college-lead') return l.tier === 'college-lead';
         return true;
       })
       .filter((l) => {

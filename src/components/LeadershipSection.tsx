@@ -5,7 +5,7 @@ import { Mail, ShieldCheck, Award } from 'lucide-react';
 
 export const LeadershipSection: React.FC = () => {
   const [leadershipList, setLeadershipList] = useState<LeaderMember[]>([]);
-  const [activeTier, setActiveTier] = useState<'all' | 'executive' | 'committee-lead'>('all');
+  const [activeTier, setActiveTier] = useState<'all' | 'executive' | 'committee-lead' | 'college-lead'>('all');
 
   useEffect(() => {
     setLeadershipList(dataService.getLeadership());
@@ -19,6 +19,7 @@ export const LeadershipSection: React.FC = () => {
     { label: 'كافة القيادات والمراكز', value: 'all' },
     { label: 'الهيئة الإدارية والرئاسة', value: 'executive' },
     { label: 'رؤساء اللجان المتخصصة', value: 'committee-lead' },
+    { label: 'ممثلو الكليات', value: 'college-lead' },
   ];
 
   const filteredMembers = leadershipList.filter((m) => {
@@ -30,6 +31,7 @@ export const LeadershipSection: React.FC = () => {
   const getTierLabel = (tier: string, role: string) => {
     if (role.includes('رئيس النادي') && !role.includes('نائب')) return 'رئاسة النادي';
     if (tier === 'executive') return 'الهيئة الإدارية';
+    if (tier === 'college-lead') return 'ممثل كلية';
     return 'قيادة اللجان';
   };
 

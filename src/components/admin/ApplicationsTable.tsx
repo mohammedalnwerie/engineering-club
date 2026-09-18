@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Send, CreditCard, Award, CheckCircle, Clock, Trash2, XCircle } from 'lucide-react';
+import { Eye, Send, CreditCard, Award, CheckCircle, Clock, Trash2, XCircle, Link as LinkIcon, UserCog } from 'lucide-react';
 import type { StoredApplication } from '../../types';
 import { effectiveCommittee } from '../../data/committees';
 import { ActionMenu, CheckBox, type ActionItem } from './controls';
@@ -19,6 +19,7 @@ export interface ApplicationsTableProps {
   onCommitteeBadge: (app: StoredApplication) => void;
   onStatus: (app: StoredApplication, status: StoredApplication['status']) => void;
   onSchedule: (app: StoredApplication) => void;
+  onAssign: (app: StoredApplication) => void;
   onDelete: (app: StoredApplication) => void;
 }
 
@@ -58,6 +59,7 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   onCommitteeBadge,
   onStatus,
   onSchedule,
+  onAssign,
   onDelete,
 }) => {
   const selectedSet = React.useMemo(() => new Set(selected), [selected]);
@@ -84,6 +86,11 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
         icon: <Award className="w-4 h-4 text-emerald-300" />,
         onClick: () => onCommitteeBadge(app),
         hidden: !accepted || !inCommittee,
+      },
+      {
+        label: 'تعيين اللجنة والمسمى',
+        icon: <UserCog className="w-4 h-4 text-cyan-300" />,
+        onClick: () => onAssign(app),
       },
       {
         label: 'قبول الطالب',
@@ -164,6 +171,20 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                   {app.major} — {effectiveCommittee(app)}
                   {app.organizationalRole ? ` · ${app.organizationalRole}` : ''}
                 </div>
+                {app.skills?.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">{app.skills.slice(0, 3).join(' · ')}</div>
+                )}
+                {app.portfolioUrl && (
+                  <a
+                    href={app.portfolioUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-cyan-300 inline-flex items-center gap-1 mt-1"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    <span>رابط أعماله</span>
+                  </a>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 mt-4">
@@ -213,9 +234,27 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                   </td>
                   <td className="p-3 text-right">
                     <div className="font-bold text-white truncate">{app.fullName}</div>
-                    <div className="text-xs text-gray-400 font-mono mt-0.5 truncate" dir="ltr">
-                      {app.email}
+                    <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-2">
+                      <span className="font-mono truncate" dir="ltr">
+                        {app.email}
+                      </span>
+                      {app.portfolioUrl && (
+                        <a
+                          href={app.portfolioUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          title={app.portfolioUrl}
+                          className="text-cyan-300 hover:text-white inline-flex items-center gap-1 shrink-0"
+                        >
+                          <LinkIcon className="w-3.5 h-3.5" />
+                          <span>أعماله</span>
+                        </a>
+                      )}
                     </div>
+                    {app.skills?.length > 0 && (
+                      <div className="text-xs text-gray-500 mt-1 truncate">{app.skills.slice(0, 3).join(' · ')}</div>
+                    )}
                   </td>
                   <td className="p-3 text-right font-mono text-cyan-300 font-semibold" dir="ltr">
                     {app.studentId}

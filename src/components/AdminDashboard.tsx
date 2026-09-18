@@ -24,6 +24,7 @@ import { CollegesPanel } from './admin/CollegesPanel';
 import { ContactPanel } from './admin/ContactPanel';
 import { TodoPanel } from './admin/TodoPanel';
 import { InterviewModal } from './admin/InterviewModal';
+import { AssignModal } from './admin/AssignModal';
 import { complaintCategoryLabel, COMPLAINT_CATEGORIES, PRIORITY_LABELS } from '../data/complaints';
 import {
   fetchMyRole,
@@ -335,7 +336,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [appStatusFilter, setAppStatusFilter] = useState<string>('all');
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
   const [showRecruitmentControls, setShowRecruitmentControls] = useState(false);
+  const [onlyWithPortfolio, setOnlyWithPortfolio] = useState(false);
   const [interviewApp, setInterviewApp] = useState<StoredApplication | null>(null);
+  const [assignApp, setAssignApp] = useState<StoredApplication | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [quickNavOpen, setQuickNavOpen] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
@@ -828,12 +831,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         `up-eng-${app.id.slice(-8)}`.toLowerCase().includes(q) ||
         app.major.toLowerCase().includes(q) ||
         app.targetCommittee.toLowerCase().includes(q) ||
-        app.email.toLowerCase().includes(q);
+        app.email.toLowerCase().includes(q) ||
+        // What the student wrote about themselves is searchable too
+        (app.skills || []).some((skill) => skill.toLowerCase().includes(q)) ||
+        (app.customSkill || '').toLowerCase().includes(q) ||
+        (app.personalStatement || '').toLowerCase().includes(q) ||
+        (app.organizationalRole || '').toLowerCase().includes(q);
       const matchesStatus = appStatusFilter === 'all' || app.status === appStatusFilter;
       const matchesCommittee = appCommitteeFilter === 'الكل' || effectiveCommittee(app).includes(appCommitteeFilter);
-      return matchesSearch && matchesStatus && matchesCommittee;
+      const matchesPortfolio = !onlyWithPortfolio || Boolean(app.portfolioUrl);
+      return matchesSearch && matchesStatus && matchesCommittee && matchesPortfolio;
     });
-  }, [applications, appSearch, appStatusFilter, appCommitteeFilter]);
+  }, [applications, appSearch, appStatusFilter, appCommitteeFilter, onlyWithPortfolio]);
 
   // Drop selected rows that the filters no longer show.
   useEffect(() => {
@@ -891,7 +900,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   };
 
   const exportApplications = (list: StoredApplication[]) => {
-    const headers = ['الاسم الكامل', 'الرقم الجامعي', 'الكلية', 'التخصص', 'السنة الدراسية', 'اللجنة المستهدفة', 'البريد الإلكتروني', 'رقم الهاتف', 'الحالة', 'تاريخ التقديم'];
+    const headers = [
+      'الاسم الكامل', 'الرقم الجامعي', 'الكلية', 'التخصص', 'السنة الدراسية',
+      'اللجنة المطلوبة', 'اللجنة المعيّنة', 'المسمى', 'المهارات', 'رابط الأعمال',
+      'نبذة الطالب', 'ساعات الالتزام', 'البريد الإلكتروني', 'رقم الهاتف', 'الحالة',
+      'موعد المقابلة', 'تاريخ التقديم',
+    ];
     const rows = list.map((a) => [
       a.fullName,
       a.studentId,
@@ -899,9 +913,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       a.major,
       a.academicYear,
       a.targetCommittee,
+      a.assignedCommittee || '',
+      a.organizationalRole || '',
+      [...(a.skills || []), a.customSkill].filter(Boolean).join(' / '),
+      a.portfolioUrl || '',
+      a.personalStatement || '',
+      String(a.weeklyCommitmentHours ?? ''),
       a.email,
       a.phone || '',
       a.status,
+      a.interviewAt ? new Date(a.interviewAt).toLocaleString('ar-SA') : '',
       a.submittedAt ? new Date(a.submittedAt).toLocaleDateString('ar-SA') : '',
     ]);
     downloadCsv(`UP_Engineering_Club_Applicants_${new Date().toISOString().split('T')[0]}`, headers, rows);
@@ -1073,6 +1094,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         )}
 
         {confirmDialog}
+
+        {assignApp && (
+          <AssignModal
+            app={assignApp}
+            onClose={() => setAssignApp(null)}
+            onSave={(assignment) => {
+              dataService.updateApplicationAssignment(assignApp.id, assignment);
+              showToast(
+                `${assignApp.fullName}: ${assignment.assignedCommittee}${
+                  assignment.organizationalRole ? ` — ${assignment.organizationalRole}` : ''
+                }`
+              );
+            }}
+          />
+        )}
 
         {interviewApp && (
           <InterviewModal
@@ -2173,6 +2209,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       <option value="مرفوض">مرفوض</option>
                     </select>
 
+                    <button
+                      type="button"
+                      onClick={() => setOnlyWithPortfolio((v) => !v)}
+                      aria-pressed={onlyWithPortfolio}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer whitespace-nowrap ${
+                        onlyWithPortfolio
+                          ? 'bg-cyan-400 text-black border-cyan-300'
+                          : 'bg-black/40 border-white/10 text-gray-300 hover:text-white'
+                      }`}
+                    >
+                      معهم رابط أعمال
+                    </button>
+
                     <select
                       value={appCommitteeFilter}
                       onChange={(e) => setAppCommitteeFilter(e.target.value)}
@@ -2254,6 +2303,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   onCommitteeBadge={setViewingCommitteeApp}
                   onStatus={(app, status) => handleUpdateAppStatus(app.id, status)}
                   onSchedule={(app) => setInterviewApp(app)}
+                  onAssign={(app) => setAssignApp(app)}
                   onDelete={(app) => void handleDeleteApplication(app.id, app.fullName)}
                 />
               </div>
@@ -4389,6 +4439,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     >
                       <option value="executive">الرئاسة والهيئة الإدارية (رئيس، نائب، أمين سر، أمين صندوق)</option>
                       <option value="committee-lead">رئيس لجنة (فعاليات وأنشطة، علاقات وتدريب، إعلامية)</option>
+                      <option value="college-lead">ممثل كلية (يمثل كليته في النادي)</option>
                     </select>
                   </div>
 
