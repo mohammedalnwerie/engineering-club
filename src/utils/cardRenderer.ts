@@ -643,54 +643,30 @@ function layout(
   }
 
   // =========================================================================
-  // 4. Technical Tagline
+  // 4. Technical Tagline (drawn later, anchored above the footer)
   // =========================================================================
-  const taglineY = y + 8;
-  if (isGeneral) {
-    if (draw) {
-      // Horizontal Rules
-      ctx.strokeStyle = 'rgba(63, 231, 227, 0.3)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(P + 10, taglineY + 4);
-      ctx.lineTo(P + 38, taglineY + 4);
-      ctx.moveTo(W - P - 38, taglineY + 4);
-      ctx.lineTo(W - P - 10, taglineY + 4);
-      ctx.stroke();
-    }
-    text(
-      'ENGINEERING BUILDS A BETTER TOMORROW',
-      W / 2,
-      taglineY,
-      `700 8px ${MONO}`,
-      'rgba(63, 231, 227, 0.65)',
-      'center'
-    );
-    y = taglineY + 18;
-  } else {
-    if (draw) {
-      ctx.strokeStyle = 'rgba(63, 231, 227, 0.3)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(P + 40, taglineY + 4);
-      ctx.lineTo(P + 70, taglineY + 4);
-      ctx.moveTo(W - P - 70, taglineY + 4);
-      ctx.lineTo(W - P - 40, taglineY + 4);
-      ctx.stroke();
-    }
-    text('ENGINEERING TODAY', W / 2, taglineY, `700 8px ${MONO}`, 'rgba(63, 231, 227, 0.65)', 'center');
-    text('FOR A BETTER TOMORROW', W / 2, taglineY + 11, `600 7px ${MONO}`, 'rgba(63, 231, 227, 0.50)', 'center');
-    y = taglineY + 28;
-  }
+  const contentBottom = y + 8;
 
   // =========================================================================
   // 5. Verification Footer (Zero Overlap, Guaranteed Separation)
   // =========================================================================
   const footerH = 100;
   // Pin the footer to the bottom of the fixed height; short cards gain air above it.
-  const footerTop = fixedHeight ? Math.max(y + 8, fixedHeight - footerH) : y + 8;
+  const footerTop = fixedHeight ? Math.max(contentBottom + 26, fixedHeight - footerH) : contentBottom + 26;
 
   if (draw) {
+    // The club line sits right above the footer, so the spare space stays in the middle
+    const taglineY = footerTop - 20;
+    ctx.strokeStyle = 'rgba(63, 231, 227, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(P + 10, taglineY + 4);
+    ctx.lineTo(P + 40, taglineY + 4);
+    ctx.moveTo(W - P - 40, taglineY + 4);
+    ctx.lineTo(W - P - 10, taglineY + 4);
+    ctx.stroke();
+    text('ENGINEERING BUILDS A BETTER TOMORROW', W / 2, taglineY, `700 8px ${MONO}`, 'rgba(63, 231, 227, 0.65)', 'center');
+
     // Footer Background & Top Divider
     ctx.fillStyle = 'rgba(5, 2, 20, 0.92)';
     ctx.fillRect(0, footerTop, W, footerH);
