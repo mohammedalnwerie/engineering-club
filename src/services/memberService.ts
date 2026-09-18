@@ -42,6 +42,8 @@ export interface MemberProfile {
   targetCommittee: string | null;
   assignedCommittee: string | null;
   organizationalRole: string | null;
+  /** صورة العضو على البطاقة (اختيارية) */
+  photoUrl?: string | null;
   memberCode: string;
   acceptedAt: string | null;
   membershipType: 'temporary' | 'semester' | null;
@@ -188,6 +190,22 @@ class MemberService {
       safeStorage.set(SESSION_KEY, this.credentials);
       await this.refresh().catch(() => undefined);
       this.notify();
+    } catch (err) {
+      throw friendly(err);
+    }
+  }
+
+  /** Sets or clears the member's own card photo. Pass null to remove it. */
+  async setPhoto(photo: string | null): Promise<void> {
+    if (!this.credentials) throw new Error('سجّل الدخول أولاً');
+    try {
+      unwrap(
+        await publicRpc<{ ok: boolean } | { error: string }>('member_set_photo', {
+          ...this.args(),
+          p_photo: photo,
+        })
+      );
+      await this.refresh().catch(() => undefined);
     } catch (err) {
       throw friendly(err);
     }

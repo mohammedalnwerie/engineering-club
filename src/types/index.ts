@@ -119,6 +119,8 @@ export interface ClubApplication {
   skills: string[];
   customSkill?: string;
   portfolioUrl?: string;
+  /** صورة الطالب على البطاقة — اختيارية */
+  photoUrl?: string;
   personalStatement: string;
   targetCommittee: string;
   weeklyCommitmentHours: number;

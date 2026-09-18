@@ -123,6 +123,7 @@ export function cardQrDataUrl(value: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 type CardApplication = Pick<StoredApplication, 'id' | 'fullName' | 'studentId' | 'major' | 'targetCommittee'> &
+  Partial<Pick<StoredApplication, 'photoUrl'>> &
   Partial<Pick<StoredApplication, 'assignedCommittee' | 'organizationalRole' | 'memberCode' | 'validUntil' | 'membershipType' | 'suspendedAt' | 'suspendReason' | 'membershipState'>> & {
     /** Last 4 characters of the member code, when the full code must stay private (public verify page) */
     codeHint?: string;
@@ -243,6 +244,7 @@ export function memberCardFor(app: CardApplication, options: CardOptions = {}): 
   return {
     name: app.fullName,
     role: app.organizationalRole || 'عضو في النادي الهندسي',
+    photoUrl: app.photoUrl || undefined,
     fields: [
       { label: 'الرقم الجامعي', value: app.studentId || '—' },
       { label: 'التخصص', value: cleanMajor(app.major) || '—' },
@@ -265,6 +267,7 @@ export function committeeCardFor(app: CardApplication, options: CardOptions = {}
   return {
     name: app.fullName,
     role: app.organizationalRole || 'عضو باللجنة',
+    photoUrl: app.photoUrl || undefined,
     fields: [
       { label: 'اللجنة', value: committeeName },
       { label: 'الرقم الجامعي', value: app.studentId || '—' },

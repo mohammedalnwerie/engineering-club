@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { MemberLoginForm } from './MemberLoginForm';
 import { PasswordCard } from './PasswordCard';
+import { PhotoCard } from './PhotoCard';
 import { MemberCard } from '../MemberCard';
 import { CommitteeBadgeModal } from '../CommitteeBadgeModal';
 import {
@@ -53,6 +54,7 @@ const asApplication = (p: MemberProfile): StoredApplication => ({
   targetCommittee: p.targetCommittee || '',
   assignedCommittee: p.assignedCommittee || undefined,
   organizationalRole: p.organizationalRole || undefined,
+  photoUrl: p.photoUrl || undefined,
   weeklyCommitmentHours: 0,
   status: 'تم القبول',
   submittedAt: '',
@@ -252,7 +254,9 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
 
               {/* Security & Password settings at bottom */}
               <div id="security-section">
-                <PasswordCard passwordSet={Boolean(profile.passwordSet)} />
+                <PhotoCard photoUrl={profile.photoUrl} name={profile.fullName} />
+
+              <PasswordCard passwordSet={Boolean(profile.passwordSet)} />
               </div>
             </div>
           )}

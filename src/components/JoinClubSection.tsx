@@ -4,6 +4,7 @@ import { MemberCard } from './MemberCard';
 import { memberCardFor } from '../utils/memberCard';
 import type { ClubApplication } from '../types';
 import { checkRateLimit } from '../utils/security';
+import { compressImage } from '../utils/image';
 import {
   normalizeCode,
   normalizePhone,
@@ -29,7 +30,17 @@ const inputClass = (hasError?: string) =>
     hasError ? 'border-red-400/70 focus:border-red-300' : 'border-white/10 focus:border-cyan-400'
   }`;
 
-import { Sparkles, ArrowLeft, ArrowRight, Check, ShieldCheck, Lock, AlertCircle, Ban } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Ban,
+  Camera,
+  Check,
+  Lock,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 
@@ -37,6 +48,7 @@ export const JoinClubSection: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<'fullName' | 'studentId' | 'email' | 'phone' | 'portfolioUrl', string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -534,6 +546,60 @@ export const JoinClubSection: React.FC = () => {
                         dir="ltr"
                       />
                       <FieldError message={errors.portfolioUrl} />
+                    </div>
+
+                    {/* Optional photo — it goes on the membership card */}
+                    <div>
+                      <label className="block text-xs text-gray-300 mb-1.5">صورتك على البطاقة (اختياري):</label>
+                      <div className="flex items-center gap-3">
+                        <span className="w-16 h-16 rounded-2xl overflow-hidden bg-white/[0.04] border border-white/10 shrink-0 flex items-center justify-center">
+                          {formData.photoUrl ? (
+                            <img src={formData.photoUrl} alt="صورتك" className="w-full h-full object-cover" />
+                          ) : (
+                            <Camera className="w-6 h-6 text-gray-500" />
+                          )}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold cursor-pointer transition-colors">
+                            {formData.photoUrl ? 'تبديل الصورة' : 'اختيار صورة'}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onClick={(e) => {
+                                (e.target as HTMLInputElement).value = '';
+                              }}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setPhotoError(null);
+                                compressImage(file, 420, 0.82)
+                                  .then((data: string) => {
+                                    if (data.length > 400_000) {
+                                      setPhotoError('الصورة كبيرة. جرّب صورة أصغر.');
+                                      return;
+                                    }
+                                    setFormData((prev) => ({ ...prev, photoUrl: data }));
+                                  })
+                                  .catch((err: unknown) => setPhotoError(err instanceof Error ? err.message : 'تعذر قراءة الصورة'));
+                              }}
+                            />
+                          </label>
+                          {formData.photoUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, photoUrl: undefined }))}
+                              className="px-3 py-2.5 rounded-xl text-sm text-gray-300 hover:text-white cursor-pointer"
+                            >
+                              حذف
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <FieldError message={photoError || undefined} />
+                      <p className="text-xs text-gray-400 mt-1.5">
+                        بدون صورة تظهر حروف اسمك على البطاقة. تقدر تضيفها أو تغيّرها لاحقاً من صفحة «حسابي».
+                      </p>
                     </div>
                   </div>
                 )}
