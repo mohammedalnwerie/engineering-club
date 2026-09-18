@@ -172,13 +172,36 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                 </p>
               )}
 
-              <PasswordCard passwordSet={Boolean(profile.passwordSet)} />
+              {!profile.passwordSet && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/[0.08] border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200">
+                  <div className="flex items-start gap-2 leading-relaxed">
+                    <span className="text-base shrink-0">🛡️</span>
+                    <span>
+                      <strong className="text-white block sm:inline">حسابك مسجّل حالياً برمز البطاقة فقط.</strong> يُنصح بإنشاء كلمة مرور شخصية لمنع أي شخص يرى بطاقتك من الوصول لحسابك.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      document.getElementById('security-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-400 text-black font-bold text-xs whitespace-nowrap self-start sm:self-center cursor-pointer hover:bg-amber-300 transition-colors"
+                  >
+                    عيّن كلمة المرور
+                  </button>
+                </div>
+              )}
 
-              <MembershipPanel profile={profile} />
-
-              {/* Card */}
+              {/* Member Digital Card (Hero) */}
               <section className="space-y-3">
-                <h3 className="text-lg font-bold text-white">بطاقة العضوية</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-white">بطاقة العضوية الرقمية</h3>
+                  {profile.memberCode && (
+                    <span className="font-mono text-xs text-cyan-300 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10" dir="ltr">
+                      {profile.memberCode}
+                    </span>
+                  )}
+                </div>
                 <MemberCard {...memberCardFor(asApplication(profile), { revealCode: true })} />
                 {profile.membershipState === 'suspended' ? (
                   <div className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-200 text-xs text-center leading-relaxed">
@@ -191,7 +214,7 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                       onClick={() =>
                         void downloadCardPng(memberCardFor(asApplication(profile), { revealCode: true }), `UP-Member-Card-${profile.studentId}.png`)
                       }
-                      className="py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-md transition-colors"
                     >
                       <Download className="w-4 h-4" />
                       <span>حفظ كصورة</span>
@@ -199,7 +222,7 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                     <button
                       type="button"
                       onClick={() => void printCard(memberCardFor(asApplication(profile), { revealCode: true }))}
-                      className="py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                     >
                       <Printer className="w-4 h-4" />
                       <span>طباعة</span>
@@ -208,10 +231,10 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                       <button
                         type="button"
                         onClick={() => setShowCommitteeCard(true)}
-                        className="col-span-2 py-2.5 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/40 text-cyan-200 text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="col-span-2 py-2.5 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/40 text-cyan-200 text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                       >
                         <Award className="w-4 h-4" />
-                        <span>كرت عضو اللجنة</span>
+                        <span>عرض كرت عضو اللجنة</span>
                       </button>
                     )}
                   </div>
@@ -221,7 +244,16 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                 </p>
               </section>
 
+              {/* Membership validity & semester renewal */}
+              <MembershipPanel profile={profile} />
+
+              {/* Events & Registrations */}
               <RegistrationsPanel profile={profile} onBrowseEvents={onClose} />
+
+              {/* Security & Password settings at bottom */}
+              <div id="security-section">
+                <PasswordCard passwordSet={Boolean(profile.passwordSet)} />
+              </div>
             </div>
           )}
         </div>

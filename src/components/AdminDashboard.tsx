@@ -31,6 +31,7 @@ import {
   hasFullAccess,
   requestPasswordReset,
   trashContentItem,
+  resetMemberPassword,
   ROLE_LABELS,
   type AdminRole,
 } from './admin/adminApi';
@@ -87,6 +88,7 @@ import {
   CreditCard,
   Copy,
   MessageSquare,
+  KeyRound,
   Send,
   Sliders,
   Power,
@@ -2807,6 +2809,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                   <span>مرفق صورة</span>
                                 </span>
                               )}
+
+                              {/* Password Reset Request Badge */}
+                              {(item.subject.includes('تصفير') || item.message.includes('تصفير')) && (
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-500/40 flex items-center gap-1 font-mono">
+                                  <KeyRound className="w-3 h-3 text-cyan-400" />
+                                  <span>طلب تصفير مرور</span>
+                                </span>
+                              )}
                             </div>
 
                             <div className="font-mono text-xs text-gray-400 flex items-center gap-2">
@@ -2823,7 +2833,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           </div>
 
                           {/* Student Info & Admin Notes */}
-                          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/5 text-xs">
+                          <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-white/5 text-xs">
                             <div className="font-mono text-gray-400 space-x-3 space-x-reverse">
                               {item.isAnonymous ? (
                                 <span className="text-amber-400/90 font-sans">مُرسل مجهول الهوية (طلب قديم قبل إلغاء الخيار)</span>
@@ -2847,7 +2857,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {(() => {
+                                const matchingMember = item.studentId
+                                  ? applications.find((a) => a.studentId === item.studentId && a.status === 'تم القبول')
+                                  : null;
+                                const isResetInquiry =
+                                  matchingMember &&
+                                  (item.subject.includes('تصفير') ||
+                                    item.subject.includes('كلمة المرور') ||
+                                    item.message.includes('تصفير') ||
+                                    item.message.includes('كلمة المرور'));
+                                if (!matchingMember || !isResetInquiry || item.status === 'resolved') return null;
+
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (
+                                        await confirm({
+                                          title: `تصفير كلمة المرور لـ (${matchingMember.fullName})؟`,
+                                          message: `سيتم تصفير كلمة المرور في قاعدة البيانات ليعود الطالب قادراً على تسجيل الدخول فوراً باستخدام رمز بطاقته (${matchingMember.memberCode || 'UP-XXXX-XXXX'})، وسيتم تحديد التذكرة كـ "تم الحل والمعالجة".`,
+                                          confirmLabel: 'تصفير وحل التذكرة',
+                                        })
+                                      ) {
+                                        try {
+                                          await resetMemberPassword(matchingMember.id);
+                                          dataService.updateComplaintStatus(
+                                            item.id,
+                                            'resolved',
+                                            'تم تصفير كلمة المرور بنجاح. يمكنك الآن الدخول فوراً باستخدام رمز بطاقتك وتعيين كلمة مرورك الجديدة.'
+                                          );
+                                          setComplaints(dataService.getComplaints());
+                                          const notifyMsg = `أهلاً بك يا ${matchingMember.fullName}،\nتم تصفير كلمة مرور حسابك في النادي الهندسي بنجاح.\nيمكنك الآن تسجيل الدخول مباشرة برمز بطاقتك:\n${matchingMember.memberCode}\nثم تعيين كلمة مرور جديدة عبر الرابط:\nhttps://engineering-club-phi.vercel.app/?member=1`;
+                                          navigator.clipboard.writeText(notifyMsg);
+                                          showToast(`تم تصفير كلمة المرور لـ ${matchingMember.fullName} ونسخ رسالة الواتساب للحافظة`);
+                                        } catch (err) {
+                                          showToast(err instanceof Error ? err.message : 'تعذر تصفير كلمة المرور');
+                                        }
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-200 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                                    title="تصفير كلمة المرور للطالب واعتماد حل التذكرة بنقرة واحدة"
+                                  >
+                                    <KeyRound className="w-3.5 h-3.5 text-cyan-300" />
+                                    <span>تصفير كلمة المرور فوراً</span>
+                                  </button>
+                                );
+                              })()}
                               <button
                                 type="button"
                                 onClick={() => {

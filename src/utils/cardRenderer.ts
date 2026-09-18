@@ -766,8 +766,10 @@ function drawStatusStamp(
   textColor: string
 ) {
   ctx.save();
-  ctx.translate(width / 2, height * 0.44);
-  ctx.rotate((-16 * Math.PI) / 180);
+  // Sits over the membership box, not over the person's name.
+  ctx.translate(width / 2, height * 0.66);
+  ctx.rotate((-14 * Math.PI) / 180);
+  ctx.globalAlpha = 0.96;
 
   const stampW = 280;
   const stampH = 34;

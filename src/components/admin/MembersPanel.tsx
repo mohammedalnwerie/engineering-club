@@ -1,5 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, X, Download, RefreshCw, Save, Search, Image as ImageIcon, CalendarPlus, PauseCircle, PlayCircle, KeyRound } from 'lucide-react';
+import {
+  Check,
+  X,
+  Download,
+  RefreshCw,
+  Save,
+  Search,
+  Image as ImageIcon,
+  CalendarPlus,
+  PauseCircle,
+  PlayCircle,
+  KeyRound,
+  Copy,
+} from 'lucide-react';
 import {
   listMembers,
   listPaymentRequests,
@@ -249,10 +262,19 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
   showToast,
 }) => {
   const [search, setSearch] = useState('');
-  const [stateFilter, setStateFilter] = useState<'all' | 'temporary' | 'semester' | 'expired'>('all');
+  const [stateFilter, setStateFilter] = useState<'all' | 'temporary' | 'semester' | 'expired' | 'suspended'>('all');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resetSuccessModal, setResetSuccessModal] = useState<{ name: string; memberCode: string; studentId: string } | null>(null);
   const settings = dataService.getMembershipSettings();
+
+  const counts = useMemo(() => {
+    const c = { all: members.length, semester: 0, temporary: 0, expired: 0, suspended: 0 };
+    for (const m of members) {
+      c[stateOf(m)]++;
+    }
+    return c;
+  }, [members]);
 
   const shown = members.filter((m) => {
     const q = search.trim().toLowerCase();
@@ -292,6 +314,33 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
 
   return (
     <div className="space-y-3">
+      {/* Quick Filter Pills */}
+      <div className="flex flex-wrap items-center gap-1.5 pb-1">
+        {[
+          { id: 'all', label: 'كل الأعضاء', count: counts.all },
+          { id: 'semester', label: 'عضوية فصلية', count: counts.semester, tone: 'text-emerald-300' },
+          { id: 'temporary', label: 'بطاقة أولى سارية', count: counts.temporary, tone: 'text-cyan-300' },
+          { id: 'expired', label: 'منتهية', count: counts.expired, tone: 'text-red-300' },
+          { id: 'suspended', label: 'معلّقة', count: counts.suspended, tone: 'text-amber-300' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setStateFilter(tab.id as typeof stateFilter)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              stateFilter === tab.id
+                ? 'bg-white/15 text-white shadow-sm border border-white/20'
+                : 'bg-white/[0.03] text-gray-400 hover:text-white hover:bg-white/[0.07] border border-white/5'
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span className={`px-1.5 py-0.5 rounded-full text-[11px] bg-black/40 ${tab.tone || 'text-gray-300'}`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 -translate-y-1/2" />
@@ -304,11 +353,11 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
           />
         </div>
         <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value as typeof stateFilter)} className={`${inputClass} sm:w-44`}>
-          <option value="all">كل الأعضاء</option>
-          <option value="semester">فصلية</option>
-          <option value="temporary">بطاقة أولى</option>
-          <option value="expired">منتهية</option>
-          <option value="suspended">معلّقة</option>
+          <option value="all">كل الأعضاء ({counts.all})</option>
+          <option value="semester">فصلية ({counts.semester})</option>
+          <option value="temporary">بطاقة أولى ({counts.temporary})</option>
+          <option value="expired">منتهية ({counts.expired})</option>
+          <option value="suspended">معلّقة ({counts.suspended})</option>
         </select>
         <Button icon={<Download className="w-4 h-4" />} onClick={exportCsv} disabled={shown.length === 0}>
           تصدير
@@ -342,7 +391,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                         {state !== 'expired' && left !== null && ` (${left} يوم)`}
                       </span>
                       {m.member_code && (
-                        <span className="font-mono text-gray-500" dir="ltr">
+                        <span className="font-mono text-cyan-300" dir="ltr">
                           {m.member_code}
                         </span>
                       )}
@@ -400,7 +449,14 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                       title="تصفير كلمة المرور لتمكين العضو من الدخول برمز بطاقته وتعيين كلمة مرور جديدة"
                       onClick={() => {
                         if (window.confirm(`هل تريد تصفير كلمة المرور لـ (${m.full_name})؟\nسيعود العضو قادراً على تسجيل الدخول فوراً باستخدام رمز بطاقته وتعيين كلمة مرور جديدة.`)) {
-                          void act(m.id, () => resetMemberPassword(m.id), `تم تصفير كلمة المرور لـ ${m.full_name}`);
+                          void act(m.id, async () => {
+                            await resetMemberPassword(m.id);
+                            setResetSuccessModal({
+                              name: m.full_name,
+                              memberCode: m.member_code || '',
+                              studentId: m.student_id,
+                            });
+                          }, `تم تصفير كلمة المرور لـ ${m.full_name}`);
                         }
                       }}
                     >
@@ -413,6 +469,56 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
           </ul>
         )}
       </Panel>
+
+      {/* Reset password success & copy helper */}
+      {resetSuccessModal && (
+        <div className="fixed inset-0 z-[85] bg-black/80 flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-2xl glass-panel border border-cyan-500/30 p-5 space-y-4 text-right shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-cyan-400" />
+                <span>تم تصفير كلمة المرور بنجاح</span>
+              </h4>
+              <button
+                onClick={() => setResetSuccessModal(null)}
+                className="p-1 rounded-lg text-gray-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-300 leading-relaxed">
+              تم تصفير كلمة المرور للعضو <strong className="text-white">{resetSuccessModal.name}</strong>. يمكنه الآن تسجيل الدخول مباشرة برمز بطاقته وتعيين كلمة مرور جديدة.
+            </p>
+            <div className="p-3.5 rounded-xl bg-black/60 border border-white/10 text-xs text-gray-300 space-y-1.5" dir="rtl">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">رمز البطاقة:</span>
+                <span className="font-mono text-cyan-300 font-bold text-sm" dir="ltr">{resetSuccessModal.memberCode || '—'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">الرقم الجامعي:</span>
+                <span className="font-mono text-white" dir="ltr">{resetSuccessModal.studentId}</span>
+              </div>
+            </div>
+            <div className="space-y-2 pt-2">
+              <Button
+                variant="primary"
+                className="w-full justify-center"
+                icon={<Copy className="w-4 h-4" />}
+                onClick={() => {
+                  const msg = `أهلاً بك يا ${resetSuccessModal.name}،\nتم تصفير كلمة المرور الخاصة بحسابك في النادي الهندسي بنجاح.\nيمكنك الآن تسجيل الدخول مباشرة باستخدام رمز بطاقتك:\n${resetSuccessModal.memberCode}\nثم تعيين كلمة مرور جديدة لحسابك عبر الرابط:\nhttps://engineering-club-phi.vercel.app/?member=1`;
+                  navigator.clipboard.writeText(msg);
+                  showToast('تم نسخ رسالة إشعار الطالب للحافظة');
+                }}
+              >
+                نسخ رسالة واتساب لإرسالها للطالب
+              </Button>
+              <Button variant="ghost" className="w-full justify-center" onClick={() => setResetSuccessModal(null)}>
+                إغلاق
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { AlertCircle, KeyRound, LogIn } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, KeyRound, LogIn } from 'lucide-react';
 import { memberService, type MemberProfile } from '../../services/memberService';
 import { normalizeCode, validateStudentId } from '../../utils/validation';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 
 interface MemberLoginFormProps {
   onSuccess: (profile: MemberProfile) => void;
@@ -11,6 +12,8 @@ interface MemberLoginFormProps {
 export const MemberLoginForm: React.FC<MemberLoginFormProps> = ({ onSuccess, submitLabel = 'دخول' }) => {
   const [studentId, setStudentId] = useState('');
   const [code, setCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,69 +40,97 @@ export const MemberLoginForm: React.FC<MemberLoginFormProps> = ({ onSuccess, sub
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      <div>
-        <label htmlFor="member-student-id" className="block text-sm text-gray-300 mb-1.5">
-          الرقم الجامعي
-        </label>
-        <input
-          id="member-student-id"
-          type="text"
-          inputMode="numeric"
-          autoComplete="username"
-          placeholder="120220145"
-          value={studentId}
-          onChange={(e) => {
-            setStudentId(normalizeCode(e.target.value));
-            setError(null);
-          }}
-          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-base text-left"
-          dir="ltr"
-        />
-      </div>
+    <>
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <div>
+          <label htmlFor="member-student-id" className="block text-sm text-gray-300 mb-1.5">
+            الرقم الجامعي
+          </label>
+          <input
+            id="member-student-id"
+            type="text"
+            inputMode="numeric"
+            autoComplete="username"
+            placeholder="120220145"
+            value={studentId}
+            onChange={(e) => {
+              setStudentId(normalizeCode(e.target.value));
+              setError(null);
+            }}
+            className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-base text-left"
+            dir="ltr"
+          />
+        </div>
 
-      <div>
-        <label htmlFor="member-code" className="block text-sm text-gray-300 mb-1.5">
-          كلمة المرور أو رمز البطاقة
-        </label>
-        <input
-          id="member-code"
-          type="password"
-          autoComplete="current-password"
-          autoCapitalize="characters"
-          placeholder="كلمة المرور أو UP-XXXX-XXXX"
-          value={code}
-          onChange={(e) => {
-            setCode(e.target.value);
-            setError(null);
-          }}
-          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-base text-left"
-          dir="ltr"
-        />
-        <p className="text-xs text-gray-400 mt-1.5 flex items-start gap-1.5 leading-relaxed">
-          <KeyRound className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>
-            أول مرة؟ ادخل برمز البطاقة اللي وصلك في إيميل القبول، وبعدها عيّن كلمة مرور خاصة فيك — لأن الرمز مطبوع على
-            البطاقة ويقدر يشوفه غيرك.
-          </span>
-        </p>
-      </div>
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="member-code" className="block text-sm text-gray-300">
+              كلمة المرور أو رمز البطاقة
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(true)}
+              className="text-xs text-cyan-300 hover:text-cyan-200 transition-colors cursor-pointer"
+            >
+              نسيت كلمة المرور؟
+            </button>
+          </div>
+          <div className="relative">
+            <input
+              id="member-code"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              autoCapitalize="characters"
+              placeholder="كلمة المرور أو UP-XXXX-XXXX"
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value);
+                setError(null);
+              }}
+              className="w-full pl-11 pr-4 py-3 rounded-xl bg-black/40 border border-white/10 focus:border-cyan-400 focus:outline-none text-white text-base text-left"
+              dir="ltr"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5 flex items-start gap-1.5 leading-relaxed">
+            <KeyRound className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <span>
+              أول مرة؟ ادخل برمز البطاقة اللي وصلك في إيميل القبول، وبعدها عيّن كلمة مرور خاصة فيك — لأن الرمز مطبوع على
+              البطاقة ويقدر يشوفه غيرك.
+            </span>
+          </p>
+        </div>
 
-      {error && (
-        <p role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </p>
-      )}
+        {error && (
+          <p role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </p>
+        )}
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full py-3 rounded-xl font-bold text-base text-white bg-gradient-to-r from-[#7F1AB2] to-[#6F3993] hover:from-[#A26CC6] hover:to-[#7F1AB2] disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer transition-all"
-      >
-        <LogIn className="w-5 h-5" />
-        <span>{isLoading ? 'جاري الدخول…' : submitLabel}</span>
-      </button>
-    </form>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-3 rounded-xl font-bold text-base text-white bg-gradient-to-r from-[#7F1AB2] to-[#6F3993] hover:from-[#A26CC6] hover:to-[#7F1AB2] disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer transition-all"
+        >
+          <LogIn className="w-5 h-5" />
+          <span>{isLoading ? 'جاري الدخول…' : submitLabel}</span>
+        </button>
+      </form>
+
+      <ForgotPasswordModal
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        initialStudentId={studentId}
+      />
+    </>
   );
 };
+
