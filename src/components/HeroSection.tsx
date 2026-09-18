@@ -52,9 +52,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
   };
 
   return (
-    <section className="relative min-h-[88vh] flex flex-col justify-center items-center pt-32 pb-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <section className="relative min-h-[76vh] flex flex-col justify-center items-center pt-28 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
       <div className="relative max-w-6xl mx-auto text-center flex flex-col items-center z-10">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#532B6E]/40 border border-[#3FE7E3]/30 text-sm mb-8 backdrop-blur-md">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#532B6E]/40 border border-[#3FE7E3]/30 text-sm mb-6 backdrop-blur-md">
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
           <span className="font-bold text-white">{settings.clubNameAr || 'النادي الهندسي'}</span>
           <span className="text-[#3FE7E3]/50">•</span>

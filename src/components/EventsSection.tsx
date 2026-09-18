@@ -181,7 +181,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
   const upcoming = events.filter((e) => e.status !== 'completed');
 
   return (
-    <section id="events" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/90 border-t border-white/5">
+    <section id="events" className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/90 border-t border-white/5">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">

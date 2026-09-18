@@ -44,7 +44,7 @@ export const LeadershipSection: React.FC = () => {
   };
 
   return (
-    <section id="leadership" className="py-16 sm:py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/85 border-t border-white/5">
+    <section id="leadership" className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/85 border-t border-white/5">
       <div className="max-w-7xl mx-auto">
         
         {/* Section Header */}

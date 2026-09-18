@@ -52,7 +52,7 @@ export const MajorsSection: React.FC = () => {
 
 
   return (
-    <section id="majors" className="py-16 sm:py-28 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/60">
+    <section id="majors" className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/60">
       <div className="max-w-7xl mx-auto">
         {/* Section Heading */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-16 gap-6">
