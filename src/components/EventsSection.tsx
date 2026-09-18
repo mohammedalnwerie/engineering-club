@@ -70,6 +70,9 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
     setFeedback(null);
     try {
       const result = await memberService.registerForEvent(event.id);
+      if (!result || !result.status) {
+        throw new Error('تعذر التحقق من حالة التسجيل من الخادم.');
+      }
       setFeedback({
         eventId: event.id,
         tone: result.status === 'registered' ? 'success' : 'warning',
@@ -78,7 +81,9 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
             ? result.alreadyRegistered
               ? 'أنت مسجّل في هذه الفعالية مسبقاً.'
               : 'تم تسجيلك بنجاح. تجد تسجيلاتك في «حسابي».'
-            : 'المقاعد اكتملت، أُضفت إلى قائمة الانتظار وسيُثبت مقعدك تلقائياً إذا انسحب أحد.',
+            : result.alreadyRegistered
+              ? 'أنت مدرج في قائمة الانتظار لهذه الفعالية مسبقاً.'
+              : 'المقاعد اكتملت، أُضفت إلى قائمة الانتظار وسيُثبت مقعدك تلقائياً إذا انسحب أحد.',
       });
       if (result.status === 'registered' && !result.alreadyRegistered) {
         confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 }, colors: ['#3FE7E3', '#7F1AB2', '#35BC2B'] });
