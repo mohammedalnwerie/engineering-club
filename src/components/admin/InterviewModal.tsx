@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock, MessageCircle, Mail } from 'lucide-react';
 import type { StoredApplication } from '../../types';
 import { Button, Field, inputClass } from './ui';
+import { emailService } from '../../services/emailService';
 
 // Picking the interview day when moving an application to "مقابلة مجدولة".
 // The hour is optional: plenty of interviews are booked as "يوم الأحد" first.
@@ -22,6 +23,12 @@ export const InterviewModal: React.FC<{
   const [timeTbd, setTimeTbd] = useState(Boolean(app.interviewTimeTbd || !app.interviewAt));
   const [day, setDay] = useState(toLocalDay(app.interviewAt));
   const [dateTime, setDateTime] = useState(toLocalDateTime(app.interviewAt));
+
+  /** What the message should say right now, even before the form is saved. */
+  const previewIso = () => {
+    if (timeTbd) return day ? new Date(`${day}T09:00`).toISOString() : undefined;
+    return dateTime ? new Date(dateTime).toISOString() : undefined;
+  };
 
   const save = () => {
     if (timeTbd) {
@@ -70,6 +77,33 @@ export const InterviewModal: React.FC<{
             />
           </Field>
         )}
+
+        {/* Telling the student is the point of scheduling, so it is one click away */}
+        <div className="pt-1 border-t border-white/10">
+          <p className="text-xs text-gray-400 mb-2">أبلغ الطالب بالموعد:</p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              icon={<MessageCircle className="w-4 h-4 text-emerald-300" />}
+              disabled={!app.phone}
+              title={app.phone ? undefined : 'لا يوجد رقم هاتف في الطلب'}
+              onClick={() => emailService.openInterviewWhatsApp({ ...app, interviewAt: previewIso(), interviewTimeTbd: timeTbd })}
+            >
+              واتساب
+            </Button>
+            <Button
+              size="sm"
+              icon={<Mail className="w-4 h-4 text-cyan-300" />}
+              disabled={!app.email}
+              onClick={() => emailService.openInterviewGmail({ ...app, interviewAt: previewIso(), interviewTimeTbd: timeTbd })}
+            >
+              إيميل
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            الطالب كمان بيشوف الموعد لما يفحص طلبه من صفحة «التحقق من العضوية».
+          </p>
+        </div>
 
         <div className="flex items-center justify-end gap-2 pt-1">
           <Button onClick={onClose}>إلغاء</Button>

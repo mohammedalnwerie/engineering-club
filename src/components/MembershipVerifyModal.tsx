@@ -75,6 +75,8 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
               weeklyCommitmentHours: 0,
               id: found.id,
               status: found.status,
+              interviewAt: found.interviewAt,
+              interviewTimeTbd: found.interviewTimeTbd,
               submittedAt: found.submittedAt || '',
             }
           : null
@@ -252,20 +254,52 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                   </div>
                 </div>
               ) : (
-                /* Found but Pending */
+                /* Found but not accepted yet — an interview date shows here */
                 <div className="p-6 rounded-2xl bg-amber-950/40 border border-amber-500/40 text-center space-y-3">
                   <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
                     <Clock className="w-6 h-6" />
                   </div>
                   <h4 className="text-base font-bold text-white">
-                    طلب الانضمام قيد المراجعة والتدقيق
+                    {matchedApp.status === 'مقابلة مجدولة' ? 'عندك مقابلة مع إدارة النادي' : 'طلب الانضمام قيد المراجعة'}
                   </h4>
-                  <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto">
-                    الطلب الخاص بالمهندس/ـة <span className="text-white font-bold">({matchedApp.fullName})</span> تم استلامه بنجاح وهو قيد الدراسة من قِبل إدارة النادي. ستصدر البطاقة الرسمية فور الاعتماد.
-                  </p>
-                  <div className="inline-block font-mono text-xs text-amber-400 px-3 py-1 rounded bg-amber-900/60 border border-amber-500/30">
-                    الحالة: {matchedApp.status}
-                  </div>
+
+                  {matchedApp.status === 'مقابلة مجدولة' ? (
+                    <div className="space-y-2.5">
+                      <p className="text-sm text-gray-200 leading-relaxed max-w-sm mx-auto">
+                        أهلاً <span className="text-white font-bold">{matchedApp.fullName}</span>، طلبك وصل لمرحلة المقابلة.
+                      </p>
+                      {matchedApp.interviewAt ? (
+                        <div className="inline-block text-sm font-bold text-amber-100 px-4 py-2.5 rounded-xl bg-amber-900/60 border border-amber-500/40">
+                          {new Date(matchedApp.interviewAt).toLocaleDateString('ar', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                          })}
+                          {matchedApp.interviewTimeTbd
+                            ? ' — الساعة تُحدد بالتواصل معك'
+                            : ` — الساعة ${new Date(matchedApp.interviewAt).toLocaleTimeString('ar', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              })}`}
+                        </div>
+                      ) : (
+                        <div className="inline-block text-sm text-amber-100 px-4 py-2.5 rounded-xl bg-amber-900/60 border border-amber-500/40">
+                          سيتم التواصل معك لتحديد الموعد
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-400">أي استفسار عن الموعد، تواصل مع إدارة النادي.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-xs text-gray-300 leading-relaxed max-w-sm mx-auto">
+                        طلب <span className="text-white font-bold">{matchedApp.fullName}</span> وصلنا وهو قيد الدراسة. تصدر
+                        البطاقة الرسمية فور الاعتماد.
+                      </p>
+                      <div className="inline-block font-mono text-xs text-amber-400 px-3 py-1 rounded bg-amber-900/60 border border-amber-500/30">
+                        الحالة: {matchedApp.status}
+                      </div>
+                    </>
+                  )}
                 </div>
               )
             ) : (

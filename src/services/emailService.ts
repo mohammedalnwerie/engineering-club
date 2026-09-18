@@ -87,6 +87,61 @@ ${verifyUrl}
     window.open(waUrl, '_blank', 'noopener,noreferrer');
   },
 
+  /** The interview invitation the admin sends by WhatsApp or Gmail after scheduling. */
+  formatInterviewMessage(app: StoredApplication) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://engineering-club-phi.vercel.app';
+    const when = app.interviewAt
+      ? new Date(app.interviewAt).toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' })
+      : '';
+    const hour =
+      app.interviewAt && !app.interviewTimeTbd
+        ? new Date(app.interviewAt).toLocaleTimeString('ar', { hour: 'numeric', minute: '2-digit' })
+        : '';
+
+    const line = !when
+      ? 'رح نتواصل معك قريباً لتحديد موعد المقابلة.'
+      : hour
+        ? `موعد مقابلتك: ${when} الساعة ${hour}.`
+        : `موعد مقابلتك: ${when}. الساعة رح نتفق عليها بالتواصل معك.`;
+
+    const subject = `موعد مقابلة الانضمام — النادي الهندسي، جامعة فلسطين`;
+    const body = `مرحباً ${app.fullName},
+
+وصلنا طلب انضمامك إلى ${effectiveCommittee(app)}، وحابين نتعرف عليك بمقابلة قصيرة.
+
+${line}
+
+تقدر تتابع حالة طلبك في أي وقت من صفحة «التحقق من العضوية»:
+${origin}/?verify=${encodeURIComponent(app.studentId || app.id)}
+
+إذا الموعد ما بناسبك، ردّ على هذه الرسالة ونرتب غيره.
+
+إدارة النادي الهندسي — جامعة فلسطين`;
+
+    return { subject, body, line };
+  },
+
+  openInterviewWhatsApp(app: StoredApplication) {
+    const { line } = this.formatInterviewMessage(app);
+    let rawPhone = (app.phone || '').replace(/\D/g, '');
+    if (rawPhone.startsWith('059') || rawPhone.startsWith('056')) rawPhone = '970' + rawPhone.substring(1);
+    else if (rawPhone.startsWith('59') || rawPhone.startsWith('56')) rawPhone = '970' + rawPhone;
+
+    const message = `مرحباً ${app.fullName} 👋
+من *النادي الهندسي — جامعة فلسطين*.
+${line}
+إذا الموعد ما بناسبك ردّ علينا ونرتب غيره.`;
+    window.open(`https://api.whatsapp.com/send?phone=${rawPhone}&text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+  },
+
+  openInterviewGmail(app: StoredApplication) {
+    const { subject, body } = this.formatInterviewMessage(app);
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(app.email)}&su=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  },
+
   /** Sends the acceptance email from the club's Gmail via the send-acceptance-email Edge Function. */
   async sendAcceptanceEmail(app: StoredApplication): Promise<{ success: boolean; message: string; sentAt?: string }> {
     try {

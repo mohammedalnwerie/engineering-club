@@ -191,6 +191,9 @@ export interface MemberLookup {
   academicYear?: string;
   targetCommittee?: string;
   skills?: string[];
+  /** موعد المقابلة إن حُدد */
+  interviewAt?: string;
+  interviewTimeTbd?: boolean;
   /** Last 4 characters of the private member code */
   codeHint?: string;
   membershipType?: 'temporary' | 'semester';
