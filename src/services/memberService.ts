@@ -131,9 +131,16 @@ class MemberService {
     return this.profile;
   }
 
+  /** Credentials for the RPCs whose second parameter is named p_code. */
   private args() {
     if (!this.credentials) throw new Error('سجّل الدخول أولاً');
     return { p_student_id: this.credentials.studentId, p_code: this.credentials.code };
+  }
+
+  /** Credentials for the RPCs whose second parameter is named p_secret. */
+  private secretArgs() {
+    if (!this.credentials) throw new Error('سجّل الدخول أولاً');
+    return { p_student_id: this.credentials.studentId, p_secret: this.credentials.code };
   }
 
   /** The secret is the card code on the first login, the password afterwards. */
@@ -182,7 +189,7 @@ class MemberService {
     try {
       unwrap(
         await publicRpc<{ ok: boolean } | { error: string }>('member_set_password', {
-          ...this.args(),
+          ...this.secretArgs(),
           p_new_password: newPassword,
         })
       );
@@ -201,7 +208,7 @@ class MemberService {
     try {
       unwrap(
         await publicRpc<{ ok: boolean } | { error: string }>('member_set_photo', {
-          ...this.args(),
+          ...this.secretArgs(),
           p_photo: photo,
         })
       );
