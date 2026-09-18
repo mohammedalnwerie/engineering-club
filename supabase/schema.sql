@@ -1573,6 +1573,9 @@ alter table public.club_applications add column if not exists password_hash   te
 alter table public.club_applications add column if not exists password_set_at timestamptz;
 
 -- المفتاح المشترك لكل دوال الأعضاء: كلمة المرور إن وُجدت، وإلا رمز البطاقة
+-- (نحذفها أولاً لأن بوستجرس لا يسمح بتغيير اسم مُعامل في دالة موجودة)
+drop function if exists public.club_member_by_credentials(text, text);
+
 create or replace function public.club_member_by_credentials(p_student_id text, p_secret text)
 returns public.club_applications
 language plpgsql
