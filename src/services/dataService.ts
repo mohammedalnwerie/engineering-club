@@ -27,7 +27,7 @@ import { SOCIAL_ORDER, type SocialLink } from '../data/socials';
 
 
 export const DEFAULT_CONTACT_SETTINGS: ContactSettings = {
-  email: 'eng.club@up.edu.ps',
+  email: 'upsmart.support@gmail.com',
   phone: '',
   addressAr: 'جامعة فلسطين — غزة',
   links: SOCIAL_ORDER.map((platform) => ({ platform, url: '', visible: false })),
@@ -490,7 +490,7 @@ class DataService {
         ...existing,
         name: isNamed ? coord.name.trim() : '',
         avatar: coord.avatar || existing.avatar,
-        email: coord.email || existing.email,
+        email: coord.email !== undefined ? coord.email.trim() : (existing.email || ''),
         role: coord.role && coord.role !== 'لجنة التنسيق والمتابعة الطلابية' ? coord.role : existing.role || `منسق وممثل ${college.name}`,
         department: college.name,
       };
@@ -954,6 +954,9 @@ class DataService {
   public getContactSettings(): ContactSettings {
     const stored = this.content.contact;
     const saved: ContactSettings = { ...DEFAULT_CONTACT_SETTINGS, ...(stored || {}) };
+    if (!saved.email || saved.email === 'eng.club@up.edu.ps') {
+      saved.email = 'upsmart.support@gmail.com';
+    }
     // Keep every known platform in the list so the dashboard can show them all.
     const byPlatform = new Map((saved.links || []).map((l) => [l.platform, l]));
     return {

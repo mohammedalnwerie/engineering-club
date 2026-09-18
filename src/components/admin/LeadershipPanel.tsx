@@ -143,7 +143,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
 
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-white text-sm truncate">
-                {leader.name || <span className="text-gray-500">بدون اسم</span>}
+                {leader.name || <span className="text-gray-500">قريباً يُعلن</span>}
               </h4>
               {leader.hidden && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-950/50 border border-amber-500/40 rounded px-1.5 py-0.5 mt-1">
@@ -186,12 +186,16 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
           )}
 
           <div className="space-y-1 text-xs text-slate-400 mb-3 font-mono">
-            <div className="truncate">
-              <span className="text-slate-500">القسم:</span> {leader.department}
-            </div>
-            <div className="truncate text-xs text-slate-400">
-              <span className="text-slate-500">البريد:</span> {leader.email}
-            </div>
+            {leader.department && (
+              <div className="truncate">
+                <span className="text-slate-500">القسم:</span> {leader.department}
+              </div>
+            )}
+            {leader.email ? (
+              <div className="truncate text-xs text-slate-400">
+                <span className="text-slate-500">البريد:</span> {leader.email}
+              </div>
+            ) : null}
           </div>
 
           {/* Skills */}
@@ -293,7 +297,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-white text-sm truncate">{leader.name || 'بدون اسم'}</span>
+              <span className="font-bold text-white text-sm truncate">{leader.name || 'قريباً يُعلن'}</span>
               <span
                 className={`font-mono text-[10px] px-2 py-0.5 rounded border ${
                   isPresident

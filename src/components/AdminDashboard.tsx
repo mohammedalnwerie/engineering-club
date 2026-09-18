@@ -535,7 +535,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
   const handleSaveLeader = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!leaderForm.name?.trim() || !leaderForm.role?.trim()) return;
+    if (!leaderForm.role?.trim()) return;
 
     const skillsArray = leaderSkillsInput
       .split(',')
@@ -544,13 +544,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
     const saved: LeaderMember = {
       id: editingLeader ? editingLeader.id : `leader-${Date.now()}`,
-      name: leaderForm.name || '',
-      role: leaderForm.role || '',
+      name: leaderForm.name?.trim() || '',
+      role: leaderForm.role?.trim() || 'عضو مجلس قيادي',
       tier: leaderForm.tier || 'committee-lead',
-      department: leaderForm.department || '',
+      department: leaderForm.department?.trim() || '',
       avatar: leaderForm.avatar || '',
-      quote: leaderForm.quote || '',
-      email: leaderForm.email || '',
+      quote: leaderForm.quote?.trim() || '',
+      email: leaderForm.email?.trim() || '',
       linkedin: leaderForm.linkedin,
       github: leaderForm.github,
       skills: skillsArray.length > 0 ? skillsArray : ['مهندس مبتكر'],
@@ -562,22 +562,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     setColleges(dataService.getColleges());
 
     // Synchronize matching applicant's organizational role to prevent conflicts
-    const matchingApp = applications.find(
-      (a) =>
-        a.fullName.trim() === saved.name.trim() ||
-        (saved.email && a.email.toLowerCase() === saved.email.toLowerCase())
-    );
-    if (matchingApp && matchingApp.organizationalRole !== saved.role) {
-      dataService.updateApplicationAssignment(matchingApp.id, {
-        assignedCommittee: saved.department || matchingApp.assignedCommittee || matchingApp.targetCommittee,
-        organizationalRole: saved.role,
-      });
-      setApplications(dataService.getApplications());
+    if (saved.name) {
+      const matchingApp = applications.find(
+        (a) =>
+          a.fullName.trim() === saved.name.trim() ||
+          (saved.email && a.email.toLowerCase() === saved.email.toLowerCase())
+      );
+      if (matchingApp && matchingApp.organizationalRole !== saved.role) {
+        dataService.updateApplicationAssignment(matchingApp.id, {
+          assignedCommittee: saved.department || matchingApp.assignedCommittee || matchingApp.targetCommittee,
+          organizationalRole: saved.role,
+        });
+        setApplications(dataService.getApplications());
+      }
     }
 
     setShowLeaderModal(false);
     setEditingLeader(null);
-    showToast(`تم حفظ بيانات المهندس (${saved.name}) بنجاح`);
+    showToast(`تم حفظ بيانات المهندس (${saved.name || 'قريباً يُعلن'}) بنجاح`);
   };
 
   const handleDeleteLeader = async (id: string, name: string) => {
@@ -4540,11 +4542,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 {/* Name & Role Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-gray-300 mb-1 font-mono">الاسم الكامل:</label>
+                    <label className="block text-gray-300 mb-1 font-mono">الاسم الكامل (اختياري - "قريباً يُعلن" إن تُرِك فارغاً):</label>
                     <input
                       type="text"
-                      required
-                      placeholder="مثال: م. بدر بن عبدالعزيز المنصور"
+                      placeholder="مثال: م. بدر بن عبدالعزيز المنصور (أو اتركه فارغاً)"
                       value={leaderForm.name || ''}
                       onChange={(e) => setLeaderForm({ ...leaderForm, name: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
@@ -4556,7 +4557,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <input
                       type="text"
                       required
-                      placeholder="مثال: رئيس النادي الهندسي"
+                      placeholder="مثال: رئيس النادي الهندسي أو رئيس لجنة"
                       value={leaderForm.role || ''}
                       onChange={(e) => setLeaderForm({ ...leaderForm, role: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
@@ -4585,10 +4586,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   </div>
 
                   <div>
-                    <label className="block text-gray-300 mb-1 font-mono">القسم / اللجنة التابعة:</label>
+                    <label className="block text-gray-300 mb-1 font-mono">القسم / اللجنة التابعة (اختياري):</label>
                     <input
                       type="text"
-                      required
                       placeholder="مثال: رئاسة النادي أو لجنة الفعاليات والأنشطة"
                       value={leaderForm.department || ''}
                       onChange={(e) => setLeaderForm({ ...leaderForm, department: e.target.value })}
@@ -4598,11 +4598,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 mb-1 font-mono">البريد الإلكتروني / الجامعي:</label>
+                  <label className="block text-gray-300 mb-1 font-mono">البريد الإلكتروني / الجامعي (اختياري):</label>
                   <input
                     type="email"
-                    required
-                    placeholder="leader@up.edu.ps"
+                    placeholder="upsmart.support@gmail.com أو اتركه فارغاً"
                     value={leaderForm.email || ''}
                     onChange={(e) => setLeaderForm({ ...leaderForm, email: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono focus:outline-none focus:border-cyan-400"
@@ -4610,11 +4609,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 mb-1 font-mono">كلمة القائد / الاقتباس الهندسي:</label>
+                  <label className="block text-gray-300 mb-1 font-mono">كلمة القائد / الاقتباس الهندسي (اختياري):</label>
                   <textarea
                     rows={2}
-                    required
-                    placeholder="اقتباس أو رؤية القائد لمستقبل النادي والهندسة..."
+                    placeholder="اقتباس أو رؤية القائد لمستقبل النادي والهندسة (اختياري)..."
                     value={leaderForm.quote || ''}
                     onChange={(e) => setLeaderForm({ ...leaderForm, quote: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
@@ -4622,7 +4620,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 mb-1 font-mono">المهارات والاهتمامات (مفصولة بفواصل):</label>
+                  <label className="block text-gray-300 mb-1 font-mono">المهارات والاهتمامات (اختياري - مفصولة بفواصل):</label>
                   <input
                     type="text"
                     placeholder="القيادة الاستراتيجية, معمارية النظم, إدارة المشاريع"
@@ -4730,11 +4728,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-gray-400 mb-1">اسم المنسق:</label>
+                      <label className="block text-gray-400 mb-1">اسم المنسق (اختياري):</label>
                       <input
                         type="text"
-                        required
-                        value={editingCollege.coordinator.name}
+                        placeholder="اسم المنسق أو اتركه فارغاً"
+                        value={editingCollege.coordinator.name || ''}
                         onChange={(e) =>
                           setEditingCollege({
                             ...editingCollege,
@@ -4745,11 +4743,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-400 mb-1">المسمى الأكاديمي:</label>
+                      <label className="block text-gray-400 mb-1">المسمى الأكاديمي (اختياري):</label>
                       <input
                         type="text"
-                        required
-                        value={editingCollege.coordinator.title}
+                        placeholder="مثال: منسق وممثل الكلية"
+                        value={editingCollege.coordinator.title || ''}
                         onChange={(e) =>
                           setEditingCollege({
                             ...editingCollege,
@@ -4763,11 +4761,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-gray-400 mb-1">البريد الإلكتروني:</label>
+                      <label className="block text-gray-400 mb-1">البريد الإلكتروني (اختياري):</label>
                       <input
                         type="email"
-                        required
-                        value={editingCollege.coordinator.email}
+                        placeholder="upsmart.support@gmail.com أو اتركه فارغاً"
+                        value={editingCollege.coordinator.email || ''}
                         onChange={(e) =>
                           setEditingCollege({
                             ...editingCollege,
@@ -4864,22 +4862,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-gray-300 mb-1 font-mono">الإنجاز الأبرز للكلية:</label>
+                    <label className="block text-gray-300 mb-1 font-mono">الإنجاز الأبرز للكلية (اختياري):</label>
                     <input
                       type="text"
-                      required
-                      value={editingCollege.flagshipAchievement}
+                      placeholder="مثال: بيئة تطبيقية متطورة (أو اتركه فارغاً)"
+                      value={editingCollege.flagshipAchievement || ''}
                       onChange={(e) => setEditingCollege({ ...editingCollege, flagshipAchievement: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-300 mb-1 font-mono">عدد المختبرات المتطورة:</label>
+                    <label className="block text-gray-300 mb-1 font-mono">عدد المختبرات المتطورة (اختياري):</label>
                     <input
                       type="number"
-                      required
-                      value={editingCollege.labsCount}
-                      onChange={(e) => setEditingCollege({ ...editingCollege, labsCount: Number(e.target.value) })}
+                      min="0"
+                      placeholder="0"
+                      value={editingCollege.labsCount ?? 0}
+                      onChange={(e) => setEditingCollege({ ...editingCollege, labsCount: Math.max(0, Number(e.target.value) || 0) })}
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white"
                     />
                   </div>

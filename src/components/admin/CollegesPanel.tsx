@@ -213,7 +213,7 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
                       </span>
                       <span className="font-mono text-xs text-slate-400 flex items-center gap-1">
                         <FlaskConical className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>{col.labsCount} مختبرات معتمدة</span>
+                        <span>{col.labsCount || 0} مختبرات معتمدة</span>
                       </span>
                     </div>
 
@@ -224,7 +224,7 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
                     <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60 flex items-center gap-3 mb-4">
                       <img
                         src={col.coordinator.avatar || DEFAULT_AVATAR}
-                        alt={col.coordinator.name}
+                        alt={col.coordinator.name || 'منسق الكلية'}
                         className="w-11 h-11 rounded-xl object-cover border border-slate-700 shrink-0 shadow-xs"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
@@ -239,8 +239,8 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
                             </span>
                           )}
                         </div>
-                        <div className="text-xs font-bold text-white truncate mt-0.5">{col.coordinator.name}</div>
-                        <div className="text-xs text-cyan-400 truncate">{col.coordinator.title}</div>
+                        <div className="text-xs font-bold text-white truncate mt-0.5">{col.coordinator.name || 'قريباً يُعلن'}</div>
+                        <div className="text-xs text-cyan-400 truncate">{col.coordinator.title || 'منسق الكلية'}</div>
                       </div>
                     </div>
 
@@ -321,14 +321,18 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-white text-sm truncate">{col.name}</h4>
                         <span className="text-slate-500">•</span>
-                        <span className="text-xs text-cyan-400 truncate">{col.coordinator.name}</span>
+                        <span className="text-xs text-cyan-400 truncate">{col.coordinator.name || 'قريباً يُعلن'}</span>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5 flex-wrap">
                         <span>{colMajors.length} تخصصات مسجلة</span>
                         <span className="text-slate-600">•</span>
-                        <span>{col.labsCount} مختبرات</span>
-                        <span className="text-slate-600">•</span>
-                        <span className="truncate max-w-sm">{col.flagshipAchievement}</span>
+                        <span>{col.labsCount || 0} مختبرات</span>
+                        {col.flagshipAchievement && (
+                          <>
+                            <span className="text-slate-600">•</span>
+                            <span className="truncate max-w-sm">{col.flagshipAchievement}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

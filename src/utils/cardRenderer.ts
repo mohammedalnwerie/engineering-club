@@ -51,8 +51,8 @@ interface Assets {
 }
 
 /** First letters of the first two words — stands in for a missing photo. */
-function monogram(name: string) {
-  const words = name.replace(/^م\.?\s*/, '').trim().split(/\s+/).filter(Boolean);
+function monogram(name?: string) {
+  const words = (name || '').replace(/^م\.?\s*/, '').trim().split(/\s+/).filter(Boolean);
   if (!words.length) return 'UP';
   // First name + family name, the way initials are read on a badge.
   const letters = words.length > 1 ? [words[0][0], words[words.length - 1][0]] : [words[0][0]];
@@ -216,7 +216,7 @@ function draw(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets) {
 
   const textRight = spineX - 14;
   const textW = textRight - P;
-  const name = wrapFit(card.name, textW, 900, 22, 2);
+  const name = wrapFit(card.name || 'قريباً يُعلن', textW, 900, 22, 2);
   name.lines.forEach((line, i) => text(line, textRight, photoY + 2 + i * (name.size + 7), name.font, TEXT));
 
   const roleTop = photoY + 2 + name.lines.length * (name.size + 7) + 6;
