@@ -274,6 +274,11 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                     {app.status === 'مقابلة مجدولة' && (
                       <div className="text-xs text-blue-200 mt-1.5">{interviewLabel(app)}</div>
                     )}
+                    {app.submittedAt && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        قُدّم {new Date(app.submittedAt).toLocaleDateString('ar', { day: 'numeric', month: 'long' })}
+                      </div>
+                    )}
                   </td>
                   <td className="p-3">
                     <div className="flex items-center justify-center gap-2">
