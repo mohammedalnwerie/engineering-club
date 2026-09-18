@@ -1343,59 +1343,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               </div>
 
               {/* Sidebar Navigation Links */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-5 no-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3 space-y-6 no-scrollbar">
                 {/* Group 1: Operations & Students */}
                 <div>
                   {!isSidebarCollapsed && (
-                    <div className="px-3 text-xs font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      العمليات والطلبة
+                    <div className="px-3 text-[11px] font-mono text-slate-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <span>العمليات والطلبة</span>
                     </div>
                   )}
                   <nav className="space-y-1">
-                    {fullAccess && (<>
-                    {/* Overview Hub */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('overview')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'overview'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="نظرة عامة والتحكم"
-                    >
-                      <LayoutDashboard className={`w-4 h-4 shrink-0 ${activeTab === 'overview' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && <span className="flex-1 text-right">نظرة عامة والتحكم</span>}
-                    </button>
+                    {fullAccess && (
+                      <SidebarNavItem
+                        active={activeTab === 'overview'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<LayoutDashboard className="w-4 h-4" />}
+                        label="نظرة عامة والتحكم"
+                        onClick={() => setActiveTab('overview')}
+                      />
+                    )}
 
-                    </>)}
-                    {/* Applications */}
-                    <button
-                      type="button"
+                    <SidebarNavItem
+                      active={activeTab === 'applications'}
+                      collapsed={isSidebarCollapsed}
+                      icon={<Users className="w-4 h-4" />}
+                      label="طلبات الانضمام"
+                      badge={
+                        applications.filter((a) => a.status === 'قيد المراجعة').length > 0 ? (
+                          <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold">
+                            {applications.filter((a) => a.status === 'قيد المراجعة').length} جديد
+                          </span>
+                        ) : (
+                          <span className="text-xs font-mono text-slate-500">
+                            {applications.length}
+                          </span>
+                        )
+                      }
                       onClick={() => setActiveTab('applications')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'applications'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="طلبات الانضمام"
-                    >
-                      <Users className={`w-4 h-4 shrink-0 ${activeTab === 'applications' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && (
-                        <>
-                          <span className="flex-1 text-right">طلبات الانضمام</span>
-                          {applications.filter((a) => a.status === 'قيد المراجعة').length > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold">
-                              {applications.filter((a) => a.status === 'قيد المراجعة').length} جديد
-                            </span>
-                          ) : (
-                            <span className="text-xs font-mono text-gray-500">
-                              {applications.length}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </button>
+                    />
 
                     {fullAccess && (
                       <SidebarNavItem
@@ -1406,181 +1390,129 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         onClick={() => setActiveTab('members')}
                       />
                     )}
-
-                    {/* Events & Tickets */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('events')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'events'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="الفعاليات والحضور"
-                    >
-                      <Calendar className={`w-4 h-4 shrink-0 ${activeTab === 'events' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && (
-                        <>
-                          <span className="flex-1 text-right">الفعاليات والتسجيل</span>
-                        </>
-                      )}
-                    </button>
-
-                    {fullAccess && (<>
-                    {/* Complaints & Inquiries */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('complaints')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'complaints'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="صندوق الشكاوى والمقترحات"
-                    >
-                      <MessageSquare className={`w-4 h-4 shrink-0 ${activeTab === 'complaints' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && (
-                        <>
-                          <span className="flex-1 text-right">صندوق الشكاوى</span>
-                          {complaints.filter((c) => c.status === 'pending').length > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-mono text-xs font-black">
-                              {complaints.filter((c) => c.status === 'pending').length}
-                            </span>
-                          ) : (
-                            <span className="text-xs font-mono text-gray-500">{complaints.length}</span>
-                          )}
-                        </>
-                      )}
-                    </button>
-                    </>)}
                   </nav>
                 </div>
 
-                {fullAccess && (<>
-                {/* Group 2: Content & CMS */}
+                {/* Group 2: Leadership & Academics */}
+                {fullAccess && (
+                  <div>
+                    {!isSidebarCollapsed && (
+                      <div className="px-3 text-[11px] font-mono text-slate-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <span>الهيكل القيادي والأكاديمي</span>
+                      </div>
+                    )}
+                    <nav className="space-y-1">
+                      <SidebarNavItem
+                        active={activeTab === 'leadership'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<Award className="w-4 h-4" />}
+                        label="الكادر القيادي والهيكل"
+                        badge={<span className="text-xs font-mono text-slate-500">{leadership.length}</span>}
+                        onClick={() => setActiveTab('leadership')}
+                      />
+
+                      <SidebarNavItem
+                        active={activeTab === 'colleges'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<Building2 className="w-4 h-4" />}
+                        label="الكليات والتخصصات"
+                        badge={<span className="text-xs font-mono text-slate-500">{colleges.length}</span>}
+                        onClick={() => setActiveTab('colleges')}
+                      />
+
+                      <SidebarNavItem
+                        active={activeTab === 'team'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<Users className="w-4 h-4" />}
+                        label="فريق مسؤولي اللوحة"
+                        onClick={() => setActiveTab('team')}
+                      />
+                    </nav>
+                  </div>
+                )}
+
+                {/* Group 3: Activities & Content */}
                 <div>
                   {!isSidebarCollapsed && (
-                    <div className="px-3 text-xs font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      محتوى الموقع
+                    <div className="px-3 text-[11px] font-mono text-slate-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <span>الأنشطة والمحتوى</span>
                     </div>
                   )}
                   <nav className="space-y-1">
-                    {/* Projects */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('projects')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'projects'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="المشاريع ودراسات الحالة"
-                    >
-                      <Layers className={`w-4 h-4 shrink-0 ${activeTab === 'projects' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && (
-                        <>
-                          <span className="flex-1 text-right">المشاريع والمبادرات</span>
-                          <span className="text-xs font-mono text-gray-500">{projects.length}</span>
-                        </>
-                      )}
-                    </button>
-
-                    {/* Leadership */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('leadership')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'leadership'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="الكادر القيادي والهيئة الإدارية"
-                    >
-                      <Award className={`w-4 h-4 shrink-0 ${activeTab === 'leadership' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && (
-                        <>
-                          <span className="flex-1 text-right">الكادر القيادي</span>
-                          <span className="text-xs font-mono text-gray-500">{leadership.length}</span>
-                        </>
-                      )}
-                    </button>
-
-                    {/* Colleges & Majors */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('colleges')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'colleges'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="الكليات والتخصصات"
-                    >
-                      <Building2 className={`w-4 h-4 shrink-0 ${activeTab === 'colleges' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && <span className="flex-1 text-right">الكليات والتخصصات</span>}
-                    </button>
-                  </nav>
-                </div>
-
-                </>)}
-                {/* Group 3: System & Tech */}
-                <div>
-                  {!isSidebarCollapsed && (
-                    <div className="px-3 text-xs font-mono text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      إعدادات النظام والتقنية
-                    </div>
-                  )}
-                  <nav className="space-y-1">
-                    {fullAccess && (<>
-                    {/* Site Settings & Visibility */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('settings')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'settings'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="الرؤية وهوية الموقع"
-                    >
-                      <Sparkles className={`w-4 h-4 shrink-0 ${activeTab === 'settings' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && <span className="flex-1 text-right">الهوية وإعدادات العرض</span>}
-                    </button>
-
-                    {/* Cloud & Supabase */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('cloud')}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'cloud'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="السحابة والنسخ الاحتياطي والمشتركون"
-                    >
-                      <Database className={`w-4 h-4 shrink-0 ${activeTab === 'cloud' ? 'text-cyan-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && (
-                        <>
-                          <span className="flex-1 text-right">السحابة والمشتركون</span>
-                          <span className="text-xs font-mono text-gray-500">{subscribers.length}</span>
-                        </>
-                      )}
-                    </button>
-
                     <SidebarNavItem
+                      active={activeTab === 'events'}
+                      collapsed={isSidebarCollapsed}
+                      icon={<Calendar className="w-4 h-4" />}
+                      label="الفعاليات والتسجيل"
+                      onClick={() => setActiveTab('events')}
+                    />
+
+                    {fullAccess && (
+                      <>
+                        <SidebarNavItem
+                          active={activeTab === 'projects'}
+                          collapsed={isSidebarCollapsed}
+                          icon={<Layers className="w-4 h-4" />}
+                          label="المشاريع والمبادرات"
+                          badge={<span className="text-xs font-mono text-slate-500">{projects.length}</span>}
+                          onClick={() => setActiveTab('projects')}
+                        />
+
+                        <SidebarNavItem
+                          active={activeTab === 'complaints'}
+                          collapsed={isSidebarCollapsed}
+                          icon={<MessageSquare className="w-4 h-4" />}
+                          label="صندوق الشكاوى"
+                          badge={
+                            complaints.filter((c) => c.status === 'pending').length > 0 ? (
+                              <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-black font-mono text-xs font-black">
+                                {complaints.filter((c) => c.status === 'pending').length}
+                              </span>
+                            ) : (
+                              <span className="text-xs font-mono text-slate-500">{complaints.length}</span>
+                            )
+                          }
+                          onClick={() => setActiveTab('complaints')}
+                        />
+                      </>
+                    )}
+                  </nav>
+                </div>
+
+                {/* Group 4: System & Governance */}
+                {fullAccess && (
+                  <div>
+                    {!isSidebarCollapsed && (
+                      <div className="px-3 text-[11px] font-mono text-slate-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <span>النظام والرقابة</span>
+                      </div>
+                    )}
+                    <nav className="space-y-1">
+                      <SidebarNavItem
+                        active={activeTab === 'settings'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<Sparkles className="w-4 h-4" />}
+                        label="الهوية وإعدادات العرض"
+                        onClick={() => setActiveTab('settings')}
+                      />
+
+                      <SidebarNavItem
+                        active={activeTab === 'cloud'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<Database className="w-4 h-4" />}
+                        label="السحابة والمشتركون"
+                        badge={<span className="text-xs font-mono text-slate-500">{subscribers.length}</span>}
+                        onClick={() => setActiveTab('cloud')}
+                      />
+
+                      <SidebarNavItem
                         active={activeTab === 'contact'}
                         collapsed={isSidebarCollapsed}
                         icon={<LinkIcon className="w-4 h-4" />}
                         label="روابط التواصل"
                         onClick={() => setActiveTab('contact')}
                       />
-                    <SidebarNavItem
-                        active={activeTab === 'team'}
-                        collapsed={isSidebarCollapsed}
-                        icon={<Users className="w-4 h-4" />}
-                        label="فريق الإدارة"
-                        onClick={() => setActiveTab('team')}
-                      />
+
                       <SidebarNavItem
                         active={activeTab === 'activity'}
                         collapsed={isSidebarCollapsed}
@@ -1588,6 +1520,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         label="سجل النشاط"
                         onClick={() => setActiveTab('activity')}
                       />
+
                       <SidebarNavItem
                         active={activeTab === 'trash'}
                         collapsed={isSidebarCollapsed}
@@ -1595,26 +1528,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         label="سلة المحذوفات"
                         onClick={() => setActiveTab('trash')}
                       />
-                    </>)}
-                    {/* Security & Audit Logs */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('security');
-                        setAuditLogs(getSecurityAuditLogs());
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
-                        activeTab === 'security'
-                          ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      title="الأمان وسجل النظام"
-                    >
-                      <ShieldCheck className={`w-4 h-4 shrink-0 ${activeTab === 'security' ? 'text-emerald-400' : 'text-gray-400'}`} />
-                      {!isSidebarCollapsed && <span className="flex-1 text-right">الأمان وسجل التدقيق</span>}
-                    </button>
-                  </nav>
-                </div>
+
+                      <SidebarNavItem
+                        active={activeTab === 'security'}
+                        collapsed={isSidebarCollapsed}
+                        icon={<ShieldCheck className="w-4 h-4" />}
+                        label="الأمان وسجل التدقيق"
+                        onClick={() => {
+                          setActiveTab('security');
+                          setAuditLogs(getSecurityAuditLogs());
+                        }}
+                      />
+                    </nav>
+                  </div>
+                )}
               </div>
 
               {/* Sidebar Footer: Admin Status & Fast Refresh */}

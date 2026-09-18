@@ -4,6 +4,7 @@ import { X, ShieldCheck, Printer, Download } from 'lucide-react';
 import { downloadCardPng, printCard } from '../utils/cardRenderer';
 import { executiveCardFor } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
+import { dataService } from '../services/dataService';
 
 interface ExecutiveBadgeModalProps {
   isOpen: boolean;
@@ -16,7 +17,18 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
 
   if (!isOpen || !leader) return null;
 
-  const card = executiveCardFor(leader);
+  const apps = dataService.getApplications();
+  const cleanName = (leader.name || '').trim().replace(/^م\.\s*/, '');
+  const matchedApp = apps.find(
+    (a) =>
+      (cleanName && a.fullName.trim().replace(/^م\.\s*/, '') === cleanName) ||
+      (leader.email && a.email && a.email.toLowerCase() === leader.email.toLowerCase())
+  );
+
+  const card = executiveCardFor(
+    leader,
+    matchedApp ? { studentId: matchedApp.studentId, major: matchedApp.major } : undefined
+  );
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">

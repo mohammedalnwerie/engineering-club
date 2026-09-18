@@ -133,18 +133,19 @@ export const SidebarNavItem: React.FC<{
     onClick={onClick}
     title={label}
     aria-current={active ? 'page' : undefined}
-    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs font-bold transition-all cursor-pointer ${
+    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-xs transition-all cursor-pointer min-h-[42px] ${
       active
-        ? 'bg-gradient-to-r from-cyan-500/20 to-[#7F1AB2]/20 text-white border border-cyan-400/40 shadow-sm'
-        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+        ? 'bg-cyan-500/15 text-cyan-200 border border-cyan-500/35 shadow-[0_2px_12px_rgba(0,240,255,0.08)] font-bold'
+        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent font-medium'
     }`}
   >
-    <span className={`shrink-0 ${active ? 'text-cyan-400' : 'text-gray-400'}`}>{icon}</span>
+    <span className={`shrink-0 transition-colors ${active ? 'text-cyan-400' : 'text-slate-400'}`}>{icon}</span>
     {!collapsed && (
       <>
-        <span className="flex-1 text-right">{label}</span>
+        <span className="flex-1 text-right truncate">{label}</span>
         {badge}
       </>
     )}
   </button>
 );
+

@@ -167,7 +167,10 @@ export function committeeCardFor(app: CardApplication, options: CardOptions = {}
 }
 
 /** Executive & Representative Commission Badge */
-export function executiveCardFor(leader: LeaderMember): CardData {
+export function executiveCardFor(
+  leader: LeaderMember,
+  studentApp?: { studentId?: string; major?: string }
+): CardData {
   const isPresident = leader.id === 'pres-1' || (leader.role.includes('رئيس النادي') && !leader.role.includes('نائب'));
   const isCollegeLead = leader.tier === 'college-lead';
   const isExecutive = leader.tier === 'executive';
@@ -178,60 +181,57 @@ export function executiveCardFor(leader: LeaderMember): CardData {
   const shortId = rawId.length > 6 ? rawId.slice(-6).toUpperCase() : (rawId || '0001').toUpperCase();
   const code = `${prefix}-${shortId}`;
 
-  // Official badge (clean Arabic commission without date clutter):
+  // Official badge:
   const badge = isPresident
-    ? 'رئاسة النادي المعتمدة'
+    ? 'رئاسة النادي'
     : isCollegeLead
-    ? 'اعتماد تمثيل الكلية'
-    : isExecutive
-    ? 'اعتماد الهيئة الإدارية'
-    : 'اعتماد رئاسة اللجنة';
+    ? 'تمثيل الكلية'
+    : 'اعتماد رسمي';
 
-  // Highlight band (entity name):
-  let highlightValue = (leader.department || '').trim();
-  if (!highlightValue || highlightValue === 'ممثلين الكليات' || highlightValue === 'ممثلو الكليات') {
-    if (isCollegeLead) {
-      highlightValue = (leader.role || '').replace(/^(منسق\s+وممثل|منسق|ممثل)\s+/, '').trim() || 'الكليات الهندسية';
-    } else if (isPresident) {
-      highlightValue = 'مجلس إدارة النادي الهندسي';
-    } else if (isExecutive) {
-      highlightValue = 'الهيئة الإدارية العليا';
-    } else {
-      highlightValue = leader.role;
-    }
+  // Highlight band: ONLY shown if it adds new context without repeating the title
+  const department = (leader.department || '').trim();
+  const roleText = leader.role || '';
+  const roleMentionsDept = Boolean(department) && roleText.includes(department);
+  let highlight: CardField | undefined;
+
+  if (isCollegeLead && department && !roleMentionsDept) {
+    highlight = {
+      label: 'التمثيل الأكاديمي',
+      value: department,
+    };
   }
 
-  const highlightLabel = isCollegeLead
-    ? 'التمثيل الأكاديمي'
-    : isPresident || isExecutive
-    ? 'الهيئة التنظيمية'
-    : 'اللجنة التنفيذية';
-
-  // Rich official fields (informative & balanced layout):
+  // Concise, high-value, non-repetitive fields:
   const fields: CardField[] = [
     {
-      label: 'التكليف التنظيمي',
+      label: 'نوع التكليف',
       value: isPresident
-        ? 'رئيس مجلس الإدارة'
+        ? 'مجلس الإدارة والقيادة العليا'
         : isExecutive
-        ? 'عضو الهيئة الإدارية'
+        ? 'عضوية الهيئة الإدارية'
         : isCollegeLead
-        ? 'ممثل الكلية في النادي'
-        : 'رئيس لجنة تنفيذية',
-    },
-    {
-      label: 'الجهة التابعة',
-      value: highlightValue,
-    },
-    {
-      label: 'الصفة الرسمية',
-      value: leader.role,
+        ? 'تمثيل الكلية والتنسيق الطلابي'
+        : 'رئاسة لجنة تنفيذية',
     },
     {
       label: 'حالة الاعتماد',
       value: 'معتمد رسمياً ✓',
     },
   ];
+
+  if (studentApp?.studentId) {
+    fields.push({
+      label: 'الرقم الجامعي',
+      value: studentApp.studentId,
+    });
+  }
+
+  if (studentApp?.major) {
+    fields.push({
+      label: 'التخصص',
+      value: cleanMajor(studentApp.major),
+    });
+  }
 
   if (leader.email && leader.email.trim()) {
     fields.push({
@@ -245,10 +245,7 @@ export function executiveCardFor(leader: LeaderMember): CardData {
     name: leader.name || leader.role,
     role: leader.name ? leader.role : undefined,
     photoUrl: leader.avatar || undefined,
-    highlight: {
-      label: highlightLabel,
-      value: highlightValue,
-    },
+    highlight,
     fields,
     badge,
     qrValue: `${window.location.origin}/#leadership`,
