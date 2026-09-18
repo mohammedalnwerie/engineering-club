@@ -178,7 +178,7 @@ export function App() {
             <HeroSection onJoinClick={handleJoinClick} onExploreClick={handleExploreClick} />
             <BrandIdentitySection onOpenAboutPage={handleOpenAbout} />
             <AcademicsSection />
-            <EventsSection onOpenMemberPortal={handleOpenMember} />
+            <EventsSection onOpenMemberPortal={handleOpenMember} onOpenJoinModal={handleJoinClick} />
             <ProjectsSection />
             <JoinClubSection />
             <LeadershipSection />

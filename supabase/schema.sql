@@ -2093,6 +2093,8 @@ declare
   v_status    text;
   v_deadline  timestamptz;
   v_committee text := coalesce(v_member.data->>'assignedCommittee', v_member.data->>'targetCommittee');
+  v_role      text := coalesce(v_member.data->>'organizationalRole', '');
+  v_is_exec   boolean := (v_role ilike '%رئيس%' or v_role ilike '%نائب%' or v_role ilike '%أمين صندوق%' or v_role ilike '%إدارية%');
 begin
   if v_member.id is null then
     return jsonb_build_object('error', 'الرقم الجامعي أو رمز العضو غير صحيح');
@@ -2114,7 +2116,8 @@ begin
     raise exception 'انتهى موعد التسجيل';
   end if;
 
-  if v_event.committee_only and coalesce(v_committee, '') <> coalesce(v_event.committee, '') then
+  -- استثناء: القيادات والهيئة الإدارية لا يُحظرون من حضور فعاليات اللجان
+  if v_event.committee_only and not v_is_exec and coalesce(v_committee, '') <> coalesce(v_event.committee, '') then
     raise exception 'هذه الفعالية مخصصة لأعضاء %', v_event.committee;
   end if;
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   LogOut,
@@ -13,12 +14,19 @@ import {
   CreditCard,
   Upload,
   Award,
+  Crown,
+  Lightbulb,
+  Send,
+  Check,
+  ShieldCheck,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { MemberLoginForm } from './MemberLoginForm';
 import { PasswordCard } from './PasswordCard';
 import { PhotoCard } from './PhotoCard';
 import { MemberCard } from '../MemberCard';
 import { CommitteeBadgeModal } from '../CommitteeBadgeModal';
+import { ExecutiveBadgeModal } from '../ExecutiveBadgeModal';
 import {
   memberService,
   daysLeft,
@@ -32,7 +40,7 @@ import { memberCardFor } from '../../utils/memberCard';
 import { downloadCardPng, printCard } from '../../utils/cardRenderer';
 import { compressImage } from '../../utils/image';
 import { findCommittee, effectiveCommittee } from '../../data/committees';
-import type { StoredApplication } from '../../types';
+import type { StoredApplication, LeaderMember } from '../../types';
 
 interface MemberPortalProps {
   onClose: () => void;
@@ -70,6 +78,14 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
   const [isLoading, setIsLoading] = useState(memberService.isLoggedIn && !memberService.currentProfile);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showCommitteeCard, setShowCommitteeCard] = useState(false);
+  const [showExecutiveCard, setShowExecutiveCard] = useState(false);
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
+  const [suggestTopic, setSuggestTopic] = useState('');
+  const [suggestDetails, setSuggestDetails] = useState('');
+  const [suggestContact, setSuggestContact] = useState('');
+  const [suggestSubmitted, setSuggestSubmitted] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [suggestSending, setSuggestSending] = useState(false);
 
   useEffect(() => {
     const unsub = memberService.subscribe(() => setProfile(memberService.currentProfile));
@@ -93,6 +109,67 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
       setIsLoading(false);
     }
   };
+
+  const handleSuggestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile || !suggestTopic.trim()) return;
+    setSuggestSending(true);
+    setSuggestError(null);
+    try {
+      await dataService.submitComplaint({
+        studentName: profile.fullName,
+        studentId: profile.studentId,
+        email: profile.email,
+        phone: suggestContact.trim() || undefined,
+        college: profile.college || profile.major || 'كلية الهندسة وتكنولوجيا المعلومات',
+        category: 'suggestion',
+        subject: '[اقتراح ورشة / فعالية من عضو] ' + suggestTopic.trim(),
+        message: `مقدم المقترح: ${profile.fullName} (عضو مسجل - الرقم الجامعي: ${profile.studentId}) | الكلية/التخصص: ${profile.major || profile.college || '—'} | تفاصيل المقترح: ${suggestDetails.trim()}`,
+        isAnonymous: false,
+      });
+      setSuggestSubmitted(true);
+      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 }, colors: ['#10B981', '#06B6D4', '#F59E0B'] });
+      setTimeout(() => {
+        setShowSuggestModal(false);
+        setSuggestSubmitted(false);
+        setSuggestTopic('');
+        setSuggestDetails('');
+        setSuggestContact('');
+      }, 2500);
+    } catch (err) {
+      setSuggestError(err instanceof Error ? err.message : 'تعذر إرسال المقترح');
+    } finally {
+      setSuggestSending(false);
+    }
+  };
+
+  const leaders = dataService.getLeadership();
+  const cleanName = (profile?.fullName || '').trim().replace(/^م\.\s*/, '');
+  const matchedLeader: LeaderMember | null = profile
+    ? leaders.find(
+        (l) =>
+          l.tier === 'executive' &&
+          ((cleanName && l.name.trim().replace(/^م\.\s*/, '') === cleanName) ||
+            (profile.email && l.email && l.email.toLowerCase() === profile.email.toLowerCase()))
+      ) ||
+      (profile.organizationalRole &&
+      (profile.organizationalRole.includes('رئيس') ||
+        profile.organizationalRole.includes('نائب') ||
+        profile.organizationalRole.includes('أمين صندوق') ||
+        profile.organizationalRole.includes('إدارية'))
+        ? {
+            id: 'exec-leader-' + profile.studentId,
+            name: profile.fullName,
+            role: profile.organizationalRole,
+            tier: 'executive' as const,
+            department: 'الهيئة الإدارية والتنفيذية',
+            avatar: profile.photoUrl || '',
+            email: profile.email || '',
+            quote: 'خدمة طلبة كلية الهندسة وتكنولوجيا المعلومات وقيادة مبادرات التميز.',
+            skills: ['القيادة الهندسية', 'التنسيق التنفيذي'],
+          }
+        : null)
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -229,6 +306,16 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                       <Printer className="w-4 h-4" />
                       <span>طباعة</span>
                     </button>
+                    {matchedLeader && (
+                      <button
+                        type="button"
+                        onClick={() => setShowExecutiveCard(true)}
+                        className="col-span-2 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-cyan-500/20 to-amber-500/20 hover:from-amber-500/30 hover:to-cyan-500/30 border border-amber-400/40 text-amber-200 text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-md"
+                      >
+                        <Crown className="w-4 h-4 text-amber-400" />
+                        <span>عرض بطاقة التكليف القيادي</span>
+                      </button>
+                    )}
                     {findCommittee(effectiveCommittee(asApplication(profile)))?.id !== 'general' && (
                       <button
                         type="button"
@@ -252,6 +339,32 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
               {/* Events & Registrations */}
               <RegistrationsPanel profile={profile} onBrowseEvents={onClose} />
 
+              {/* Propose Workshop or Event Section */}
+              <section className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/30 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0 shadow-sm">
+                    <Lightbulb className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white">اقترح ورشة عمل أو فعالية للنادي</h4>
+                      <span className="font-mono text-[10px] bg-emerald-950/60 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">ميزة حصرية للأعضاء</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
+                      شاركنا مقترحك لمسار أو دورة تود تنظيمها، وسيعمل فريق النادي على دراستها وتنفيذها معك.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSuggestModal(true)}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs shrink-0 cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Lightbulb className="w-3.5 h-3.5" />
+                  <span>تقديم مقترح ورشة</span>
+                </button>
+              </section>
+
               {/* Security & Password settings at bottom */}
               <div id="security-section">
                 <PhotoCard photoUrl={profile.photoUrl} name={profile.fullName} />
@@ -263,9 +376,118 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
         </div>
       </div>
 
+      {showExecutiveCard && matchedLeader && (
+        <ExecutiveBadgeModal isOpen leader={matchedLeader} onClose={() => setShowExecutiveCard(false)} />
+      )}
+
       {showCommitteeCard && profile && (
         <CommitteeBadgeModal isOpen app={asApplication(profile)} revealCode onClose={() => setShowCommitteeCard(false)} />
       )}
+
+      {showSuggestModal && profile &&
+        createPortal(
+          <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 sm:p-4 pt-20 sm:pt-24 pb-8 overflow-y-auto bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right my-auto">
+              <button
+                onClick={() => setShowSuggestModal(false)}
+                className="absolute top-5 left-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {!suggestSubmitted ? (
+                <form onSubmit={handleSuggestSubmit} className="space-y-4">
+                  <div className="flex items-center gap-2 mb-1 text-emerald-400">
+                    <Lightbulb className="w-6 h-6" />
+                    <h3 className="text-xl font-bold text-white">اقترح ورشة عمل أو فعالية</h3>
+                  </div>
+
+                  {/* Verified Member Status */}
+                  <div className="p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>عضو معتمد: <strong>{profile.fullName}</strong></span>
+                    </div>
+                    <span className="font-mono text-[11px] bg-emerald-900/60 px-2 py-0.5 rounded text-emerald-200">{profile.studentId}</span>
+                  </div>
+
+                  <p className="text-xs text-gray-300 font-light">
+                    اكتب الفكرة أو المهارة الهندسية التي ترى أنها تفيد الزملاء في كليتك، وسيقوم مجلس إدارة النادي بمراجعتها والتنسيق معك لإطلاقها.
+                  </p>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">موضوع الورشة أو الفعالية:</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="مثال: ورشة إدارة المشاريع الهندسية Agile، أو الذكاء الاصطناعي في التصميم..."
+                      value={suggestTopic}
+                      onChange={(e) => setSuggestTopic(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">تفاصيل أو محاور مقترحة:</label>
+                    <textarea
+                      rows={3}
+                      placeholder="اكتب نبذة عن المحاور أو الفئة المستهدفة أو مقترح لمدرب معين..."
+                      value={suggestDetails}
+                      onChange={(e) => setSuggestDetails(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">رقم جوال أو وسيلة للتواصل المباشر (اختياري):</label>
+                    <input
+                      type="text"
+                      placeholder="059XXXXXXX"
+                      value={suggestContact}
+                      onChange={(e) => setSuggestContact(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
+                    />
+                  </div>
+
+                  {suggestError && (
+                    <div role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm leading-relaxed">
+                      {suggestError}
+                    </div>
+                  )}
+
+                  <div className="pt-3 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowSuggestModal(false)}
+                      className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition-colors cursor-pointer"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={suggestSending}
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{suggestSending ? 'جاري الإرسال…' : 'إرسال المقترح للإدارة'}</span>
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-7 h-7" />
+                  </div>
+                  <h4 className="text-xl font-bold text-white mb-2">تم استلام مقترحك بنجاح!</h4>
+                  <p className="text-xs sm:text-sm text-gray-300 font-light">
+                    شكراً لمبادرتك وحرصك يا مهندس {profile.fullName.split(' ')[0]}. سيتم دراسة الورشة والتنسيق معك قريباً.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

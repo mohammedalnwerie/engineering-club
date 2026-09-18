@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { LIVE_ACTIVITY_STREAM } from '../data/clubData';
 import { dataService } from '../services/dataService';
 import { normalizeCode } from '../utils/validation';
@@ -256,9 +257,10 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
       </div>
 
       {/* Member-Exclusive Nomination Modal */}
-      {showNominateModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right my-8">
+      {showNominateModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 sm:p-4 pt-20 sm:pt-24 pb-8 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+            <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right my-auto">
             
             <button
               onClick={() => setShowNominateModal(false)}
@@ -458,9 +460,9 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
                 </p>
               </div>
             )}
-
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </section>

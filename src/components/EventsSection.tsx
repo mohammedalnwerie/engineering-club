@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Sparkles,
   Lightbulb,
@@ -15,6 +16,8 @@ import {
   Clock,
   Lock,
   UserRound,
+  ShieldCheck,
+  ArrowLeft,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { dataService } from '../services/dataService';
@@ -30,11 +33,12 @@ import { MemberLoginForm } from './member/MemberLoginForm';
 
 interface EventsSectionProps {
   onOpenMemberPortal?: () => void;
+  onOpenJoinModal?: () => void;
 }
 
 type Feedback = { eventId: string; tone: 'success' | 'warning' | 'error'; message: string };
 
-export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal }) => {
+export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal, onOpenJoinModal }) => {
   const [isVisible, setIsVisible] = useState<boolean>(() => dataService.getSettings().showEventsSection !== false);
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [eventsState, setEventsState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -90,7 +94,11 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
       }
       void loadEvents();
     } catch (err) {
-      setFeedback({ eventId: event.id, tone: 'error', message: err instanceof Error ? err.message : 'تعذر التسجيل' });
+      setFeedback({
+        eventId: event.id,
+        tone: 'error',
+        message: err instanceof Error ? err.message : 'تعذر التسجيل في الفعالية',
+      });
     } finally {
       setBusyEventId(null);
     }
@@ -118,16 +126,21 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
     setSuggestError(null);
     if (!suggestTopic.trim()) return;
 
+    const studentName = profile?.fullName || suggestName.trim() || 'طالب مقترح';
+    const studentId = profile?.studentId || 'EVENT_PROPOSAL';
+    const email = profile?.email || suggestContact.trim() || 'proposal@engclub.up';
+    const college = profile?.college || profile?.major || suggestMajor.trim() || 'كلية الهندسة وتكنولوجيا المعلومات';
+
     try {
       await dataService.submitComplaint({
-        studentName: suggestName.trim() || 'طالب مقترح',
-        studentId: 'EVENT_PROPOSAL',
-        email: suggestContact.trim() || 'proposal@engclub.up',
+        studentName,
+        studentId,
+        email,
         phone: suggestContact.trim() || undefined,
-        college: suggestMajor || 'كلية الهندسة وتكنولوجيا المعلومات',
+        college,
         category: 'suggestion',
         subject: '[اقتراح ورشة / فعالية] ' + suggestTopic.trim(),
-        message: 'التخصص: ' + suggestMajor + ' | تفاصيل المقترح: ' + suggestDetails.trim(),
+        message: `مقدم المقترح: ${studentName} (${profile ? 'عضو معتمد بالنادي' : 'طالب'}) | الرقم الجامعي: ${studentId} | الكلية/التخصص: ${college} | تفاصيل المقترح: ${suggestDetails.trim()}`,
         isAnonymous: false,
       });
     } catch (err) {
@@ -383,149 +396,185 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
       </div>
 
       {/* Member login when registering */}
-      {loginForEvent && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-white/10 p-6 sm:p-8 text-right">
-            <button
-              onClick={() => setLoginForEvent(null)}
-              aria-label="إغلاق"
-              className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-xl font-black text-white">دخول الأعضاء</h3>
-            <p className="text-sm text-gray-400 mt-1 mb-5">
-              للتسجيل في «{loginForEvent.title}».
-            </p>
-            <MemberLoginForm
-              submitLabel="دخول وتسجيل"
-              onSuccess={() => {
-                const event = loginForEvent;
-                setLoginForEvent(null);
-                void register(event);
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {loginForEvent &&
+        createPortal(
+          <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 sm:p-4 pt-20 sm:pt-24 pb-8 overflow-y-auto bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-white/10 p-6 sm:p-8 text-right">
+              <button
+                onClick={() => setLoginForEvent(null)}
+                aria-label="إغلاق"
+                className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h3 className="text-xl font-black text-white">دخول الأعضاء</h3>
+              <p className="text-sm text-gray-400 mt-1 mb-5">
+                للتسجيل في «{loginForEvent.title}».
+              </p>
+              <MemberLoginForm
+                submitLabel="دخول وتسجيل"
+                onSuccess={() => {
+                  const event = loginForEvent;
+                  setLoginForEvent(null);
+                  void register(event);
+                }}
+              />
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Suggest Event Modal */}
-      {showSuggestModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right">
-            
-            <button
-              onClick={() => setShowSuggestModal(false)}
-              className="absolute top-5 left-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {showSuggestModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 sm:p-4 pt-20 sm:pt-24 pb-8 overflow-y-auto bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right my-auto">
+              <button
+                onClick={() => setShowSuggestModal(false)}
+                className="absolute top-5 left-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            {!suggestSubmitted ? (
-              <form onSubmit={handleSuggestSubmit} className="space-y-4">
-                <div className="flex items-center gap-2 mb-2 text-emerald-400">
-                  <Lightbulb className="w-6 h-6" />
+              {!profile ? (
+                /* Non-member exclusive prompt */
+                <div className="text-center py-3 space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                    <Lightbulb className="w-8 h-8" />
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-xs font-mono">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>خاص وحصري بأعضاء النادي الهندسي</span>
+                  </div>
+
                   <h3 className="text-xl font-bold text-white">اقترح ورشة عمل أو فعالية</h3>
-                </div>
-                <p className="text-xs text-gray-300 font-light mb-4">
-                  شاركنا موضوع الورشة أو الفعالية التي ترغب بتنظيمها، وسيعمل فريق النادي على دراسة وتنسيق المقترح بأقرب وقت.
-                </p>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-200 mb-1">موضوع الورشة أو الفعالية:</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="مثال: ورشة نمذجة معمارية BIM، أو أمن تطبيقات الويب..."
-                    value={suggestTopic}
-                    onChange={(e) => setSuggestTopic(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
-                  />
-                </div>
+                  <p className="text-xs sm:text-sm text-gray-300 leading-relaxed max-w-md mx-auto">
+                    نظراً لأن جدول الفعاليات والورش يتم تصميمه وتنسيقه بناءً على تطلعات واحتياجات مهندسينا، فإن تقديم مقترحات الورش والدورات متاح لمنتسبي النادي الهندسي المسجلين.
+                  </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSuggestModal(false);
+                        if (onOpenMemberPortal) onOpenMemberPortal();
+                      }}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,240,255,0.2)]"
+                    >
+                      <UserRound className="w-4 h-4" />
+                      <span>تسجيل دخول الأعضاء لتقديم مقترح</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSuggestModal(false);
+                        if (onOpenJoinModal) onOpenJoinModal();
+                        else document.querySelector('#join')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <span>قدّم طلب انضمام للنادي</span>
+                      <ArrowLeft className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+              ) : !suggestSubmitted ? (
+                /* Authenticated member proposal form */
+                <form onSubmit={handleSuggestSubmit} className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2 text-emerald-400">
+                    <Lightbulb className="w-6 h-6" />
+                    <h3 className="text-xl font-bold text-white">اقترح ورشة عمل أو فعالية</h3>
+                  </div>
+                  
+                  {/* Verified Member Banner */}
+                  <div className="p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>عضو معتمد: <strong>{profile.fullName}</strong> ({profile.major || profile.college || 'كلية الهندسة'})</span>
+                    </div>
+                    <span className="font-mono text-[11px] bg-emerald-900/60 px-2 py-0.5 rounded text-emerald-200">{profile.studentId}</span>
+                  </div>
+
+                  <p className="text-xs text-gray-300 font-light">
+                    شاركنا موضوع الورشة أو الفعالية التي ترغب بتنظيمها، وسيعمل فريق النادي على دراسة وتنسيق المقترح بأقرب وقت.
+                  </p>
+
                   <div>
-                    <label className="block text-xs font-medium text-gray-200 mb-1">اسمك (اختياري):</label>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">موضوع الورشة أو الفعالية:</label>
                     <input
                       type="text"
-                      placeholder="اسم الطالب"
-                      value={suggestName}
-                      onChange={(e) => setSuggestName(e.target.value)}
+                      required
+                      placeholder="مثال: ورشة نمذجة معمارية BIM، أو أمن تطبيقات الويب..."
+                      value={suggestTopic}
+                      onChange={(e) => setSuggestTopic(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-200 mb-1">التخصص أو الكلية:</label>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">تفاصيل أو أفكار إضافية:</label>
+                    <textarea
+                      rows={3}
+                      placeholder="اكتب نبذة عن المحاور المقترحة أو المهارات التي ترغب باكتسابها..."
+                      value={suggestDetails}
+                      onChange={(e) => setSuggestDetails(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">وسيلة للتواصل والمتابعة (واتساب أو إيميل - اختياري):</label>
                     <input
                       type="text"
-                      placeholder="مثال: هندسة مدنية / برمجيات"
-                      value={suggestMajor}
-                      onChange={(e) => setSuggestMajor(e.target.value)}
+                      placeholder="059XXXXXXX أو إيميل للتنسيق المباشر"
+                      value={suggestContact}
+                      onChange={(e) => setSuggestContact(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-200 mb-1">تفاصيل أو أفكار إضافية:</label>
-                  <textarea
-                    rows={3}
-                    placeholder="اكتب نبذة عن المحاور المقترحة أو المهارات التي ترغب باكتسابها..."
-                    value={suggestDetails}
-                    onChange={(e) => setSuggestDetails(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none resize-none"
-                  />
-                </div>
+                  {suggestError && (
+                    <div role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm leading-relaxed">
+                      {suggestError}
+                    </div>
+                  )}
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-200 mb-1">وسيلة للتواصل (واتساب أو إيميل - اختياري):</label>
-                  <input
-                    type="text"
-                    placeholder="059XXXXXXX أو إيميل"
-                    value={suggestContact}
-                    onChange={(e) => setSuggestContact(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-400 text-white text-xs sm:text-sm outline-none"
-                  />
-                </div>
-
-                {suggestError && (
-                  <div role="alert" className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm leading-relaxed">
-                    {suggestError}
+                  <div className="pt-3 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowSuggestModal(false)}
+                      className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition-colors cursor-pointer"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>إرسال المقترح</span>
+                    </button>
                   </div>
-                )}
-                <div className="pt-3 flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowSuggestModal(false)}
-                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition-colors cursor-pointer"
-                  >
-                    إلغاء
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs sm:text-sm font-bold shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>إرسال المقترح</span>
-                  </button>
+                </form>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-7 h-7" />
+                  </div>
+                  <h4 className="text-xl font-bold text-white mb-2">تم استلام مقترحك بنجاح!</h4>
+                  <p className="text-xs sm:text-sm text-gray-300 font-light">
+                    شكراً لمشاركتك الفاعلة يا بشمهندس {profile.fullName.split(' ')[0]}. سيتم مراجعة فكرة الفعالية من قِبل لجان النادي لتضمينها في الخطط القادمة.
+                  </p>
                 </div>
-              </form>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-7 h-7" />
-                </div>
-                <h4 className="text-xl font-bold text-white mb-2">تم استلام مقترحك بنجاح!</h4>
-                <p className="text-xs sm:text-sm text-gray-300 font-light">
-                  شكراً لمشاركتك الفاعلة. سيتم مراجعة فكرة الفعالية من قِبل لجان النادي لتضمينها في الخطط القادمة.
-                </p>
-              </div>
-            )}
+              )}
 
-          </div>
-        </div>
-      )}
+            </div>
+          </div>,
+          document.body
+        )}
 
     </section>
   );
