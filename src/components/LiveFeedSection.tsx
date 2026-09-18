@@ -257,7 +257,7 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
 
       {/* Member-Exclusive Nomination Modal */}
       {showNominateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
           <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right my-8">
             
             <button

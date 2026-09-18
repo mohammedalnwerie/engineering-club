@@ -1187,7 +1187,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
         {isAuthenticated && needsPasswordSetup && (
           <div className="absolute inset-0 z-[90] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <form onSubmit={handleSetupPassword} className="w-full max-w-sm rounded-3xl glass-panel border border-white/10 p-6 space-y-4 text-right">
+            <form onSubmit={handleSetupPassword} className="w-full max-w-sm my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-white/10 p-6 space-y-4 text-right">
               <h3 className="text-xl font-black text-white">عيّن كلمة المرور</h3>
               <p className="text-sm text-gray-400">اختر كلمة مرور لحسابك لتدخل بها إلى لوحة التحكم لاحقاً.</p>
               <input
@@ -3928,7 +3928,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
         {/* Inspect Applicant Detail Modal */}
         {inspectApp && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="absolute inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md">
             <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150">
               <button
                 onClick={() => setInspectApp(null)}
@@ -4168,8 +4168,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
         {/* Digital Member ID Card Modal (Official UP Engineering Club Pass) */}
         {viewingBadgeApp && (
-          <div className="absolute inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
-            <div className="w-full max-w-md rounded-3xl glass-panel border border-emerald-500/40 p-5 sm:p-7 shadow-[0_0_50px_rgba(22,163,74,0.3)] relative text-right animate-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 z-[60] flex items-start justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
+            <div className="w-full max-w-md my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-emerald-500/40 p-5 sm:p-7 shadow-[0_0_50px_rgba(22,163,74,0.3)] relative text-right animate-in zoom-in-95 duration-200">
               <button
                 onClick={() => setViewingBadgeApp(null)}
                 className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -4246,8 +4246,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
         {/* Leadership Add/Edit Modal */}
         {showLeaderModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-xl rounded-3xl glass-panel border border-cyan-500/40 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[92vh] overflow-y-auto">
+          <div className="absolute inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-xl my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-cyan-500/40 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[92vh] overflow-y-auto">
               <button
                 onClick={() => {
                   setShowLeaderModal(false);
@@ -4613,8 +4613,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
         {/* College Edit Modal */}
         {editingCollege && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-lg rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
+          <div className="absolute inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-lg my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setEditingCollege(null)}
                 className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white"
@@ -4863,8 +4863,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
         {/* Major Edit Modal */}
         {editingMajor && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-lg rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
+          <div className="absolute inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-lg my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setEditingMajor(null)}
                 className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white"
@@ -4966,8 +4966,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
         {/* Project Edit Modal */}
         {editingProject && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="w-full max-w-2xl rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
+          <div className="absolute inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md">
+            <div className="w-full max-w-2xl my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-cyan-500/30 p-6 shadow-2xl relative text-right animate-in fade-in duration-150 max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setEditingProject(null)}
                 className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white"
@@ -5139,8 +5139,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       
         {/* Inspect & Action Complaint Modal */}
         {inspectComplaint && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-            <div className="w-full max-w-xl rounded-3xl glass-panel border border-cyan-500/40 p-6 shadow-2xl relative text-right animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+          <div className="absolute inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+            <div className="w-full max-w-xl my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-cyan-500/40 p-6 shadow-2xl relative text-right animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
               <button
                 type="button"
                 onClick={() => setInspectComplaint(null)}

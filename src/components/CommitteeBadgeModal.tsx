@@ -25,9 +25,9 @@ export const CommitteeBadgeModal: React.FC<CommitteeBadgeModalProps> = ({ isOpen
   const serialNumber = card.code;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
+    <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
       <div
-        className="w-full max-w-md rounded-3xl glass-panel border border-[#7F1AB2]/40 p-5 sm:p-7 shadow-[0_0_60px_rgba(127,26,178,0.25)] relative text-right animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-[#7F1AB2]/40 p-5 sm:p-7 shadow-[0_0_60px_rgba(127,26,178,0.25)] relative text-right animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}

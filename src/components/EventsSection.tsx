@@ -379,8 +379,8 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
 
       {/* Member login when registering */}
       {loginForEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-md rounded-3xl glass-panel border border-white/10 p-6 sm:p-8 text-right">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-white/10 p-6 sm:p-8 text-right">
             <button
               onClick={() => setLoginForEvent(null)}
               aria-label="إغلاق"
@@ -406,7 +406,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
 
       {/* Suggest Event Modal */}
       {showSuggestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div className="relative w-full max-w-lg rounded-3xl bg-[#0B1B33] border border-emerald-500/40 p-6 sm:p-8 shadow-2xl text-right">
             
             <button

@@ -87,7 +87,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
       <div
         className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl glass-panel border border-white/10 p-6 sm:p-7 relative text-right animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}

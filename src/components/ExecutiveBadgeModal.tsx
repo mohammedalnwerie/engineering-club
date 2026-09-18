@@ -31,9 +31,9 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
   );
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
+    <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">
       <div
-        className="w-full max-w-md rounded-3xl glass-panel border border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(0,240,255,0.25)] relative text-right animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(0,240,255,0.25)] relative text-right animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}

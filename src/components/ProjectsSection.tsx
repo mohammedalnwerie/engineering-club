@@ -255,7 +255,7 @@ export const ProjectsSection: React.FC = () => {
 
         {/* Detailed Case Study Modal */}
         {activeModalProject && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-xl">
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-xl">
             <div
               className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl glass-panel border border-cyan-500/30 p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.9)] animate-in fade-in zoom-in-95 duration-200 text-right"
               onClick={(e) => e.stopPropagation()}

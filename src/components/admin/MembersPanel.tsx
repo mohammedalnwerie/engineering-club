@@ -246,7 +246,7 @@ const PaymentsList: React.FC<{ payments: PaymentRequestRow[]; onChanged: () => P
       )}
 
       {receipt && (
-        <div className="fixed inset-0 z-[80] bg-black/85 flex items-center justify-center p-4" onClick={() => setReceipt(null)}>
+        <div className="fixed inset-0 z-[80] bg-black/85 flex items-start justify-center p-3 sm:p-4 overflow-y-auto" onClick={() => setReceipt(null)}>
           <img src={receipt} alt="صورة الإيصال" className="max-w-full max-h-[90vh] rounded-2xl" />
         </div>
       )}
@@ -472,7 +472,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
 
       {/* Reset password success & copy helper */}
       {resetSuccessModal && (
-        <div className="fixed inset-0 z-[85] bg-black/80 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[85] bg-black/80 flex items-start justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="w-full max-w-md rounded-2xl glass-panel border border-cyan-500/30 p-5 space-y-4 text-right shadow-2xl">
             <div className="flex items-center justify-between">
               <h4 className="text-lg font-bold text-white flex items-center gap-2">

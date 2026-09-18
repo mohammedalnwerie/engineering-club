@@ -115,7 +115,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md overflow-y-auto flex items-center justify-center p-3 sm:p-5">
+    <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md overflow-y-auto flex items-start justify-center p-3 sm:p-5">
       <div className="relative w-full max-w-lg rounded-3xl glass-panel border border-white/10 p-5 sm:p-7 text-right shadow-2xl">
         <button
           onClick={onClose}

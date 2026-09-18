@@ -112,9 +112,9 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
     : '';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
       <div
-        className="relative w-full max-w-lg rounded-3xl glass-panel border border-emerald-500/40 p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.9)] text-right animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-lg my-auto max-h-[92vh] overflow-y-auto overscroll-contain rounded-3xl glass-panel border border-emerald-500/40 p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.9)] text-right animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
