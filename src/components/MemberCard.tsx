@@ -206,8 +206,11 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
               <div className="text-xs font-semibold text-[#98F7F1]/80 leading-none mt-1">
                 جامعة فلسطين
               </div>
-              <div className="text-[8px] font-mono tracking-widest text-[#3FE7E3]/60 uppercase mt-0.5" dir="ltr">
-                — UP ENGINEERING CLUB —
+              <div className="text-[8px] font-mono tracking-widest text-[#3FE7E3]/70 uppercase mt-0.5" dir="ltr">
+                — ENGINEERING CLUB —
+              </div>
+              <div className="text-[7.5px] text-gray-400 font-sans tracking-tight leading-none mt-0.5" dir="ltr">
+                University of Palestine
               </div>
             </div>
 
@@ -226,19 +229,35 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
           /* Variant 1: General Member (Centered Layout)                          */
           /* ==================================================================== */
           <div className="px-5 pt-5 pb-3 flex flex-col items-center text-center">
-            {/* Centered Portrait Photo with Glowing Gradient Frame */}
+            {/* Centered Portrait Photo or Official Emblem Placeholder with Glowing Frame */}
             {photoUrl ? (
               <div className="relative">
-                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-[#7F1AB2] via-[#3FE7E3] to-[#35BC2B] opacity-70 blur-[3px]" />
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-[#7F1AB2] via-[#3FE7E3] to-[#35BC2B] opacity-70 blur-[3px]" />
                 <img
                   src={photoUrl}
                   alt={name}
-                  className="relative w-24 h-24 rounded-2xl object-cover border-2 border-[#3FE7E3]/60 shadow-xl"
+                  className="relative w-28 h-28 rounded-3xl object-cover border-2 border-[#3FE7E3]/60 shadow-xl"
                 />
               </div>
             ) : (
-              <div className="w-24 h-24 rounded-2xl bg-[#140B3B] border-2 border-[#3FE7E3]/40 flex items-center justify-center text-2xl font-black text-[#98F7F1] shadow-xl">
-                {name.trim().slice(0, 2)}
+              <div className="relative">
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-[#7F1AB2] via-[#3FE7E3] to-[#35BC2B] opacity-75 blur-[3px]" />
+                <div className="relative w-28 h-28 rounded-3xl bg-[#090526] border-2 border-[#3FE7E3]/50 flex flex-col items-center justify-center p-2 overflow-hidden shadow-2xl">
+                  {/* Subtle Blueprint Crosshair Overlay */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-25" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 2" />
+                    <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 2" />
+                    <circle cx="50%" cy="40%" r="28" fill="none" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 3" />
+                  </svg>
+                  <img
+                    src="/brand/emblem-on-dark.png"
+                    alt="النادي الهندسي"
+                    className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(63,231,227,0.4)] relative z-10"
+                  />
+                  <span className="text-[10px] font-bold text-[#98F7F1] tracking-tight mt-1 text-center leading-none relative z-10">
+                    عضو النادي الهندسي
+                  </span>
+                </div>
               </div>
             )}
 
@@ -266,7 +285,7 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
           /* Variant 2: Executive / Committee Member (Side-by-Side Layout)        */
           /* ==================================================================== */
           <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-4">
-            {/* Right Side: Photo with Glowing Frame */}
+            {/* Right Side: Photo or Official Emblem Placeholder with Glowing Frame */}
             {photoUrl ? (
               <div className="relative shrink-0">
                 <div
@@ -282,8 +301,29 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
                 />
               </div>
             ) : (
-              <div className="w-24 h-24 rounded-2xl bg-[#140B3B] border-2 border-white/20 flex items-center justify-center text-2xl font-black text-white shrink-0 shadow-xl">
-                {name.trim().slice(0, 2)}
+              <div className="relative shrink-0">
+                <div
+                  className="absolute -inset-1 rounded-2xl opacity-75 blur-[3px]"
+                  style={{
+                    background: `linear-gradient(135deg, ${colors.bar}, #3FE7E3, #35BC2B)`,
+                  }}
+                />
+                <div className="relative w-24 h-24 rounded-2xl bg-[#090526] border-2 border-[#3FE7E3]/50 flex flex-col items-center justify-center p-1.5 overflow-hidden shadow-2xl">
+                  {/* Subtle Blueprint Crosshair Overlay */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-25" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 2" />
+                    <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 2" />
+                    <circle cx="50%" cy="38%" r="22" fill="none" stroke="#3FE7E3" strokeWidth="0.75" strokeDasharray="3 3" />
+                  </svg>
+                  <img
+                    src="/brand/emblem-on-dark.png"
+                    alt="النادي الهندسي"
+                    className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(63,231,227,0.4)] relative z-10"
+                  />
+                  <span className="text-[9px] font-bold text-[#98F7F1] tracking-tight mt-1 text-center leading-none relative z-10">
+                    {role || 'كادر قيادي'}
+                  </span>
+                </div>
               </div>
             )}
 

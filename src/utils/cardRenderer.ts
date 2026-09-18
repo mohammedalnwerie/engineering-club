@@ -250,9 +250,10 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
 
   // Club & University Branding (to the left of emblem in RTL)
   const brandX = right - EMBLEM_SIZE - 10;
-  text('النادي الهندسي', brandX, headerTop, `900 17px ${SANS}`, '#FFFFFF', 'rtl', 'right');
-  text('جامعة فلسطين', brandX, headerTop + 22, `600 11px ${SANS}`, '#98F7F1', 'rtl', 'right');
-  text('— UP ENGINEERING CLUB —', brandX, headerTop + 37, `600 8px ${MONO}`, 'rgba(63, 231, 227, 0.65)', 'ltr', 'right');
+  text('النادي الهندسي', brandX, headerTop - 2, `900 17px ${SANS}`, '#FFFFFF', 'rtl', 'right');
+  text('جامعة فلسطين', brandX, headerTop + 18, `600 11px ${SANS}`, '#98F7F1', 'rtl', 'right');
+  text('— ENGINEERING CLUB —', brandX, headerTop + 33, `600 7.5px ${MONO}`, 'rgba(63, 231, 227, 0.7)', 'ltr', 'right');
+  text('University of Palestine', brandX, headerTop + 43, `500 7px ${SANS}`, '#9CA3AF', 'ltr', 'right');
 
   // Academic Year Pill (Left)
   const badgeText = card.badge || currentAcademicYear();
@@ -271,7 +272,7 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   text(badgeText, pillX + pillW / 2, pillY + 4, `700 11px ${SANS}`, '#FFFFFF', 'ltr', 'center');
 
   // Header Divider
-  y = headerTop + EMBLEM_SIZE + 14;
+  y = headerTop + EMBLEM_SIZE + 16;
   if (draw) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
     ctx.fillRect(0, y, W, 1);
@@ -285,20 +286,20 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
     // -----------------------------------------------------------------------
     // Variant 1: General Member (Centered Layout)
     // -----------------------------------------------------------------------
-    const PHOTO = 96;
+    const PHOTO = 104;
     const photoX = (W - PHOTO) / 2;
     const photoY = y + 16;
 
     if (draw) {
       // Glowing Border Frame
       ctx.save();
-      roundRect(ctx, photoX - 2, photoY - 2, PHOTO + 4, PHOTO + 4, 18);
+      roundRect(ctx, photoX - 2, photoY - 2, PHOTO + 4, PHOTO + 4, 24);
       ctx.strokeStyle = 'rgba(63, 231, 227, 0.65)';
       ctx.lineWidth = 2;
       ctx.stroke();
 
       // Photo clipping
-      roundRect(ctx, photoX, photoY, PHOTO, PHOTO, 16);
+      roundRect(ctx, photoX, photoY, PHOTO, PHOTO, 22);
       ctx.clip();
       if (assets.photo) {
         const img = assets.photo;
@@ -311,9 +312,33 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
           img.height * s
         );
       } else {
-        ctx.fillStyle = '#140B3B';
+        // Blueprint Placeholder matching media_1789735381242.png
+        ctx.fillStyle = '#090526';
         ctx.fillRect(photoX, photoY, PHOTO, PHOTO);
-        text(card.name.trim().slice(0, 2), W / 2, photoY + 30, `900 24px ${SANS}`, '#98F7F1', 'rtl', 'center');
+
+        // Blueprint Crosshairs
+        ctx.strokeStyle = 'rgba(63, 231, 227, 0.25)';
+        ctx.lineWidth = 0.75;
+        ctx.setLineDash([3, 2]);
+        ctx.beginPath();
+        ctx.moveTo(photoX, photoY + PHOTO / 2);
+        ctx.lineTo(photoX + PHOTO, photoY + PHOTO / 2);
+        ctx.moveTo(photoX + PHOTO / 2, photoY);
+        ctx.lineTo(photoX + PHOTO / 2, photoY + PHOTO);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(photoX + PHOTO / 2, photoY + 40, 26, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Hexagon Emblem
+        if (assets.emblem) {
+          ctx.drawImage(assets.emblem, photoX + (PHOTO - 44) / 2, photoY + 12, 44, 44);
+        }
+
+        // Emblem Subtext
+        text('عضو النادي الهندسي', photoX + PHOTO / 2, photoY + 68, `700 10px ${SANS}`, '#98F7F1', 'rtl', 'center');
       }
       ctx.restore();
     }
@@ -372,9 +397,31 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
           img.height * s
         );
       } else {
-        ctx.fillStyle = '#140B3B';
+        // Blueprint Placeholder for Executive
+        ctx.fillStyle = '#090526';
         ctx.fillRect(photoX, photoY, PHOTO, PHOTO);
-        text(card.name.trim().slice(0, 2), photoX + PHOTO / 2, photoY + 28, `900 24px ${SANS}`, '#FFFFFF', 'rtl', 'center');
+
+        // Blueprint Crosshairs
+        ctx.strokeStyle = 'rgba(63, 231, 227, 0.25)';
+        ctx.lineWidth = 0.75;
+        ctx.setLineDash([3, 2]);
+        ctx.beginPath();
+        ctx.moveTo(photoX, photoY + PHOTO / 2);
+        ctx.lineTo(photoX + PHOTO, photoY + PHOTO / 2);
+        ctx.moveTo(photoX + PHOTO / 2, photoY);
+        ctx.lineTo(photoX + PHOTO / 2, photoY + PHOTO);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(photoX + PHOTO / 2, photoY + 36, 22, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (assets.emblem) {
+          ctx.drawImage(assets.emblem, photoX + (PHOTO - 38) / 2, photoY + 10, 38, 38);
+        }
+
+        text(card.role || 'كادر قيادي', photoX + PHOTO / 2, photoY + 58, `700 9px ${SANS}`, '#98F7F1', 'rtl', 'center');
       }
       ctx.restore();
     }
