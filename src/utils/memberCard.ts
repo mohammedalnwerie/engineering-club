@@ -21,9 +21,9 @@ export interface CardData {
   name: string;
   /** Title under the name, e.g. "مصمم جرافيك" */
   role?: string;
-  /** Colored band, e.g. the committee */
+  /** Colored band / middle cardlet, e.g. the committee or membership type */
   highlight?: CardField;
-  /** Two-column details */
+  /** Extra detail fields if applicable */
   fields?: CardField[];
   photoUrl?: string;
   qrValue: string;
@@ -31,9 +31,13 @@ export interface CardData {
   accent?: CardAccent;
   /** Header pill; defaults to the current academic year */
   badge?: string;
+  /** Layout style: 'general' (centered photo for general members) or 'executive' (side-by-side for committees/leadership) */
+  layoutVariant?: 'general' | 'executive';
+  /** Icon for the middle cardlet */
+  cardletIcon?: 'users' | 'megaphone' | 'zap' | 'graduation' | 'crown';
 }
 
-export type CardAccent = 'purple' | 'cyan' | 'green';
+export type CardAccent = 'purple' | 'cyan' | 'green' | 'gold';
 
 export const CARD_ACCENTS: Record<
   CardAccent,
@@ -52,7 +56,7 @@ export const CARD_ACCENTS: Record<
     pillBg: 'rgba(63,231,227,0.14)',
     pillBorder: 'rgba(63,231,227,0.45)',
     pillText: '#98F7F1',
-    role: '#98F7F1',
+    role: '#3FE7E3',
     bar: '#3FE7E3',
     bandBg: 'rgba(63,231,227,0.10)',
     bandBorder: 'rgba(63,231,227,0.35)',
@@ -61,18 +65,27 @@ export const CARD_ACCENTS: Record<
     pillBg: 'rgba(53,188,43,0.15)',
     pillBorder: 'rgba(92,214,83,0.45)',
     pillText: '#92E98C',
-    role: '#92E98C',
-    bar: '#5CD653',
+    role: '#35BC2B',
+    bar: '#35BC2B',
     bandBg: 'rgba(53,188,43,0.12)',
     bandBorder: 'rgba(92,214,83,0.35)',
+  },
+  gold: {
+    pillBg: 'rgba(245,158,11,0.20)',
+    pillBorder: 'rgba(251,191,36,0.5)',
+    pillText: '#FDE68A',
+    role: '#FBBF24',
+    bar: '#F59E0B',
+    bandBg: 'rgba(245,158,11,0.14)',
+    bandBorder: 'rgba(245,158,11,0.40)',
   },
 };
 
 export const CARD_COLORS = {
-  background: '#120A36',
+  background: '#0D0729',
   border: 'rgba(255,255,255,0.10)',
   divider: 'rgba(255,255,255,0.10)',
-  footerBg: 'rgba(0,0,0,0.25)',
+  footerBg: 'rgba(0,0,0,0.35)',
   text: '#FFFFFF',
   muted: '#9CA3AF',
   code: '#3FE7E3',
@@ -105,152 +118,133 @@ interface CardOptions {
   revealCode?: boolean;
 }
 
-const cleanMajor = (major?: string) => (major || '').replace(/^(تخصص\s+|كلية\s+)/, '').trim();
-
 export const memberVerifyUrl = (app: Pick<StoredApplication, 'id' | 'studentId'>) =>
   `${window.location.origin}/?verify=${encodeURIComponent(app.studentId || app.id)}`;
 
 /** The printed code: full for the member, masked (UP-••••-C21D) everywhere public. */
 export function memberCodeFor(app: CardApplication, reveal = false): string {
-  if (app.memberCode) return reveal ? app.memberCode : `UP-••••-${app.memberCode.slice(-4)}`;
-  if (app.codeHint) return `UP-••••-${app.codeHint}`;
-  return `UP-ENG-${(app.id || '').slice(-8).toUpperCase()}`;
+  if (app.memberCode) return reveal ? app.memberCode : `UP-MEM-2026-${app.memberCode.slice(-5)}`;
+  const cleanId = (app.studentId || app.id || '00123').replace(/[^0-9]/g, '');
+  return `UP-MEM-2026-${cleanId.length >= 5 ? cleanId.slice(-5) : cleanId.padStart(5, '0')}`;
 }
 
-/** Pill text: membership validity when known, otherwise the academic year. */
-export function validityBadge(app: CardApplication): string | undefined {
-  if (!app.validUntil) return undefined;
-  const expired = new Date(app.validUntil).getTime() < Date.now();
-  if (expired) return 'عضوية منتهية';
-  const date = new Date(app.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long' });
-  return app.membershipType === 'semester' ? `فصلية حتى ${date}` : `صالحة حتى ${date}`;
-}
-
-/** General club membership card. */
+/** General club membership card (centered portrait layout as per brief). */
 export function memberCardFor(app: CardApplication, options: CardOptions = {}): CardData {
   const committeeName = effectiveCommittee(app);
   const committee = findCommittee(committeeName);
   const isGeneral = !committee || committee.id === 'general';
+
+  if (!isGeneral) {
+    return committeeCardFor(app, options);
+  }
+
+  const membershipVal = app.membershipType === 'semester' ? 'عضوية فصلية' : 'عضو عادي';
+
   return {
     name: app.fullName,
-    role: app.organizationalRole || (isGeneral ? 'عضو في النادي' : 'عضو في اللجنة'),
-    highlight: isGeneral
-      ? { label: 'نوع العضوية', value: 'عضوية عامة' }
-      : { label: 'اللجنة', value: committeeName },
-    fields: [
-      { label: 'الرقم الجامعي', value: app.studentId },
-      { label: 'التخصص', value: cleanMajor(app.major) },
-    ],
+    role: app.organizationalRole || 'عضو في النادي الهندسي',
+    highlight: { label: 'نوع العضوية', value: membershipVal },
     qrValue: memberVerifyUrl(app),
     code: memberCodeFor(app, options.revealCode),
-    badge: validityBadge(app),
+    badge: currentAcademicYear(),
     accent: 'purple',
+    layoutVariant: 'general',
+    cardletIcon: 'users',
   };
 }
 
-/** Committee member card (uses the admin's committee/title assignment). */
-export function committeeCardFor(app: CardApplication, options: CardOptions = {}): CardData {
+/** Committee member card (side-by-side executive layout as per brief). */
+export function committeeCardFor(app: CardApplication, _options: CardOptions = {}): CardData {
   const committeeName = effectiveCommittee(app);
+  const isMedia = committeeName.includes('إعلام') || committeeName.includes('media');
+  const isEvents = committeeName.includes('فعاليات') || committeeName.includes('events');
+
+  const cleanId = (app.studentId || app.id || '001').replace(/[^0-9]/g, '');
+  const suffix = isMedia ? 'MEDIA' : isEvents ? 'EVENTS' : 'COMM';
+  const code = `UP-EC-${suffix}-${cleanId.slice(-4).padStart(3, '0')}`;
+
   return {
     name: app.fullName,
-    role: app.organizationalRole || 'عضو في اللجنة',
-    highlight: { label: 'اللجنة', value: committeeName },
-    fields: [
-      { label: 'الرقم الجامعي', value: app.studentId },
-      { label: 'التخصص', value: cleanMajor(app.major) },
-    ],
+    role: app.organizationalRole || `عضو ${committeeName}`,
+    highlight: { label: 'الجهة', value: committeeName },
     qrValue: memberVerifyUrl(app),
-    code: memberCodeFor(app, options.revealCode),
-    badge: validityBadge(app),
-    accent: 'cyan',
+    code,
+    badge: currentAcademicYear(),
+    accent: isMedia ? 'green' : isEvents ? 'cyan' : 'purple',
+    layoutVariant: 'executive',
+    cardletIcon: isMedia ? 'megaphone' : 'zap',
   };
 }
 
-/** Executive & Representative Commission Badge */
+/** Executive & Representative Commission Badge (side-by-side executive layout as per brief). */
 export function executiveCardFor(
   leader: LeaderMember,
-  studentApp?: { studentId?: string; major?: string }
+  _studentApp?: { studentId?: string; major?: string }
 ): CardData {
   const isPresident = leader.id === 'pres-1' || (leader.role.includes('رئيس النادي') && !leader.role.includes('نائب'));
   const isCollegeLead = leader.tier === 'college-lead';
   const isExecutive = leader.tier === 'executive';
 
-  // Format short serial: UP-EXEC-XXXX or UP-COL-XXXX
-  const prefix = isCollegeLead ? 'UP-COL' : 'UP-EXEC';
-  const rawId = (leader.id || '').replace(/[^a-zA-Z0-9]/g, '');
-  const shortId = rawId.length > 6 ? rawId.slice(-6).toUpperCase() : (rawId || '0001').toUpperCase();
-  const code = `${prefix}-${shortId}`;
+  // Format short serial matching brief: UP-EXEC-2026-COMMEDIA / UP-COL-2026-IT / UP-EXEC-2026-PRES
+  let serialSuffix = (leader.id || '').replace(/^lead-col-/, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  if (leader.id === 'pres-1') serialSuffix = 'PRES';
+  else if (leader.id === 'comm-media') serialSuffix = 'COMMEDIA';
+  else if (leader.id === 'comm-events') serialSuffix = 'EVENTS';
+  else if (leader.id === 'comm-relations') serialSuffix = 'RELATIONS';
+  else if (serialSuffix.length > 8) serialSuffix = serialSuffix.slice(0, 8);
 
-  // Official badge:
-  const badge = isPresident
-    ? 'رئاسة النادي'
-    : isCollegeLead
-    ? 'تمثيل الكلية'
-    : 'اعتماد رسمي';
+  const prefix = isCollegeLead ? 'UP-COL-2026' : 'UP-EXEC-2026';
+  const code = `${prefix}-${serialSuffix || '001'}`;
 
-  // Highlight band: ONLY shown if it adds new context without repeating the title
-  const department = (leader.department || '').trim();
-  const roleText = leader.role || '';
-  const roleMentionsDept = Boolean(department) && roleText.includes(department);
-  let highlight: CardField | undefined;
+  // Cardlet highlight info:
+  let highlightLabel = 'الجهة';
+  let highlightValue = (leader.department || '').trim();
+  let cardletIcon: 'users' | 'megaphone' | 'zap' | 'graduation' | 'crown' = 'zap';
+  let accent: CardAccent = 'green';
 
-  if (isCollegeLead && department && !roleMentionsDept) {
-    highlight = {
-      label: 'التمثيل الأكاديمي',
-      value: department,
-    };
-  }
-
-  // Concise, high-value, non-repetitive fields:
-  const fields: CardField[] = [
-    {
-      label: 'نوع التكليف',
-      value: isPresident
-        ? 'مجلس الإدارة والقيادة العليا'
-        : isExecutive
-        ? 'عضوية الهيئة الإدارية'
-        : isCollegeLead
-        ? 'تمثيل الكلية والتنسيق الطلابي'
-        : 'رئاسة لجنة تنفيذية',
-    },
-    {
-      label: 'حالة الاعتماد',
-      value: 'معتمد رسمياً ✓',
-    },
-  ];
-
-  if (studentApp?.studentId) {
-    fields.push({
-      label: 'الرقم الجامعي',
-      value: studentApp.studentId,
-    });
-  }
-
-  if (studentApp?.major) {
-    fields.push({
-      label: 'التخصص',
-      value: cleanMajor(studentApp.major),
-    });
-  }
-
-  if (leader.email && leader.email.trim()) {
-    fields.push({
-      label: 'البريد الرسمي',
-      value: leader.email.trim(),
-      small: true,
-    });
+  if (isPresident) {
+    highlightLabel = 'الهيئة التنظيمية';
+    highlightValue = 'مجلس إدارة النادي الهندسي';
+    cardletIcon = 'crown';
+    accent = 'gold';
+  } else if (isCollegeLead) {
+    highlightLabel = 'التمثيل الأكاديمي';
+    highlightValue = leader.department || 'الكليات الهندسية';
+    cardletIcon = 'graduation';
+    accent = 'cyan';
+  } else if (isExecutive) {
+    highlightLabel = 'الهيئة التنظيمية';
+    highlightValue = leader.department || 'الهيئة الإدارية العليا';
+    cardletIcon = 'crown';
+    accent = 'gold';
+  } else {
+    // Committee lead
+    const isMedia = leader.role.includes('إعلام') || leader.department.includes('إعلام');
+    if (isMedia) {
+      cardletIcon = 'megaphone';
+      accent = 'green';
+    } else {
+      cardletIcon = 'zap';
+      accent = 'cyan';
+    }
+    highlightLabel = 'الجهة';
+    highlightValue = leader.department || leader.role;
   }
 
   return {
     name: leader.name || leader.role,
     role: leader.name ? leader.role : undefined,
     photoUrl: leader.avatar || undefined,
-    highlight,
-    fields,
-    badge,
+    highlight: {
+      label: highlightLabel,
+      value: highlightValue,
+    },
+    badge: currentAcademicYear(),
     qrValue: `${window.location.origin}/#leadership`,
     code,
-    accent: isCollegeLead ? 'cyan' : isPresident ? 'purple' : 'green',
+    accent,
+    layoutVariant: 'executive',
+    cardletIcon,
   };
 }
 

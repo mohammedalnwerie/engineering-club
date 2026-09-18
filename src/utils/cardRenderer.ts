@@ -1,13 +1,12 @@
-import { CARD_ACCENTS, CARD_COLORS, cardNameFontSize, cardQrDataUrl, currentAcademicYear, type CardData } from './memberCard';
+import { CARD_ACCENTS, cardNameFontSize, cardQrDataUrl, currentAcademicYear, type CardData } from './memberCard';
 
 /*
- * Draws the club ID card directly on a canvas. This replaces DOM screenshots
- * (html-to-image), which cropped RTL layouts, dropped web fonts and could hang.
- * Measurements mirror components/MemberCard.tsx.
+ * Draws the club ID card directly on a canvas with the Unified Blueprint Identity (2026-2027).
+ * Strictly mirrors components/MemberCard.tsx.
  */
 
 const W = 360;
-const P = 24;
+const P = 20;
 const SANS = "'Alexandria', 'IBM Plex Sans Arabic', sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
@@ -48,167 +47,524 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
 }
 
 interface Assets {
-  logo: HTMLImageElement | null;
+  emblem: HTMLImageElement | null;
   qr: HTMLImageElement | null;
   photo: HTMLImageElement | null;
+}
+
+/** Draws the technical blueprint vector background (gears, building facade, grid). */
+function drawBlueprintBackground(ctx: CanvasRenderingContext2D, height: number) {
+  ctx.save();
+
+  // 1. Subtle Isometric / Technical Grid
+  ctx.strokeStyle = 'rgba(63, 231, 227, 0.035)';
+  ctx.lineWidth = 0.75;
+  for (let x = 0; x <= W; x += 24) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= height; y += 24) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  // 2. Top-Left Cyber Neon Diagonal Ribbon
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(44, 0);
+  ctx.lineTo(0, 44);
+  ctx.closePath();
+  const cornerGrad = ctx.createLinearGradient(0, 0, 44, 44);
+  cornerGrad.addColorStop(0, '#35BC2B');
+  cornerGrad.addColorStop(0.5, '#3FE7E3');
+  cornerGrad.addColorStop(1, '#7F1AB2');
+  ctx.fillStyle = cornerGrad;
+  ctx.fill();
+
+  // 3. Mechanical Blueprint Gear (Middle Left)
+  const gx = 10;
+  const gy = 200;
+  ctx.strokeStyle = 'rgba(63, 231, 227, 0.12)';
+  ctx.fillStyle = 'rgba(63, 231, 227, 0.12)';
+
+  // Pitch Circle (Dashed)
+  ctx.beginPath();
+  ctx.arc(gx, gy, 70, 0, Math.PI * 2);
+  ctx.setLineDash([4, 3]);
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Root Circle
+  ctx.beginPath();
+  ctx.arc(gx, gy, 50, 0, Math.PI * 2);
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Hub Circle
+  ctx.beginPath();
+  ctx.arc(gx, gy, 20, 0, Math.PI * 2);
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  // Inner Hub Dot
+  ctx.beginPath();
+  ctx.arc(gx, gy, 7, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Spokes
+  for (let i = 0; i < 6; i++) {
+    const rad = (i * 60 * Math.PI) / 180;
+    ctx.beginPath();
+    ctx.moveTo(gx + Math.cos(rad) * 20, gy + Math.sin(rad) * 20);
+    ctx.lineTo(gx + Math.cos(rad) * 50, gy + Math.sin(rad) * 50);
+    ctx.stroke();
+  }
+
+  // Gear Teeth
+  for (let i = 0; i < 12; i++) {
+    const rad = (i * 30 * Math.PI) / 180;
+    ctx.save();
+    ctx.translate(gx, gy);
+    ctx.rotate(rad);
+    ctx.strokeRect(-5, -78, 10, 12);
+    ctx.restore();
+  }
+
+  // 4. Architectural Building Facade (Bottom Right)
+  const bx = 280;
+  const by = height - 120;
+  ctx.strokeStyle = 'rgba(63, 231, 227, 0.11)';
+  ctx.lineWidth = 0.8;
+
+  // Ground lines
+  ctx.beginPath();
+  ctx.moveTo(bx - 140, by + 80);
+  ctx.lineTo(bx + 70, by + 80);
+  ctx.stroke();
+
+  // Building wireframe block
+  ctx.beginPath();
+  ctx.moveTo(bx - 120, by + 80);
+  ctx.lineTo(bx - 120, by + 20);
+  ctx.lineTo(bx - 40, by - 15);
+  ctx.lineTo(bx + 40, by + 20);
+  ctx.lineTo(bx + 40, by + 80);
+  ctx.stroke();
+
+  // Slabs
+  ctx.beginPath();
+  ctx.moveTo(bx - 120, by + 60);
+  ctx.lineTo(bx + 40, by + 60);
+  ctx.moveTo(bx - 120, by + 40);
+  ctx.lineTo(bx + 40, by + 40);
+  ctx.stroke();
+
+  // Pillars
+  ctx.beginPath();
+  ctx.moveTo(bx - 80, by + 80);
+  ctx.lineTo(bx - 80, by + 30);
+  ctx.moveTo(bx, by + 80);
+  ctx.lineTo(bx, by + 30);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/** Draws the 4 HUD corner brackets around a box. */
+function drawHudCorners(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, size = 8) {
+  ctx.save();
+  ctx.strokeStyle = '#3FE7E3';
+  ctx.lineWidth = 2;
+
+  // Top-Left
+  ctx.beginPath();
+  ctx.moveTo(x, y + size);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + size, y);
+  ctx.stroke();
+
+  // Top-Right
+  ctx.beginPath();
+  ctx.moveTo(x + w - size, y);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w, y + size);
+  ctx.stroke();
+
+  // Bottom-Left
+  ctx.beginPath();
+  ctx.moveTo(x, y + h - size);
+  ctx.lineTo(x, y + h);
+  ctx.lineTo(x + size, y + h);
+  ctx.stroke();
+
+  // Bottom-Right
+  ctx.beginPath();
+  ctx.moveTo(x + w - size, y + h);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x + w, y + h - size);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 /** Lays out the card; draws only when `draw` is true. Returns the total height. */
 function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, draw: boolean): number {
   const colors = CARD_ACCENTS[card.accent || 'purple'];
   const right = W - P;
-  const text = (value: string, x: number, y: number, font: string, color: string, dir: CanvasDirection = 'rtl') => {
+  const isGeneral = card.layoutVariant === 'general';
+
+  const text = (
+    value: string,
+    x: number,
+    y: number,
+    font: string,
+    color: string,
+    dir: CanvasDirection = 'rtl',
+    align: CanvasTextAlign = 'right'
+  ) => {
     if (!draw) return;
     ctx.font = font;
     ctx.fillStyle = color;
     ctx.direction = dir;
-    ctx.textAlign = 'right';
+    ctx.textAlign = align;
     ctx.textBaseline = 'top';
     ctx.fillText(value, x, y);
   };
 
-  let y = 6; // brand strip
+  let y = 6; // Below the brand gradient strip
 
-  // Header: the horizontal club logo, with the university name balancing it
-  const headerTop = y + 20;
-  const LOGO_H = 40;
-  if (assets.logo && draw) {
-    const ratio = assets.logo.width / assets.logo.height;
-    ctx.drawImage(assets.logo, right - LOGO_H * ratio, headerTop, LOGO_H * ratio, LOGO_H);
+  // =========================================================================
+  // 1. Header: Emblem (Right), Club Name (Middle), Academic Year Pill (Left)
+  // =========================================================================
+  const headerTop = y + 14;
+  const EMBLEM_SIZE = 40;
+
+  if (draw && assets.emblem) {
+    ctx.drawImage(assets.emblem, right - EMBLEM_SIZE, headerTop, EMBLEM_SIZE, EMBLEM_SIZE);
   }
-  text('جامعة فلسطين', P + 78, headerTop + LOGO_H - 16, `400 12px ${SANS}`, CARD_COLORS.muted);
 
-  y = headerTop + LOGO_H + 16;
+  // Club & University Branding (to the left of emblem in RTL)
+  const brandX = right - EMBLEM_SIZE - 10;
+  text('النادي الهندسي', brandX, headerTop, `900 17px ${SANS}`, '#FFFFFF', 'rtl', 'right');
+  text('جامعة فلسطين', brandX, headerTop + 22, `600 11px ${SANS}`, '#98F7F1', 'rtl', 'right');
+  text('— UP ENGINEERING CLUB —', brandX, headerTop + 37, `600 8px ${MONO}`, 'rgba(63, 231, 227, 0.65)', 'ltr', 'right');
+
+  // Academic Year Pill (Left)
+  const badgeText = card.badge || currentAcademicYear();
+  const pillW = 84;
+  const pillH = 22;
+  const pillX = P;
+  const pillY = headerTop + 10;
   if (draw) {
-    ctx.fillStyle = CARD_COLORS.divider;
+    roundRect(ctx, pillX, pillY, pillW, pillH, 11);
+    ctx.fillStyle = 'rgba(8, 4, 29, 0.9)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(63, 231, 227, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  text(badgeText, pillX + pillW / 2, pillY + 4, `700 11px ${SANS}`, '#FFFFFF', 'ltr', 'center');
+
+  // Header Divider
+  y = headerTop + EMBLEM_SIZE + 14;
+  if (draw) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
     ctx.fillRect(0, y, W, 1);
   }
-  y += 1 + 24;
+  y += 1;
 
-  // Identity
-  const identityTop = y;
-  let textRight = right;
-  const PHOTO = 88;
-  if (card.photoUrl && assets.photo) {
+  // =========================================================================
+  // 2. Identity Section (Diverges by Variant)
+  // =========================================================================
+  if (isGeneral) {
+    // -----------------------------------------------------------------------
+    // Variant 1: General Member (Centered Layout)
+    // -----------------------------------------------------------------------
+    const PHOTO = 96;
+    const photoX = (W - PHOTO) / 2;
+    const photoY = y + 16;
+
     if (draw) {
+      // Glowing Border Frame
       ctx.save();
-      roundRect(ctx, right - PHOTO, identityTop, PHOTO, PHOTO, 16);
+      roundRect(ctx, photoX - 2, photoY - 2, PHOTO + 4, PHOTO + 4, 18);
+      ctx.strokeStyle = 'rgba(63, 231, 227, 0.65)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Photo clipping
+      roundRect(ctx, photoX, photoY, PHOTO, PHOTO, 16);
       ctx.clip();
-      const img = assets.photo;
-      const s = Math.max(PHOTO / img.width, PHOTO / img.height);
-      ctx.drawImage(
-        img,
-        right - PHOTO + (PHOTO - img.width * s) / 2,
-        identityTop + (PHOTO - img.height * s) / 2,
-        img.width * s,
-        img.height * s
-      );
+      if (assets.photo) {
+        const img = assets.photo;
+        const s = Math.max(PHOTO / img.width, PHOTO / img.height);
+        ctx.drawImage(
+          img,
+          photoX + (PHOTO - img.width * s) / 2,
+          photoY + (PHOTO - img.height * s) / 2,
+          img.width * s,
+          img.height * s
+        );
+      } else {
+        ctx.fillStyle = '#140B3B';
+        ctx.fillRect(photoX, photoY, PHOTO, PHOTO);
+        text(card.name.trim().slice(0, 2), W / 2, photoY + 30, `900 24px ${SANS}`, '#98F7F1', 'rtl', 'center');
+      }
       ctx.restore();
     }
-    textRight = right - PHOTO - 16;
-  }
-  const nameRight = textRight - 4 - 12;
-  const nameSize = cardNameFontSize(card.name, Boolean(card.photoUrl && assets.photo));
-  const nameFont = `900 ${nameSize}px ${SANS}`;
-  const nameLine = nameSize + 6;
-  ctx.font = nameFont;
-  const nameLines = wrapLines(ctx, card.name, nameRight - P);
-  nameLines.forEach((line, i) => text(line, nameRight, identityTop + i * nameLine + 2, nameFont, CARD_COLORS.text));
-  let blockBottom = identityTop + nameLines.length * nameLine;
-  if (card.role) {
-    text(card.role, nameRight, blockBottom + 6 + 2, `700 14px ${SANS}`, colors.role);
-    blockBottom += 6 + 20;
-  }
-  // Validity pill under the identity — in the header it used to collide with the logo
-  const badge = card.badge || currentAcademicYear();
-  if (badge) {
-    ctx.font = `700 12px ${SANS}`;
-    const pillW = Math.min(ctx.measureText(badge).width + 20, nameRight - P);
-    const pillTop = blockBottom + 8;
+
+    // Centered Name
+    const nameY = photoY + PHOTO + 14;
+    const nameSize = cardNameFontSize(card.name, true) + 2;
+    text(card.name, W / 2, nameY, `900 ${nameSize}px ${SANS}`, '#FFFFFF', 'rtl', 'center');
+
+    // Centered Role
+    const roleY = nameY + nameSize + 6;
+    text(card.role || 'عضو في النادي الهندسي', W / 2, roleY, `700 13px ${SANS}`, '#3FE7E3', 'rtl', 'center');
+
+    // Centered Gradient Accent Line
     if (draw) {
-      roundRect(ctx, nameRight - pillW, pillTop, pillW, 24, 12);
-      ctx.fillStyle = colors.pillBg;
+      const lineW = 96;
+      const lineX = (W - lineW) / 2;
+      const lineY = roleY + 22;
+      const grad = ctx.createLinearGradient(lineX, 0, lineX + lineW, 0);
+      grad.addColorStop(0, 'rgba(63, 231, 227, 0)');
+      grad.addColorStop(0.5, 'rgba(63, 231, 227, 0.9)');
+      grad.addColorStop(1, 'rgba(63, 231, 227, 0)');
+      ctx.fillStyle = grad;
+      roundRect(ctx, lineX, lineY, lineW, 2, 1);
       ctx.fill();
-      ctx.strokeStyle = colors.pillBorder;
+    }
+
+    y = roleY + 34;
+  } else {
+    // -----------------------------------------------------------------------
+    // Variant 2: Executive / Committee Member (Side-by-Side Layout)
+    // -----------------------------------------------------------------------
+    const PHOTO = 92;
+    const photoX = right - PHOTO;
+    const photoY = y + 16;
+
+    if (draw) {
+      // Glowing Border Frame
+      ctx.save();
+      roundRect(ctx, photoX - 2, photoY - 2, PHOTO + 4, PHOTO + 4, 18);
+      ctx.strokeStyle = colors.bar || '#3FE7E3';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Photo clipping
+      roundRect(ctx, photoX, photoY, PHOTO, PHOTO, 16);
+      ctx.clip();
+      if (assets.photo) {
+        const img = assets.photo;
+        const s = Math.max(PHOTO / img.width, PHOTO / img.height);
+        ctx.drawImage(
+          img,
+          photoX + (PHOTO - img.width * s) / 2,
+          photoY + (PHOTO - img.height * s) / 2,
+          img.width * s,
+          img.height * s
+        );
+      } else {
+        ctx.fillStyle = '#140B3B';
+        ctx.fillRect(photoX, photoY, PHOTO, PHOTO);
+        text(card.name.trim().slice(0, 2), photoX + PHOTO / 2, photoY + 28, `900 24px ${SANS}`, '#FFFFFF', 'rtl', 'center');
+      }
+      ctx.restore();
+    }
+
+    // Text on the left (Right-aligned in RTL)
+    const textX = photoX - 14;
+    const nameSize = cardNameFontSize(card.name, true);
+    ctx.font = `900 ${nameSize}px ${SANS}`;
+    const nameLines = wrapLines(ctx, card.name, textX - P);
+    nameLines.forEach((l, i) => text(l, textX, photoY + 6 + i * (nameSize + 6), `900 ${nameSize}px ${SANS}`, '#FFFFFF', 'rtl', 'right'));
+
+    const roleY = photoY + 6 + nameLines.length * (nameSize + 6) + 2;
+    text(card.role || 'كادر تنظيمي قيادي', textX, roleY, `800 14px ${SANS}`, colors.role, 'rtl', 'right');
+
+    // Glowing Underline Bar
+    if (draw) {
+      const barW = 88;
+      const barY = roleY + 22;
+      roundRect(ctx, textX - barW, barY, barW, 3, 1.5);
+      ctx.fillStyle = colors.bar;
+      ctx.fill();
+    }
+
+    y = Math.max(photoY + PHOTO + 16, roleY + 36);
+  }
+
+  // =========================================================================
+  // 3. Middle Cardlet (Highlighted Box with Diagonal Cyber Corner)
+  // =========================================================================
+  if (card.highlight?.value) {
+    const cardletH = 62;
+    const cardletY = y + 8;
+    const cardletW = W - 2 * P;
+
+    if (draw) {
+      // Frosted Glass Panel
+      roundRect(ctx, P, cardletY, cardletW, cardletH, 16);
+      ctx.fillStyle = 'rgba(13, 8, 46, 0.85)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
       ctx.lineWidth = 1;
       ctx.stroke();
-    }
-    const badgeDir: CanvasDirection = /[؀-ۿ]/.test(badge) ? 'rtl' : 'ltr';
-    text(badge, nameRight - 10, pillTop + 5, `700 12px ${SANS}`, colors.pillText, badgeDir);
-    blockBottom = pillTop + 24;
-  }
-  if (draw) {
-    roundRect(ctx, textRight - 4, identityTop, 4, blockBottom - identityTop, 2);
-    ctx.fillStyle = colors.bar;
-    ctx.fill();
-  }
-  y = Math.max(blockBottom, card.photoUrl && assets.photo ? identityTop + PHOTO : 0);
 
-  // Committee band
-  if (card.highlight?.value) {
-    y += 20;
-    ctx.font = `700 16px ${SANS}`;
-    const valueLines = wrapLines(ctx, card.highlight.value, W - 2 * P - 32);
-    const bandH = 14 + 16 + 4 + valueLines.length * 22 + 14;
-    if (draw) {
-      roundRect(ctx, P, y, W - 2 * P, bandH, 16);
-      ctx.fillStyle = colors.bandBg;
+      // Corner Diagonal Cyber Neon Slash (Bottom-Left)
+      ctx.save();
+      roundRect(ctx, P, cardletY, cardletW, cardletH, 16);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.moveTo(P, cardletY + cardletH - 24);
+      ctx.lineTo(P + 24, cardletY + cardletH);
+      ctx.lineTo(P, cardletY + cardletH);
+      ctx.closePath();
+      const slashGrad = ctx.createLinearGradient(P, cardletY + cardletH, P + 24, cardletY + cardletH - 24);
+      slashGrad.addColorStop(0, '#35BC2B');
+      slashGrad.addColorStop(1, '#3FE7E3');
+      ctx.fillStyle = slashGrad;
       ctx.fill();
-      ctx.strokeStyle = colors.bandBorder;
+      ctx.restore();
+
+      // Vertical Divider between Icon area and Text area
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.fillRect(P + 52, cardletY + 12, 1, cardletH - 24);
+
+      // Icon Representation Badge (Left side)
+      roundRect(ctx, P + 14, cardletY + 14, 34, 34, 10);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+      ctx.stroke();
+
+      // Simple technical emblem inside icon box
+      ctx.fillStyle = colors.role || '#3FE7E3';
+      ctx.beginPath();
+      ctx.arc(P + 31, cardletY + 31, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Right Side: Label and Value
+    const contentX = right - 14;
+    text(card.highlight.label, contentX, cardletY + 13, `500 11px ${SANS}`, '#9CA3AF', 'rtl', 'right');
+    text(card.highlight.value, contentX, cardletY + 30, `800 15px ${SANS}`, '#FFFFFF', 'rtl', 'right');
+
+    y = cardletY + cardletH + 8;
+  }
+
+  // =========================================================================
+  // 4. Technical Tagline
+  // =========================================================================
+  const taglineY = y + 8;
+  if (isGeneral) {
+    if (draw) {
+      // Horizontal Rules
+      ctx.strokeStyle = 'rgba(63, 231, 227, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(P + 10, taglineY + 4);
+      ctx.lineTo(P + 38, taglineY + 4);
+      ctx.moveTo(W - P - 38, taglineY + 4);
+      ctx.lineTo(W - P - 10, taglineY + 4);
       ctx.stroke();
     }
-    text(card.highlight.label, right - 16, y + 14 + 1, `400 12px ${SANS}`, '#D1D5DB');
-    valueLines.forEach((line, i) => text(line, right - 16, y + 14 + 20 + i * 22 + 2, `700 16px ${SANS}`, CARD_COLORS.text));
-    y += bandH;
+    text(
+      'ENGINEERING BUILDS A BETTER TOMORROW',
+      W / 2,
+      taglineY,
+      `700 8px ${MONO}`,
+      'rgba(63, 231, 227, 0.65)',
+      'ltr',
+      'center'
+    );
+    y = taglineY + 18;
+  } else {
+    if (draw) {
+      ctx.strokeStyle = 'rgba(63, 231, 227, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(P + 40, taglineY + 4);
+      ctx.lineTo(P + 70, taglineY + 4);
+      ctx.moveTo(W - P - 70, taglineY + 4);
+      ctx.lineTo(W - P - 40, taglineY + 4);
+      ctx.stroke();
+    }
+    text('ENGINEERING TODAY', W / 2, taglineY, `700 8px ${MONO}`, 'rgba(63, 231, 227, 0.65)', 'ltr', 'center');
+    text('FOR A BETTER TOMORROW', W / 2, taglineY + 11, `600 7px ${MONO}`, 'rgba(63, 231, 227, 0.50)', 'ltr', 'center');
+    y = taglineY + 28;
   }
 
-  // Details grid
-  const details = (card.fields || []).filter((f) => f.value);
-  if (details.length) {
-    y += 16;
-    const colW = (W - 2 * P - 24) / 2;
-    let rowTop = y;
-    let rowHeight = 0;
-    details.forEach((f, i) => {
-      const wide = f.small || (details.length % 2 === 1 && i === details.length - 1);
-      const col = wide ? 0 : i % 2;
-      if (col === 0 && i > 0) {
-        rowTop += rowHeight + 16;
-        rowHeight = 0;
-      }
-      const cellRight = col === 0 ? right : right - colW - 24;
-      const cellWidth = wide ? W - 2 * P : colW;
-      const valueFont = f.small ? `700 12px ${SANS}` : `700 14px ${SANS}`;
-      const valueLine = f.small ? 16 : 20;
-      ctx.font = valueFont;
-      const lines = wrapLines(ctx, f.value, cellWidth);
-      text(f.label, cellRight, rowTop + 1, `400 12px ${SANS}`, CARD_COLORS.muted);
-      lines.forEach((line, li) =>
-        text(line, cellRight, rowTop + 20 + li * valueLine + 2, valueFont, CARD_COLORS.text, f.small ? 'ltr' : 'rtl')
-      );
-      rowHeight = Math.max(rowHeight, 20 + lines.length * valueLine);
-    });
-    y = rowTop + rowHeight;
-  }
-  y += 24;
+  // =========================================================================
+  // 5. Verification Footer (ZERO EMAIL, HUD QR, Shield & Official Signature)
+  // =========================================================================
+  const footerTop = y + 8;
+  const footerH = 106;
 
-  // Verification strip
-  const footerTop = y;
-  const footerH = 16 + 72 + 16;
   if (draw) {
-    ctx.fillStyle = CARD_COLORS.footerBg;
+    // Footer Background & Top Divider
+    ctx.fillStyle = 'rgba(5, 2, 20, 0.92)';
     ctx.fillRect(0, footerTop, W, footerH);
-    ctx.fillStyle = CARD_COLORS.divider;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
     ctx.fillRect(0, footerTop, W, 1);
-    roundRect(ctx, P, footerTop + 16, 72, 72, 12);
+
+    // QR Code Frame (Left)
+    const QR_BOX = 62;
+    const qrX = P + 4;
+    const qrY = footerTop + 12;
+
+    roundRect(ctx, qrX, qrY, QR_BOX, QR_BOX, 8);
     ctx.fillStyle = '#FFFFFF';
     ctx.fill();
-    if (assets.qr) ctx.drawImage(assets.qr, P + 6, footerTop + 22, 60, 60);
+
+    if (assets.qr) {
+      ctx.drawImage(assets.qr, qrX + 3, qrY + 3, QR_BOX - 6, QR_BOX - 6);
+    }
+
+    // 4 Cyber HUD Corner Brackets around QR
+    drawHudCorners(ctx, qrX - 3, qrY - 3, QR_BOX + 6, QR_BOX + 6, 8);
+
+    // Code Pill (Center)
+    const pillBoxW = 126;
+    const pillBoxH = 22;
+    const pillBoxX = W / 2 - pillBoxW / 2 + 10;
+    const pillBoxY = footerTop + 34;
+
+    roundRect(ctx, pillBoxX, pillBoxY, pillBoxW, pillBoxH, 11);
+    ctx.fillStyle = '#0A0524';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(63, 231, 227, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Bottom Subtext Bar
+    ctx.strokeStyle = 'rgba(63, 231, 227, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(P + 20, footerTop + 88);
+    ctx.lineTo(W / 2 - 60, footerTop + 88);
+    ctx.moveTo(W / 2 + 60, footerTop + 88);
+    ctx.lineTo(W - P - 20, footerTop + 88);
+    ctx.stroke();
   }
-  const textTop = footerTop + 16 + (72 - 64) / 2;
-  text('كود التحقق', right, textTop + 1, `400 12px ${SANS}`, CARD_COLORS.muted);
-  text(card.code, right, textTop + 20 + 2, `700 14px ${MONO}`, CARD_COLORS.code, 'ltr');
-  text('امسح الرمز للتحقق من البطاقة', right, textTop + 48 + 1, `400 12px ${SANS}`, CARD_COLORS.muted);
+
+  // Verification Code Texts (Center)
+  text('كود التحقق', W / 2 + 10, footerTop + 16, `600 11px ${SANS}`, '#D1D5DB', 'rtl', 'center');
+  text(card.code, W / 2 + 10, footerTop + 39, `700 12px ${MONO}`, '#3FE7E3', 'ltr', 'center');
+
+  // Official Signature (Right)
+  text('النادي الهندسي', right, footerTop + 22, `800 12px ${SANS}`, '#E5E7EB', 'rtl', 'right');
+  text('جامعة فلسطين', right, footerTop + 38, `600 11px ${SANS}`, '#98F7F1', 'rtl', 'right');
+
+  // Palestine University Bottom Subtext
+  text('PALESTINE UNIVERSITY', W / 2, footerTop + 84, `700 8px ${MONO}`, 'rgba(63, 231, 227, 0.60)', 'ltr', 'center');
 
   return footerTop + footerH;
 }
@@ -222,12 +578,12 @@ export async function renderCardPng(card: CardData, scale = 3): Promise<string> 
     document.fonts.load(`700 14px 'JetBrains Mono'`),
   ]).catch(() => undefined);
 
-  const [logo, qr, photo] = await Promise.all([
-    loadImage('/brand/logo-horizontal-on-dark.png'),
+  const [emblem, qr, photo] = await Promise.all([
+    loadImage('/brand/emblem-on-dark.png'),
     cardQrDataUrl(card.qrValue).then(loadImage).catch(() => null),
     card.photoUrl ? loadImage(card.photoUrl) : Promise.resolve(null),
   ]);
-  const assets = { logo, qr, photo };
+  const assets = { emblem, qr, photo };
 
   const measureCtx = document.createElement('canvas').getContext('2d')!;
   const height = layout(measureCtx, card, assets, false);
@@ -238,23 +594,33 @@ export async function renderCardPng(card: CardData, scale = 3): Promise<string> 
   const ctx = canvas.getContext('2d')!;
   ctx.scale(scale, scale);
 
-  // Card body clipped to rounded corners (transparent outside)
-  roundRect(ctx, 0.5, 0.5, W - 1, height - 1, 24);
+  // Card body clipped to rounded corners
+  roundRect(ctx, 0.5, 0.5, W - 1, height - 1, 28);
   ctx.save();
   ctx.clip();
-  ctx.fillStyle = CARD_COLORS.background;
+
+  // 1. Deep Space Tech Background
+  ctx.fillStyle = '#090521';
   ctx.fillRect(0, 0, W, height);
+
+  // 2. Blueprint Background (Grid, Gear, Facade)
+  drawBlueprintBackground(ctx, height);
+
+  // 3. Top Triple-Color Brand Strip
   const strip = ctx.createLinearGradient(0, 0, W, 0);
-  strip.addColorStop(0, CARD_COLORS.strip[0]);
-  strip.addColorStop(0.5, CARD_COLORS.strip[1]);
-  strip.addColorStop(1, CARD_COLORS.strip[2]);
+  strip.addColorStop(0, '#35BC2B');
+  strip.addColorStop(0.5, '#3FE7E3');
+  strip.addColorStop(1, '#7F1AB2');
   ctx.fillStyle = strip;
   ctx.fillRect(0, 0, W, 6);
+
+  // 4. Draw Card Content
   layout(ctx, card, assets, true);
   ctx.restore();
 
-  roundRect(ctx, 0.5, 0.5, W - 1, height - 1, 24);
-  ctx.strokeStyle = CARD_COLORS.border;
+  // Subtle Border Stroke
+  roundRect(ctx, 0.5, 0.5, W - 1, height - 1, 28);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
