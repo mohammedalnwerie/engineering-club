@@ -1,4 +1,4 @@
-﻿-- =====================================================================
+-- =====================================================================
 -- تحديث 013: إصلاح دالة تسجيل الفعاليات
 -- السبب: كان متغير FOUND في PL/pgSQL يُعاد ضبطه إلى true دائماً بواسطة
 -- استعلام (SELECT count(*) INTO v_count)، مما كان يجعل الكود يحاول
@@ -11,7 +11,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public
-as 
+as $$
 declare
   v_member    public.club_applications := public.club_member_by_credentials(p_student_id, p_code);
   v_event     public.club_events;
@@ -71,7 +71,7 @@ begin
 
   return jsonb_build_object('status', v_existing.status, 'id', v_existing.id, 'alreadyRegistered', false);
 end;
-;
+$$;
 
 revoke all on function public.register_for_event(text, text, uuid) from public;
 grant execute on function public.register_for_event(text, text, uuid) to anon, authenticated;
