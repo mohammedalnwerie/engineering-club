@@ -44,23 +44,18 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
         style={{ background: `linear-gradient(to left, ${CARD_COLORS.strip[2]}, ${CARD_COLORS.strip[1]}, ${CARD_COLORS.strip[0]})` }}
       />
 
-      {/* Header */}
-      <div className="px-6 pt-5 pb-4 flex items-center justify-between gap-3" style={{ borderBottom: `1px solid ${CARD_COLORS.divider}` }}>
-        <div className="flex items-center gap-3 min-w-0">
-          <img src="/brand/emblem-on-dark.png" alt="" className="w-11 h-11 object-contain shrink-0" />
-          <div className="min-w-0">
-            <div className="text-base font-black text-white leading-5">النادي الهندسي</div>
-            <div className="text-xs leading-4 mt-1" style={{ color: CARD_COLORS.muted }}>
-              جامعة فلسطين
-            </div>
-          </div>
-        </div>
-        <span
-          dir="auto"
-          className="shrink-0 text-xs font-bold h-[26px] px-3 inline-flex items-center rounded-full"
-          style={{ background: colors.pillBg, border: `1px solid ${colors.pillBorder}`, color: colors.pillText }}
-        >
-          {badge || currentAcademicYear()}
+      {/* Header — the club's own logo, nothing competing with it */}
+      <div
+        className="px-6 pt-5 pb-4 flex items-end justify-between gap-3"
+        style={{ borderBottom: `1px solid ${CARD_COLORS.divider}` }}
+      >
+        <img
+          src="/brand/logo-horizontal-on-dark.png"
+          alt="النادي الهندسي — Engineering Club"
+          className="h-10 w-auto object-contain shrink-0"
+        />
+        <span className="text-xs leading-4 pb-0.5 shrink-0" style={{ color: CARD_COLORS.muted }}>
+          جامعة فلسطين
         </span>
       </div>
 
@@ -87,6 +82,14 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
                   {role}
                 </div>
               )}
+              {/* Validity sits with the identity now; in the header it collided with the logo */}
+              <span
+                dir="auto"
+                className="mt-2 text-xs font-bold h-[24px] px-2.5 inline-flex items-center rounded-full"
+                style={{ background: colors.pillBg, border: `1px solid ${colors.pillBorder}`, color: colors.pillText }}
+              >
+                {badge || currentAcademicYear()}
+              </span>
             </div>
           </div>
         </div>

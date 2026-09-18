@@ -48,7 +48,7 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
 }
 
 interface Assets {
-  emblem: HTMLImageElement | null;
+  logo: HTMLImageElement | null;
   qr: HTMLImageElement | null;
   photo: HTMLImageElement | null;
 }
@@ -69,28 +69,16 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
 
   let y = 6; // brand strip
 
-  // Header (emblem 44 + 20 top + 16 bottom)
+  // Header: the horizontal club logo, with the university name balancing it
   const headerTop = y + 20;
-  if (draw && assets.emblem) ctx.drawImage(assets.emblem, right - 44, headerTop, 44, 44);
-  text('النادي الهندسي', right - 44 - 12, headerTop + 2, `900 16px ${SANS}`, CARD_COLORS.text);
-  text('جامعة فلسطين', right - 44 - 12, headerTop + 26, `400 12px ${SANS}`, CARD_COLORS.muted);
-
-  const badge = card.badge || currentAcademicYear();
-  ctx.font = `700 12px ${SANS}`;
-  const pillW = ctx.measureText(badge).width + 24;
-  const pillY = headerTop + 22 - 13;
-  if (draw) {
-    roundRect(ctx, P, pillY, pillW, 26, 13);
-    ctx.fillStyle = colors.pillBg;
-    ctx.fill();
-    ctx.strokeStyle = colors.pillBorder;
-    ctx.lineWidth = 1;
-    ctx.stroke();
+  const LOGO_H = 40;
+  if (assets.logo && draw) {
+    const ratio = assets.logo.width / assets.logo.height;
+    ctx.drawImage(assets.logo, right - LOGO_H * ratio, headerTop, LOGO_H * ratio, LOGO_H);
   }
-  const badgeDir: CanvasDirection = /[؀-ۿ]/.test(badge) ? 'rtl' : 'ltr';
-  text(badge, P + pillW - 12, pillY + 6, `700 12px ${SANS}`, colors.pillText, badgeDir);
+  text('جامعة فلسطين', P + 78, headerTop + LOGO_H - 16, `400 12px ${SANS}`, CARD_COLORS.muted);
 
-  y = headerTop + 44 + 16;
+  y = headerTop + LOGO_H + 16;
   if (draw) {
     ctx.fillStyle = CARD_COLORS.divider;
     ctx.fillRect(0, y, W, 1);
@@ -130,6 +118,24 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   if (card.role) {
     text(card.role, nameRight, blockBottom + 6 + 2, `700 14px ${SANS}`, colors.role);
     blockBottom += 6 + 20;
+  }
+  // Validity pill under the identity — in the header it used to collide with the logo
+  const badge = card.badge || currentAcademicYear();
+  if (badge) {
+    ctx.font = `700 12px ${SANS}`;
+    const pillW = Math.min(ctx.measureText(badge).width + 20, nameRight - P);
+    const pillTop = blockBottom + 8;
+    if (draw) {
+      roundRect(ctx, nameRight - pillW, pillTop, pillW, 24, 12);
+      ctx.fillStyle = colors.pillBg;
+      ctx.fill();
+      ctx.strokeStyle = colors.pillBorder;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    const badgeDir: CanvasDirection = /[؀-ۿ]/.test(badge) ? 'rtl' : 'ltr';
+    text(badge, nameRight - 10, pillTop + 5, `700 12px ${SANS}`, colors.pillText, badgeDir);
+    blockBottom = pillTop + 24;
   }
   if (draw) {
     roundRect(ctx, textRight - 4, identityTop, 4, blockBottom - identityTop, 2);
@@ -216,12 +222,12 @@ export async function renderCardPng(card: CardData, scale = 3): Promise<string> 
     document.fonts.load(`700 14px 'JetBrains Mono'`),
   ]).catch(() => undefined);
 
-  const [emblem, qr, photo] = await Promise.all([
-    loadImage('/brand/emblem-on-dark.png'),
+  const [logo, qr, photo] = await Promise.all([
+    loadImage('/brand/logo-horizontal-on-dark.png'),
     cardQrDataUrl(card.qrValue).then(loadImage).catch(() => null),
     card.photoUrl ? loadImage(card.photoUrl) : Promise.resolve(null),
   ]);
-  const assets = { emblem, qr, photo };
+  const assets = { logo, qr, photo };
 
   const measureCtx = document.createElement('canvas').getContext('2d')!;
   const height = layout(measureCtx, card, assets, false);
