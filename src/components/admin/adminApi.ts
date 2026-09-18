@@ -148,6 +148,10 @@ export const setMembershipSuspended = (applicationId: string, suspended: boolean
 export const extendMembership = (applicationId: string, validUntil: string) =>
   run((c) => c.from('club_applications').update({ valid_until: validUntil }).eq('id', applicationId));
 
+/** Resets a member's password hash so they can log back in using their card code and set a new password. */
+export const resetMemberPassword = (applicationId: string) =>
+  run((c) => c.from('club_applications').update({ password_hash: null }).eq('id', applicationId));
+
 // ---------------------------------------------------------------------------
 // Events & registrations
 // ---------------------------------------------------------------------------

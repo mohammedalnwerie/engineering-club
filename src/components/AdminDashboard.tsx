@@ -39,6 +39,7 @@ import { downloadCardPng, printCard } from '../utils/cardRenderer';
 import { memberCardFor } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
 import { AcceptanceDispatchModal } from './AcceptanceDispatchModal';
+import { emailService } from '../services/emailService';
 import type {
   ProjectCaseStudy,
   StoredApplication,
@@ -4172,8 +4173,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 <button
                   type="button"
                   onClick={() => {
-                    const text = `🎉 تهانينا يا م. ${viewingBadgeApp.fullName}!\nتم قبول انضمامك رسمياً للنادي الهندسي بجامعة فلسطين.\nنوع العضوية: ${viewingBadgeApp.targetCommittee}\nرقم الاعتماد: UP-ENG-${(viewingBadgeApp.id || 'VALID').slice(-8).toUpperCase()}\nأهلاً بك معنا في صُنع أثر الغد! 🚀`;
-                    navigator.clipboard.writeText(text);
+                    const { message } = emailService.formatWhatsAppMessage(viewingBadgeApp);
+                    navigator.clipboard.writeText(message);
                     showToast('تم نسخ رسالة القبول والاعتماد للحافظة بنجاح!');
                   }}
                   className="w-full py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-200 font-medium text-xs cursor-pointer flex items-center justify-center gap-2 transition-all"

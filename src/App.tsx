@@ -31,9 +31,26 @@ if (new URLSearchParams(window.location.search).get('setup') === 'password') {
   }
 }
 
-const clearRouteHash = (route: string) => {
-  if (window.location.hash === route) {
-    window.history.pushState(null, '', window.location.pathname + window.location.search);
+const clearRoute = (hashRoute: string, paramKey?: string) => {
+  try {
+    const url = new URL(window.location.href);
+    let changed = false;
+    if (paramKey && url.searchParams.has(paramKey)) {
+      url.searchParams.delete(paramKey);
+      changed = true;
+    }
+    if (url.hash === hashRoute) {
+      url.hash = '';
+      changed = true;
+    }
+    if (changed) {
+      const search = url.searchParams.toString() ? `?${url.searchParams.toString()}` : '';
+      window.history.replaceState(null, '', url.pathname + search + url.hash);
+    }
+  } catch {
+    if (window.location.hash === hashRoute) {
+      window.history.pushState(null, '', window.location.pathname);
+    }
   }
 };
 
@@ -71,7 +88,7 @@ export function App() {
 
   const handleCloseAdmin = () => {
     setShowAdminModal(false);
-    clearRouteHash('#/admin');
+    clearRoute('#/admin', 'admin');
   };
 
   const handleOpenAbout = () => {
@@ -82,7 +99,7 @@ export function App() {
 
   const handleCloseAbout = () => {
     setShowAboutPage(false);
-    clearRouteHash('#/about');
+    clearRoute('#/about', 'about');
   };
 
   const handleOpenComplaints = () => {
@@ -92,7 +109,7 @@ export function App() {
 
   const handleCloseComplaints = () => {
     setShowComplaintsModal(false);
-    clearRouteHash('#/complaints');
+    clearRoute('#/complaints', 'complaints');
   };
 
   const handleOpenMember = () => {
@@ -102,12 +119,18 @@ export function App() {
 
   const handleCloseMember = () => {
     setShowMemberPortal(false);
-    clearRouteHash('#/member');
+    clearRoute('#/member', 'member');
   };
 
   const handleOpenVerify = () => {
     setVerifyCode('');
     setShowVerifyModal(true);
+  };
+
+  const handleCloseVerify = () => {
+    setShowVerifyModal(false);
+    setVerifyCode('');
+    clearRoute('', 'verify');
   };
 
   const handleJoinClick = () => {
@@ -130,7 +153,7 @@ export function App() {
 
       <Suspense fallback={null}>
         {showVerifyModal && (
-          <MembershipVerifyModal isOpen onClose={() => setShowVerifyModal(false)} initialCode={verifyCode} />
+          <MembershipVerifyModal isOpen onClose={handleCloseVerify} initialCode={verifyCode} />
         )}
         {showComplaintsModal && <ComplaintsModal isOpen onClose={handleCloseComplaints} />}
         {showAdminModal && <AdminDashboard isOpen onClose={handleCloseAdmin} />}

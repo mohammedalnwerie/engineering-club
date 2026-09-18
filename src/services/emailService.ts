@@ -7,7 +7,12 @@ export const emailService = {
   formatAcceptanceEmail(app: StoredApplication) {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://engineering-club-phi.vercel.app';
     const verifyUrl = `${origin}/?verify=${encodeURIComponent(app.studentId || app.id)}`;
-    const authCode = `UP-ENG-${(app.id || 'VALID').slice(-8).toUpperCase()}`;
+    const accountUrl = `${origin}/?member=1`;
+    const memberCode = app.memberCode || `UP-MEM-${(app.studentId || app.id || '00123').slice(-5)}`;
+    const committee = effectiveCommittee(app);
+    const validUntilStr = app.validUntil
+      ? new Date(app.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '';
 
     const subject = `تهانينا يا م. ${app.fullName}! تم قبول عضويتك في النادي الهندسي — جامعة فلسطين 🎓`;
     const body = `السلام عليكم ورحمة الله وبركاته،
@@ -15,16 +20,20 @@ export const emailService = {
 الزميل المهندس / الزميلة المهندسة: ${app.fullName} المحترمـ/ـة
 تحية طيبة وبعد،،
 
-يسر مجلس إدارة النادي الهندسي في جامعة فلسطين أن يهنئك بقبول طلب انضمامك رسمياً لعضوية النادي ضمن "${effectiveCommittee(app)}" للعام الجامعي 2026.
+يسر مجلس إدارة النادي الهندسي في جامعة فلسطين أن يهنئك بقبول طلب انضمامك رسمياً لعضوية النادي ضمن "${committee}"${app.organizationalRole ? ` بمسمى (${app.organizationalRole})` : ''} للعام الجامعي 2026/2027.
 
-لقد تم اعتماد وإصدار بطاقة عضويتك الرقمية الرسمية وتوثيقها في سجلات النادي بكود توثيق فريد:
-• كود الاعتماد الرسمي: ${authCode}
+🪪 بيانات عضويتك واعتمادك الرسمي:
+• رمز العضو / كود الدخول الأول: ${memberCode}
+• الرقم الجامعي: ${app.studentId}
 • الكلية: ${app.college}
 • التخصص: ${app.major}
-• الرقم الجامعي: ${app.studentId}
+${validUntilStr ? `• صلاحية البطاقة الأولى: حتى ${validUntilStr} (يمكنك تجديدها لاحقاً إلى عضوية فصلية من حسابك)\n` : ''}
+🔐 خطوتك الأولى — تفعيل حسابك وتعيين كلمة المرور:
+ادخل إلى صفحة «حسابي» برقمك الجامعي ورمز العضو أعلاه، لتعيين كلمة مرور خاصة بك، والتسجيل في الورش والفعاليات ومتابعة عضويتك:
+🔗 ${accountUrl}
 
-🔗 يمكنك استعراض وتحميل بطاقة عضويتك الرقمية الرسمية (PNG/PDF) فوراً عبر الرابط التالي:
-${verifyUrl}
+📇 رابط استعراض وحفظ بطاقتك الرقمية الرسمية:
+🔗 ${verifyUrl}
 
 نرحب بك عضواً فاعلاً في مجتمع مهندسي الغد، ونتطلع لمشاركتك وإبداعاتك معنا في الأنشطة القادمة.
 
@@ -34,30 +43,40 @@ ${verifyUrl}
 ${origin}
 `;
 
-    return { subject, body, verifyUrl, authCode };
+    return { subject, body, verifyUrl, authCode: memberCode, accountUrl };
   },
 
   formatWhatsAppMessage(app: StoredApplication) {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://engineering-club-phi.vercel.app';
     const verifyUrl = `${origin}/?verify=${encodeURIComponent(app.studentId || app.id)}`;
-    const authCode = `UP-ENG-${(app.id || 'VALID').slice(-8).toUpperCase()}`;
+    const accountUrl = `${origin}/?member=1`;
+    const memberCode = app.memberCode || `UP-MEM-${(app.studentId || app.id || '00123').slice(-5)}`;
+    const committee = effectiveCommittee(app);
+    const validUntilStr = app.validUntil
+      ? new Date(app.validUntil).toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '';
 
     const message = `🎉 *تهانينا يا م. ${app.fullName}!*
-يسر إدارة *النادي الهندسي بجامعة فلسطين* إعلامك بقبول عضويتك رسمياً ضمن *${effectiveCommittee(app)}*.
+يسر إدارة *النادي الهندسي بجامعة فلسطين* إعلامك بقبول عضويتك رسمياً ضمن *${committee}*${app.organizationalRole ? ` بمسمى (${app.organizationalRole})` : ''}.
 
-🪪 *تم إصدار بطاقة عضويتك الرقمية المعتمدة رسمياً:*
-• كود التوثيق: ${authCode}
+🪪 *بيانات عضويتك المعتمدة:*
+• رمز العضو / كود الدخول الأول: *${memberCode}*
+• الرقم الجامعي: ${app.studentId}
 • الكلية: ${app.college}
 • التخصص: ${app.major}
+${validUntilStr ? `• صلاحية البطاقة الأولى: حتى ${validUntilStr}\n` : ''}
+🔐 *خطوتك الأولى — تفعيل حسابك:*
+ادخل إلى صفحة «حسابي» برقمك الجامعي ورمز العضو أعلاه لتعيين كلمة مرورك الخاصة والتسجيل في ورش وفعاليات النادي:
+${accountUrl}
 
-🔗 *رابط استعراض وتحميل البطاقة الرسمية:*
+🔗 *رابط استعراض وتحميل بطاقتك الرقمية الرسمية:*
 ${verifyUrl}
 
 أهلاً بك معنا في صُنع أثر الغد! 🚀
 *الهيئة الإدارية — النادي الهندسي*
 *جامعة فلسطين*`;
 
-    return { message, verifyUrl, authCode };
+    return { message, verifyUrl, authCode: memberCode, accountUrl };
   },
 
   openGmailWebmail(app: StoredApplication) {

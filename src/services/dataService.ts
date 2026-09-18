@@ -658,11 +658,14 @@ class DataService {
   public updateApplicationStatus(id: string, status: StoredApplication['status']) {
     this.applications = this.applications.map((a) => {
       if (a.id !== id) return a;
+      const isAccepted = status === 'تم القبول';
       const validUntil =
-        a.validUntil || (status === 'تم القبول' ? new Date(Date.now() + 14 * 86_400_000).toISOString() : a.validUntil);
+        a.validUntil || (isAccepted ? new Date(Date.now() + 14 * 86_400_000).toISOString() : a.validUntil);
       const membershipType =
-        a.membershipType || (status === 'تم القبول' ? 'temporary' : a.membershipType);
-      return { ...a, status, validUntil, membershipType };
+        a.membershipType || (isAccepted ? 'temporary' : a.membershipType);
+      const acceptedAt = a.acceptedAt || (isAccepted ? new Date().toISOString() : undefined);
+      const membershipState = isAccepted ? (a.suspendedAt ? 'suspended' : 'temporary') : 'not_member';
+      return { ...a, status, validUntil, membershipType, acceptedAt, membershipState };
     });
     this.notify();
     void this.runAdminWrite('فشل تحديث حالة الطلب', (client) =>

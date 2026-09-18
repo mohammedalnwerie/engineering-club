@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, X, Download, RefreshCw, Save, Search, Image as ImageIcon, CalendarPlus, PauseCircle, PlayCircle } from 'lucide-react';
+import { Check, X, Download, RefreshCw, Save, Search, Image as ImageIcon, CalendarPlus, PauseCircle, PlayCircle, KeyRound } from 'lucide-react';
 import {
   listMembers,
   listPaymentRequests,
@@ -8,6 +8,7 @@ import {
   applyTrialEndToMembers,
   setMembershipSuspended,
   extendMembership,
+  resetMemberPassword,
   type MemberRow,
   type PaymentRequestRow,
 } from './adminApi';
@@ -390,6 +391,20 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                       }}
                     >
                       تمديد 7 أيام
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon={<KeyRound className="w-4 h-4 text-cyan-400" />}
+                      disabled={busy === m.id}
+                      title="تصفير كلمة المرور لتمكين العضو من الدخول برمز بطاقته وتعيين كلمة مرور جديدة"
+                      onClick={() => {
+                        if (window.confirm(`هل تريد تصفير كلمة المرور لـ (${m.full_name})؟\nسيعود العضو قادراً على تسجيل الدخول فوراً باستخدام رمز بطاقته وتعيين كلمة مرور جديدة.`)) {
+                          void act(m.id, () => resetMemberPassword(m.id), `تم تصفير كلمة المرور لـ ${m.full_name}`);
+                        }
+                      }}
+                    >
+                      تصفير كلمة المرور
                     </Button>
                   </div>
                 </li>
