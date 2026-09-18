@@ -12,7 +12,7 @@ const ICONS_MAP: Record<string, React.ElementType> = {
   Building2,
 };
 
-export const MajorsSection: React.FC = () => {
+export const MajorsSection: React.FC<{ embedded?: boolean }> = ({ embedded }) => {
   const [majorsList, setMajorsList] = useState<Major[]>([]);
   const [activeMajorId, setActiveMajorId] = useState<string>('');
 
@@ -51,6 +51,191 @@ export const MajorsSection: React.FC = () => {
   };
 
 
+  const body = (
+    <>
+      {/* 6 Majors Horizontal Interactive Selector Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+        {majorsList.map((major) => {
+          const isSelected = major.id === activeMajorId;
+
+          const Icon = ICONS_MAP[major.iconName] || Terminal;
+
+          return (
+            <button
+              key={major.id}
+              onClick={() => handleSelectMajor(major.id)}
+              className={`p-4 rounded-2xl border text-right transition-all duration-300 relative overflow-hidden cursor-pointer flex flex-col justify-between h-36 ${
+                isSelected
+                  ? 'glass-panel border-cyan-400/80 shadow-[0_0_25px_rgba(0,240,255,0.2)] bg-cyan-950/30'
+                  : 'bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.04]'
+              }`}
+            >
+              <div className="flex items-center justify-between w-full">
+                <span
+                  className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${
+                    isSelected ? 'bg-cyan-500/20 text-cyan-300' : 'text-gray-500 bg-white/5'
+                  }`}
+                >
+                  {major.code}
+                </span>
+                <Icon
+                  className={`w-5 h-5 transition-transform duration-300 ${
+                    isSelected ? 'text-cyan-400 scale-110' : 'text-gray-400'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <h4
+                  className={`text-sm font-bold leading-tight transition-colors ${
+                    isSelected ? 'text-white' : 'text-gray-300'
+                  }`}
+                >
+                  {major.name}
+                </h4>
+                <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                  {major.collegeName.replace(/^كلية\s*/, '')}
+                </div>
+              </div>
+
+              {isSelected && (
+                <div className="absolute bottom-0 inset-x-0 h-1 bg-cyan-400 shadow-[0_0_10px_#00f0ff]" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Deep Dive Interactive Major Showcase Stage */}
+      <div className="rounded-3xl glass-panel p-6 sm:p-10 border border-white/10 relative overflow-hidden">
+        {/* Blueprint Wireframe Background */}
+        <div className="absolute inset-0 bg-blueprint-grid opacity-30 pointer-events-none" />
+
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Header and Overview */}
+          <div className="lg:col-span-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 rounded-2xl bg-cyan-950/60 border border-cyan-400/40 text-cyan-400 shadow-md">
+                  <ActiveIcon className="w-8 h-8" />
+                </div>
+                <div>
+                  <div className="font-mono text-xs text-cyan-400 uppercase tracking-wider">
+                    {activeMajor.collegeName}
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
+                    {activeMajor.name}
+                  </h3>
+                </div>
+              </div>
+
+              <p className="text-base text-gray-300 leading-relaxed mb-6 font-light">
+                {activeMajor.description}
+              </p>
+
+              {/* Key Courses */}
+              <div className="mb-6">
+                <h5 className="font-mono text-xs uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-1.5">
+                  <span>ما ستتعلمه وتكتسبه في هذا التخصص:</span>
+                </h5>
+                <div className="space-y-2">
+                  {activeMajor.keyCourses.map((course, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl bg-black/30 border border-white/5 flex items-center justify-between text-xs sm:text-sm text-gray-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                        <span>{course}</span>
+                      </div>
+                      <span className="font-mono text-xs text-gray-500">مسار {idx + 1}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Technical Stack & Career Trajectory */}
+          <div className="lg:col-span-6 flex flex-col gap-6">
+            {/* Tech Stack Chips */}
+            <div className="p-6 rounded-2xl bg-black/30 border border-white/10">
+              <h5 className="font-mono text-xs uppercase tracking-wider text-cyan-300 mb-4 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-cyan-400" />
+                <span>أبرز البرامج والأدوات التي ستتقنها:</span>
+              </h5>
+              <div className="flex flex-wrap gap-2">
+                {activeMajor.techStack.map((tech, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-xs font-mono font-medium text-cyan-300 shadow-sm"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Career Horizons */}
+            <div className="p-6 rounded-2xl bg-black/30 border border-white/10">
+              <h5 className="font-mono text-xs uppercase tracking-wider text-emerald-400 mb-4 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                <span>المجالات والفرص المهنية بعد التخرج:</span>
+              </h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {activeMajor.careerPaths.map((career, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-xs sm:text-sm text-gray-200 flex items-center gap-2"
+                  >
+                    <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>{career}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Student Project Incubator Callout */}
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-black/40 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-2 font-mono text-xs text-emerald-400 uppercase tracking-wider">
+                    <span>حاضنة الأفكار والمشاريع الطلابية</span>
+                    <span className="text-emerald-500/50">|</span>
+                    <span className="text-gray-400">باب التقديم مفتوح</span>
+                  </div>
+                  <div className="text-sm font-bold text-white mt-1">
+                    لديك فكرة مشروع في هذا التخصص؟ انضم للنادي وحوّلها لواقع عملي!
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    يوفر النادي الإرشاد الأكاديمي، فرق العمل، والبيئة التجريبية لتمكين طلبة التخصص من بناء نماذجهم وتطوير حلولهم.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  const target = document.querySelector('#join');
+                  target?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-400 hover:text-black border border-emerald-500/40 text-xs font-bold transition-all text-emerald-200 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+              >
+                <span>شارك بفكرتك / انضم الآن</span>
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  // Rendered on its own, or inside the combined academics section without its header.
+  if (embedded) return body;
+
   return (
     <section id="majors" className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#08041D]/60">
       <div className="max-w-7xl mx-auto">
@@ -70,183 +255,7 @@ export const MajorsSection: React.FC = () => {
           </p>
         </div>
 
-        {/* 6 Majors Horizontal Interactive Selector Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
-          {majorsList.map((major) => {
-            const isSelected = major.id === activeMajorId;
-
-            const Icon = ICONS_MAP[major.iconName] || Terminal;
-
-            return (
-              <button
-                key={major.id}
-                onClick={() => handleSelectMajor(major.id)}
-                className={`p-4 rounded-2xl border text-right transition-all duration-300 relative overflow-hidden cursor-pointer flex flex-col justify-between h-36 ${
-                  isSelected
-                    ? 'glass-panel border-cyan-400/80 shadow-[0_0_25px_rgba(0,240,255,0.2)] bg-cyan-950/30'
-                    : 'bg-white/[0.02] border-white/5 hover:border-white/20 hover:bg-white/[0.04]'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span
-                    className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${
-                      isSelected ? 'bg-cyan-500/20 text-cyan-300' : 'text-gray-500 bg-white/5'
-                    }`}
-                  >
-                    {major.code}
-                  </span>
-                  <Icon
-                    className={`w-5 h-5 transition-transform duration-300 ${
-                      isSelected ? 'text-cyan-400 scale-110' : 'text-gray-400'
-                    }`}
-                  />
-                </div>
-
-                <div>
-                  <h4
-                    className={`text-sm font-bold leading-tight transition-colors ${
-                      isSelected ? 'text-white' : 'text-gray-300'
-                    }`}
-                  >
-                    {major.name}
-                  </h4>
-                  <div className="text-xs text-gray-500 mt-1 line-clamp-1">
-                    {major.collegeName.replace(/^كلية\s*/, '')}
-                  </div>
-                </div>
-
-                {isSelected && (
-                  <div className="absolute bottom-0 inset-x-0 h-1 bg-cyan-400 shadow-[0_0_10px_#00f0ff]" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Deep Dive Interactive Major Showcase Stage */}
-        <div className="rounded-3xl glass-panel p-6 sm:p-10 border border-white/10 relative overflow-hidden">
-          {/* Blueprint Wireframe Background */}
-          <div className="absolute inset-0 bg-blueprint-grid opacity-30 pointer-events-none" />
-
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Header and Overview */}
-            <div className="lg:col-span-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-2xl bg-cyan-950/60 border border-cyan-400/40 text-cyan-400 shadow-md">
-                    <ActiveIcon className="w-8 h-8" />
-                  </div>
-                  <div>
-                    <div className="font-mono text-xs text-cyan-400 uppercase tracking-wider">
-                      {activeMajor.collegeName}
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
-                      {activeMajor.name}
-                    </h3>
-                  </div>
-                </div>
-
-                <p className="text-base text-gray-300 leading-relaxed mb-6 font-light">
-                  {activeMajor.description}
-                </p>
-
-                {/* Key Courses */}
-                <div className="mb-6">
-                  <h5 className="font-mono text-xs uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-1.5">
-                    <span>ما ستتعلمه وتكتسبه في هذا التخصص:</span>
-                  </h5>
-                  <div className="space-y-2">
-                    {activeMajor.keyCourses.map((course, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3 rounded-xl bg-black/30 border border-white/5 flex items-center justify-between text-xs sm:text-sm text-gray-200"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                          <span>{course}</span>
-                        </div>
-                        <span className="font-mono text-xs text-gray-500">مسار {idx + 1}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Technical Stack & Career Trajectory */}
-            <div className="lg:col-span-6 flex flex-col gap-6">
-              {/* Tech Stack Chips */}
-              <div className="p-6 rounded-2xl bg-black/30 border border-white/10">
-                <h5 className="font-mono text-xs uppercase tracking-wider text-cyan-300 mb-4 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-cyan-400" />
-                  <span>أبرز البرامج والأدوات التي ستتقنها:</span>
-                </h5>
-                <div className="flex flex-wrap gap-2">
-                  {activeMajor.techStack.map((tech, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1.5 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-xs font-mono font-medium text-cyan-300 shadow-sm"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Career Horizons */}
-              <div className="p-6 rounded-2xl bg-black/30 border border-white/10">
-                <h5 className="font-mono text-xs uppercase tracking-wider text-emerald-400 mb-4 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  <span>المجالات والفرص المهنية بعد التخرج:</span>
-                </h5>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {activeMajor.careerPaths.map((career, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-xs sm:text-sm text-gray-200 flex items-center gap-2"
-                    >
-                      <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>{career}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Student Project Incubator Callout */}
-              <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-black/40 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="inline-flex items-center gap-2 font-mono text-xs text-emerald-400 uppercase tracking-wider">
-                      <span>حاضنة الأفكار والمشاريع الطلابية</span>
-                      <span className="text-emerald-500/50">|</span>
-                      <span className="text-gray-400">باب التقديم مفتوح</span>
-                    </div>
-                    <div className="text-sm font-bold text-white mt-1">
-                      لديك فكرة مشروع في هذا التخصص؟ انضم للنادي وحوّلها لواقع عملي!
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      يوفر النادي الإرشاد الأكاديمي، فرق العمل، والبيئة التجريبية لتمكين طلبة التخصص من بناء نماذجهم وتطوير حلولهم.
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    const target = document.querySelector('#join');
-                    target?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-400 hover:text-black border border-emerald-500/40 text-xs font-bold transition-all text-emerald-200 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-                >
-                  <span>شارك بفكرتك / انضم الآن</span>
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {body}
       </div>
     </section>
   );

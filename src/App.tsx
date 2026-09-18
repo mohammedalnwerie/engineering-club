@@ -4,8 +4,7 @@ import { CanvasBackground } from './components/CanvasBackground';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { BrandIdentitySection } from './components/BrandIdentitySection';
-import { CollegesSection } from './components/CollegesSection';
-import { MajorsSection } from './components/MajorsSection';
+import { AcademicsSection } from './components/AcademicsSection';
 import { ProjectsSection } from './components/ProjectsSection';
 import { EventsSection } from './components/EventsSection';
 import { LeadershipSection } from './components/LeadershipSection';
@@ -155,8 +154,7 @@ export function App() {
           <main className="relative z-10">
             <HeroSection onJoinClick={handleJoinClick} onExploreClick={handleExploreClick} />
             <BrandIdentitySection onOpenAboutPage={handleOpenAbout} />
-            <CollegesSection />
-            <MajorsSection />
+            <AcademicsSection />
             <EventsSection onOpenMemberPortal={handleOpenMember} />
             <ProjectsSection />
             <JoinClubSection />
