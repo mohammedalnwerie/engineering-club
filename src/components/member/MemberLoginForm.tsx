@@ -129,6 +129,11 @@ export const MemberLoginForm: React.FC<MemberLoginFormProps> = ({ onSuccess, sub
         isOpen={showForgotModal}
         onClose={() => setShowForgotModal(false)}
         initialStudentId={studentId}
+        onSuccessReset={(sid) => {
+          setStudentId(sid);
+          setCode('');
+          setError(null);
+        }}
       />
     </>
   );

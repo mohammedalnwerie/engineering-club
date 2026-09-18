@@ -202,6 +202,23 @@ class MemberService {
     }
   }
 
+  /** Allows an accepted member to self-reset their password if they verify their registered phone or email. */
+  async selfResetPassword(studentId: string, verification: string): Promise<{ ok: boolean; fullName?: string; message?: string }> {
+    try {
+      return unwrap(
+        await publicRpc<{ ok: boolean; fullName?: string; message?: string } | { error: string }>(
+          'member_self_reset_password',
+          {
+            p_student_id: normalizeCode(studentId),
+            p_verification: verification.trim(),
+          }
+        )
+      );
+    } catch (err) {
+      throw friendly(err);
+    }
+  }
+
   /** Sets or clears the member's own card photo. Pass null to remove it. */
   async setPhoto(photo: string | null): Promise<void> {
     if (!this.credentials) throw new Error('سجّل الدخول أولاً');
