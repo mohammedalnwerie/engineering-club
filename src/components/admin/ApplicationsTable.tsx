@@ -3,7 +3,7 @@ import { Eye, Send, CreditCard, Award, CheckCircle, Clock, Trash2, XCircle, Link
 import type { StoredApplication } from '../../types';
 import { effectiveCommittee } from '../../data/committees';
 import { ActionMenu, CheckBox, type ActionItem } from './controls';
-import { Button, EmptyState } from './ui';
+import { Button, EmptyState, Badge } from './ui';
 
 // The applications list: one labelled primary action plus a named menu, so no
 // row is a line of unlabelled icons any more. Cards on phones, table on desktop.
@@ -161,7 +161,10 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                     </div>
                   </div>
                   <div className="text-left">
-                    <StatusPill status={app.status} />
+                    <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                      <StatusPill status={app.status} />
+                      {app.suspendedAt && <Badge tone="amber">معلّقة</Badge>}
+                    </div>
                     {app.status === 'مقابلة مجدولة' && (
                       <div className="text-xs text-blue-200 mt-1.5">{interviewLabel(app)}</div>
                     )}
@@ -270,7 +273,10 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
                     </div>
                   </td>
                   <td className="p-3 text-center">
-                    <StatusPill status={app.status} />
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                      <StatusPill status={app.status} />
+                      {app.suspendedAt && <Badge tone="amber">معلّقة</Badge>}
+                    </div>
                     {app.status === 'مقابلة مجدولة' && (
                       <div className="text-xs text-blue-200 mt-1.5">{interviewLabel(app)}</div>
                     )}

@@ -59,6 +59,8 @@ const asApplication = (p: MemberProfile): StoredApplication => ({
   memberCode: p.memberCode,
   membershipType: p.membershipType || undefined,
   validUntil: p.validUntil || undefined,
+  membershipState: p.membershipState,
+  suspendedAt: p.membershipState === 'suspended' ? (p.acceptedAt || 'suspended') : undefined,
 });
 
 export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) => {
@@ -178,36 +180,42 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
               <section className="space-y-3">
                 <h3 className="text-lg font-bold text-white">بطاقة العضوية</h3>
                 <MemberCard {...memberCardFor(asApplication(profile), { revealCode: true })} />
-                <div className="grid grid-cols-2 gap-2 max-w-[360px] mx-auto">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void downloadCardPng(memberCardFor(asApplication(profile), { revealCode: true }), `UP-Member-Card-${profile.studentId}.png`)
-                    }
-                    className="py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-sm flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>حفظ كصورة</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void printCard(memberCardFor(asApplication(profile), { revealCode: true }))}
-                    className="py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Printer className="w-4 h-4" />
-                    <span>طباعة</span>
-                  </button>
-                  {findCommittee(effectiveCommittee(asApplication(profile)))?.id !== 'general' && (
+                {profile.membershipState === 'suspended' ? (
+                  <div className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-200 text-xs text-center leading-relaxed">
+                    ⚠️ البطاقة معلّقة إدارياً. تم تعطيل حفظ الصورة والطباعة لحين تسوية وضع العضوية مع إدارة النادي.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 max-w-[360px] mx-auto">
                     <button
                       type="button"
-                      onClick={() => setShowCommitteeCard(true)}
-                      className="col-span-2 py-2.5 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/40 text-cyan-200 text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                      onClick={() =>
+                        void downloadCardPng(memberCardFor(asApplication(profile), { revealCode: true }), `UP-Member-Card-${profile.studentId}.png`)
+                      }
+                      className="py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-sm flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <Award className="w-4 h-4" />
-                      <span>كرت عضو اللجنة</span>
+                      <Download className="w-4 h-4" />
+                      <span>حفظ كصورة</span>
                     </button>
-                  )}
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => void printCard(memberCardFor(asApplication(profile), { revealCode: true }))}
+                      className="py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>طباعة</span>
+                    </button>
+                    {findCommittee(effectiveCommittee(asApplication(profile)))?.id !== 'general' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCommitteeCard(true)}
+                        className="col-span-2 py-2.5 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/40 text-cyan-200 text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>كرت عضو اللجنة</span>
+                      </button>
+                    )}
+                  </div>
+                )}
                 <p className="text-xs text-gray-500 text-center">
                   البطاقة للتحقق من عضويتك. الدخول إلى حسابك بكلمة المرور، فلا تشارك كلمة المرور مع أحد.
                 </p>

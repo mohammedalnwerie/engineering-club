@@ -395,27 +395,36 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   const pillY = headerTop + 10;
   if (draw) {
     roundRect(ctx, pillX, pillY, pillW, pillH, 11);
-    ctx.fillStyle = card.validityStatus === 'expired' ? 'rgba(69, 10, 10, 0.9)' : 'rgba(8, 4, 29, 0.9)';
+    ctx.fillStyle =
+      card.validityStatus === 'suspended'
+        ? 'rgba(69, 26, 3, 0.95)'
+        : card.validityStatus === 'expired'
+          ? 'rgba(69, 10, 10, 0.9)'
+          : 'rgba(8, 4, 29, 0.9)';
     ctx.fill();
     ctx.strokeStyle =
-      card.validityStatus === 'expired'
-        ? 'rgba(239, 68, 68, 0.6)'
-        : card.validityStatus === 'temporary'
-          ? 'rgba(245, 158, 11, 0.5)'
-          : card.validityStatus === 'accredited'
-            ? 'rgba(251, 191, 36, 0.5)'
-            : 'rgba(63, 231, 227, 0.45)';
+      card.validityStatus === 'suspended'
+        ? 'rgba(245, 158, 11, 0.8)'
+        : card.validityStatus === 'expired'
+          ? 'rgba(239, 68, 68, 0.6)'
+          : card.validityStatus === 'temporary'
+            ? 'rgba(245, 158, 11, 0.5)'
+            : card.validityStatus === 'accredited'
+              ? 'rgba(251, 191, 36, 0.5)'
+              : 'rgba(63, 231, 227, 0.45)';
     ctx.lineWidth = 1;
     ctx.stroke();
   }
   const pillTextColor =
-    card.validityStatus === 'expired'
-      ? '#FCA5A5'
-      : card.validityStatus === 'temporary'
-        ? '#FDE68A'
-        : card.validityStatus === 'accredited'
+    card.validityStatus === 'suspended'
+      ? '#FDE68A'
+      : card.validityStatus === 'expired'
+        ? '#FCA5A5'
+        : card.validityStatus === 'temporary'
           ? '#FDE68A'
-          : '#FFFFFF';
+          : card.validityStatus === 'accredited'
+            ? '#FDE68A'
+            : '#FFFFFF';
   text(badgeText, pillX + pillW / 2, pillY + 4, `700 10.5px ${SANS}`, pillTextColor, 'center');
 
   // Header Divider
@@ -660,13 +669,15 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
       text(card.highlight.label, contentX, cardletY + 11, `500 10px ${SANS}`, '#9CA3AF', 'right');
       text(card.highlight.value, contentX, cardletY + 28, `800 14px ${SANS}`, '#FFFFFF', 'right');
       const subtextColor =
-        card.validityStatus === 'expired'
-          ? '#FCA5A5'
-          : card.validityStatus === 'temporary'
-            ? '#FDE68A'
-            : card.validityStatus === 'accredited'
+        card.validityStatus === 'suspended'
+          ? '#FDE68A'
+          : card.validityStatus === 'expired'
+            ? '#FCA5A5'
+            : card.validityStatus === 'temporary'
               ? '#FDE68A'
-              : '#98F7F1';
+              : card.validityStatus === 'accredited'
+                ? '#FDE68A'
+                : '#98F7F1';
       text(`● ${card.highlight.subvalue}`, contentX, cardletY + 47, `600 10px ${SANS}`, subtextColor, 'right');
     } else {
       text(card.highlight.label, contentX, cardletY + 13, `500 11px ${SANS}`, '#9CA3AF', 'right');
@@ -790,6 +801,36 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   return footerTop + footerH;
 }
 
+function drawSuspensionStamp(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  ctx.save();
+  ctx.translate(width / 2, height * 0.44);
+  ctx.rotate((-16 * Math.PI) / 180);
+
+  const stampW = 280;
+  const stampH = 34;
+
+  // Frosted dark box
+  roundRect(ctx, -stampW / 2, -stampH / 2, stampW, stampH, 12);
+  ctx.fillStyle = 'rgba(9, 5, 33, 0.92)';
+  ctx.fill();
+
+  // Dashed amber border
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = '#F59E0B';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Bold text
+  ctx.font = `900 13px ${SANS}`;
+  ctx.fillStyle = '#FDE68A';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('عضوية معلّقة — SUSPENDED', 0, 0);
+
+  ctx.restore();
+}
+
 /** Renders the card to a PNG data URL at `scale`× resolution. */
 export async function renderCardPng(card: CardData, scale = 3): Promise<string> {
   await Promise.all([
@@ -837,6 +878,12 @@ export async function renderCardPng(card: CardData, scale = 3): Promise<string> 
 
   // 4. Draw Card Content
   layout(ctx, card, assets, true);
+
+  // 5. Suspension Security Watermark Stamp
+  if (card.validityStatus === 'suspended') {
+    drawSuspensionStamp(ctx, W, height);
+  }
+
   ctx.restore();
 
   // Subtle Border Stroke

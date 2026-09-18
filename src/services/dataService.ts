@@ -164,6 +164,8 @@ interface ApplicationRow {
   accepted_at?: string | null;
   membership_type?: 'temporary' | 'semester' | null;
   valid_until?: string | null;
+  suspended_at?: string | null;
+  suspend_reason?: string | null;
 }
 
 interface ComplaintRow {
@@ -198,24 +200,42 @@ export interface MemberLookup {
   codeHint?: string;
   membershipType?: 'temporary' | 'semester';
   validUntil?: string;
-  membershipState?: 'temporary' | 'semester' | 'expired' | 'not_member';
+  suspendedAt?: string;
+  suspendReason?: string;
+  membershipState?: 'temporary' | 'semester' | 'expired' | 'suspended' | 'not_member';
 }
 
-const rowToApplication = (row: ApplicationRow): StoredApplication => ({
-  ...(row.data as ClubApplication),
-  id: row.id,
-  studentId: row.student_id,
-  fullName: row.full_name,
-  email: row.email || '',
-  phone: row.phone || '',
-  skills: row.data?.skills || [],
-  status: row.status,
-  submittedAt: row.submitted_at,
-  memberCode: row.member_code || undefined,
-  acceptedAt: row.accepted_at || undefined,
-  membershipType: row.membership_type || undefined,
-  validUntil: row.valid_until || undefined,
-});
+const rowToApplication = (row: ApplicationRow): StoredApplication => {
+  const isSuspended = Boolean(row.suspended_at);
+  const isExpired = Boolean(row.valid_until && new Date(row.valid_until).getTime() < Date.now());
+  const membershipState =
+    row.status !== 'تم القبول'
+      ? 'not_member'
+      : isSuspended
+        ? 'suspended'
+        : isExpired
+          ? 'expired'
+          : (row.membership_type || 'temporary');
+
+  return {
+    ...(row.data as ClubApplication),
+    id: row.id,
+    studentId: row.student_id,
+    fullName: row.full_name,
+    email: row.email || '',
+    phone: row.phone || '',
+    skills: row.data?.skills || [],
+    status: row.status,
+    submittedAt: row.submitted_at,
+    memberCode: row.member_code || undefined,
+    acceptedAt: row.accepted_at || undefined,
+    membershipType: row.membership_type || undefined,
+    validUntil: row.valid_until || undefined,
+    suspendedAt: row.suspended_at || undefined,
+    suspendReason: row.suspend_reason || undefined,
+    membershipState,
+  };
+};
 
 const rowToComplaint = (row: ComplaintRow): ComplaintItem => ({
   ...(row.data as ComplaintItem),
@@ -648,6 +668,17 @@ class DataService {
     void this.runAdminWrite('فشل تحديث حالة الطلب', (client) =>
       client.from('club_applications').update({ status }).eq('id', id)
     );
+  }
+
+  public updateApplicationSuspended(id: string, suspended: boolean, reason?: string) {
+    this.applications = this.applications.map((a) => {
+      if (a.id !== id) return a;
+      const suspendedAt = suspended ? new Date().toISOString() : undefined;
+      const suspendReason = suspended ? reason?.trim() || undefined : undefined;
+      const membershipState = suspended ? 'suspended' : a.membershipType || 'temporary';
+      return { ...a, suspendedAt, suspendReason, membershipState };
+    });
+    this.notify();
   }
 
   /** Admin: place a member in a committee and give them a title. Stored inside the application's data.

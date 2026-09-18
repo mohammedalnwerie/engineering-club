@@ -78,6 +78,9 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
               interviewAt: found.interviewAt,
               interviewTimeTbd: found.interviewTimeTbd,
               submittedAt: found.submittedAt || '',
+              membershipState: found.membershipState,
+              suspendedAt: found.suspendedAt,
+              suspendReason: found.suspendReason,
             }
           : null
       );
@@ -175,7 +178,18 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                 /* Verified Active Member Card */
                 <div className="space-y-4">
                   {/* Status Banner */}
-                  {matchedApp.validUntil && new Date(matchedApp.validUntil).getTime() < Date.now() ? (
+                  {matchedApp.membershipState === 'suspended' || Boolean(matchedApp.suspendedAt) ? (
+                    <div role="alert" className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/50 text-amber-200 text-sm flex items-start gap-2.5 leading-relaxed">
+                      <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-amber-300">تنبيه رسمي: هذه العضوية معلّقة حالياً</div>
+                        <div className="text-xs text-amber-200/90 mt-0.5">
+                          {matchedApp.suspendReason ? `السبب: ${matchedApp.suspendReason}` : 'العضوية معلّقة بقرار إداري ولا تمنح صاحبها صلاحيات الحضور أو الأنشطة.'}
+                          {' '}يرجى مراجعة إدارة النادي لتسوية الوضع.
+                        </div>
+                      </div>
+                    </div>
+                  ) : matchedApp.validUntil && new Date(matchedApp.validUntil).getTime() < Date.now() ? (
                     <div role="alert" className="p-3 rounded-xl bg-amber-950/50 border border-amber-500/40 text-amber-200 text-sm flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 shrink-0" />
                       <span>
@@ -199,44 +213,52 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                   <MemberCard {...memberCardFor(matchedApp)} />
                   {/* Actions: Export PNG & Print PDF */}
                   <div className="flex flex-col gap-2 pt-2">
-                    <button
-                      type="button"
-                      disabled={isExporting}
-                      onClick={async () => {
-                        setIsExporting(true);
-                        const cleanId = matchedApp.studentId || 'PASS';
-                        await downloadCardPng(memberCardFor(matchedApp), `UP-Member-Card-${cleanId}.png`);
-                        setIsExporting(false);
-                      }}
-                      className="w-full py-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 disabled:opacity-60 text-black font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>{isExporting ? 'جاري تجهيز الصورة…' : 'حفظ البطاقة كصورة'}</span>
-                    </button>
+                    {matchedApp.membershipState === 'suspended' || Boolean(matchedApp.suspendedAt) ? (
+                      <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 text-center text-xs text-gray-400">
+                        لا يمكن تصدير أو طباعة البطاقة لأن العضوية معلّقة إدارياً.
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={isExporting}
+                          onClick={async () => {
+                            setIsExporting(true);
+                            const cleanId = matchedApp.studentId || 'PASS';
+                            await downloadCardPng(memberCardFor(matchedApp), `UP-Member-Card-${cleanId}.png`);
+                            setIsExporting(false);
+                          }}
+                          className="w-full py-3 rounded-xl bg-emerald-400 hover:bg-emerald-300 disabled:opacity-60 text-black font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>{isExporting ? 'جاري تجهيز الصورة…' : 'حفظ البطاقة كصورة'}</span>
+                        </button>
 
-                    {findCommittee(effectiveCommittee(matchedApp))?.id !== 'general' && effectiveCommittee(matchedApp) && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowCommitteeBadge(true);
-                        }}
-                        className="w-full py-3 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/40 text-cyan-200 font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
-                      >
-                        <Award className="w-4 h-4 text-cyan-300" />
-                        <span>كرت عضو اللجنة</span>
-                      </button>
+                        {findCommittee(effectiveCommittee(matchedApp))?.id !== 'general' && effectiveCommittee(matchedApp) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowCommitteeBadge(true);
+                            }}
+                            className="w-full py-3 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/40 text-cyan-200 font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
+                          >
+                            <Award className="w-4 h-4 text-cyan-300" />
+                            <span>كرت عضو اللجنة</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => void printCard(memberCardFor(matchedApp))}
+                          className="w-full py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
+                        >
+                          <Printer className="w-4 h-4 text-emerald-400" />
+                          <span>طباعة / PDF</span>
+                        </button>
+                      </>
                     )}
 
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void printCard(memberCardFor(matchedApp))}
-                        className="flex-1 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white font-bold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all"
-                      >
-                        <Printer className="w-4 h-4 text-emerald-400" />
-                        <span>طباعة / PDF</span>
-                      </button>
-
                       <button
                         type="button"
                         onClick={() => {
@@ -244,11 +266,11 @@ export const MembershipVerifyModal: React.FC<MembershipVerifyModalProps> = ({
                           setCopied(true);
                           setTimeout(() => setCopied(false), 3000);
                         }}
-                        className="px-4 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-200 text-sm font-medium cursor-pointer transition-all flex items-center gap-2"
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-200 text-sm font-medium cursor-pointer transition-all flex items-center justify-center gap-2"
                         title="نسخ رابط التحقق المباشر"
                       >
                         <Copy className="w-3.5 h-3.5 text-cyan-400" />
-                        <span>{copied ? 'تم النسخ!' : 'نسخ الرابط'}</span>
+                        <span>{copied ? 'تم نسخ الرابط!' : 'نسخ رابط التحقق'}</span>
                       </button>
                     </div>
                   </div>

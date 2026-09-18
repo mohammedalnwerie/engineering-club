@@ -354,11 +354,13 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                       disabled={busy === m.id}
                       onClick={() => {
                         if (state === 'suspended') {
+                          dataService.updateApplicationSuspended(m.id, false);
                           void act(m.id, () => setMembershipSuspended(m.id, false), `تم رفع التعليق عن ${m.full_name}`);
                           return;
                         }
                         const reason = window.prompt(`سبب تعليق عضوية ${m.full_name}؟ (اختياري)`);
                         if (reason === null) return;
+                        dataService.updateApplicationSuspended(m.id, true, reason);
                         void act(m.id, () => setMembershipSuspended(m.id, true, reason), `تم تعليق عضوية ${m.full_name}`);
                       }}
                     >

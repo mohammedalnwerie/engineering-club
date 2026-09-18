@@ -221,7 +221,9 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
           {/* Left: Academic Year / Validity Pill */}
           <div
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-[11px] font-bold shrink-0 transition-colors ${
-              validityStatus === 'expired'
+              validityStatus === 'suspended'
+                ? 'bg-amber-950/90 border-amber-500/80 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                : validityStatus === 'expired'
                 ? 'bg-red-950/80 border-red-500/60 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.25)]'
                 : validityStatus === 'temporary'
                 ? 'bg-[#08041D]/90 border-amber-400/50 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
@@ -232,7 +234,9 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
           >
             <Calendar
               className={`w-3 h-3 ${
-                validityStatus === 'expired'
+                validityStatus === 'suspended'
+                  ? 'text-amber-400'
+                  : validityStatus === 'expired'
                   ? 'text-red-400'
                   : validityStatus === 'temporary'
                   ? 'text-amber-400'
@@ -400,7 +404,9 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
                 {(highlight.subvalue || validitySubtext) && (
                   <div
                     className={`text-[10px] sm:text-[10.5px] mt-1 font-semibold flex items-center gap-1.5 break-words leading-tight ${
-                      validityStatus === 'expired'
+                      validityStatus === 'suspended'
+                        ? 'text-amber-300 font-bold'
+                        : validityStatus === 'expired'
                         ? 'text-red-300'
                         : validityStatus === 'temporary'
                         ? 'text-amber-300'
@@ -411,7 +417,9 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        validityStatus === 'expired'
+                        validityStatus === 'suspended'
+                          ? 'bg-amber-400'
+                          : validityStatus === 'expired'
                           ? 'bg-red-400'
                           : validityStatus === 'temporary'
                           ? 'bg-amber-400 animate-pulse'
@@ -515,6 +523,17 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
             <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#3FE7E3]/30" />
           </div>
         </div>
+
+        {/* Suspension Security HUD Watermark Stamp */}
+        {validityStatus === 'suspended' && (
+          <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center overflow-hidden p-4">
+            <div className="rotate-[-16deg] px-6 py-2.5 rounded-2xl bg-[#090521]/90 border-2 border-dashed border-amber-500 text-amber-300 font-black text-xs sm:text-sm tracking-wider uppercase shadow-[0_0_35px_rgba(245,158,11,0.55)] backdrop-blur-[2px] flex items-center gap-2 select-none">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <span>عضوية معلّقة — SUSPENDED</span>
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

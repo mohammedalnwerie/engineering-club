@@ -114,7 +114,7 @@ export function cardQrDataUrl(value: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 type CardApplication = Pick<StoredApplication, 'id' | 'fullName' | 'studentId' | 'major' | 'targetCommittee'> &
-  Partial<Pick<StoredApplication, 'assignedCommittee' | 'organizationalRole' | 'memberCode' | 'validUntil' | 'membershipType'>> & {
+  Partial<Pick<StoredApplication, 'assignedCommittee' | 'organizationalRole' | 'memberCode' | 'validUntil' | 'membershipType' | 'suspendedAt' | 'suspendReason' | 'membershipState'>> & {
     /** Last 4 characters of the member code, when the full code must stay private (public verify page) */
     codeHint?: string;
   };
@@ -141,6 +141,18 @@ export function computeCardValidity(app: CardApplication): {
   cardletTitle: string;
   validitySubtext: string;
 } {
+  const isSuspended = Boolean(app.suspendedAt || app.membershipState === 'suspended');
+
+  if (isSuspended) {
+    const reasonText = app.suspendReason?.trim();
+    return {
+      status: 'suspended',
+      badgeText: 'عضوية معلّقة',
+      cardletTitle: 'عضوية معلّقة إدارياً',
+      validitySubtext: reasonText ? `السبب: ${reasonText}` : 'معلّقة بموجب قرار إداري • راجع إدارة النادي',
+    };
+  }
+
   const isExpired = Boolean(app.validUntil && new Date(app.validUntil).getTime() < Date.now());
 
   if (isExpired && app.validUntil) {
@@ -220,7 +232,7 @@ export function memberCardFor(app: CardApplication, options: CardOptions = {}): 
     qrValue: memberVerifyUrl(app),
     code: memberCodeFor(app, options.revealCode),
     badge: validity.badgeText,
-    accent: validity.status === 'expired' ? 'gold' : 'purple',
+    accent: validity.status === 'suspended' || validity.status === 'expired' ? 'gold' : 'purple',
     layoutVariant: 'general',
     cardletIcon: 'users',
     validityStatus: validity.status,
@@ -253,7 +265,7 @@ export function committeeCardFor(app: CardApplication, options: CardOptions = {}
     qrValue: memberVerifyUrl(app),
     code,
     badge: validity.badgeText,
-    accent: validity.status === 'expired' ? 'gold' : isMedia ? 'green' : isEvents ? 'cyan' : 'purple',
+    accent: validity.status === 'suspended' || validity.status === 'expired' ? 'gold' : isMedia ? 'green' : isEvents ? 'cyan' : 'purple',
     layoutVariant: 'executive',
     cardletIcon: isMedia ? 'megaphone' : 'zap',
     validityStatus: validity.status,
