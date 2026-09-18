@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Search, PlusCircle, Pencil, Trash2, RotateCcw } from 'lucide-react';
+import { RefreshCw, Search, PlusCircle, Pencil, Trash2, RotateCcw, Download } from 'lucide-react';
 import { listActivity, type ActivityRow } from './adminApi';
 import { EmptyState, ErrorNote, LoadingRows, PageHeader, Panel, Button, formatDateTime, inputClass } from './ui';
+import { downloadCsv } from '../../utils/security';
 
 const TYPE_LABELS: Record<string, string> = {
   application: 'الطلبات',
@@ -77,9 +78,28 @@ export const ActivityPanel: React.FC = () => {
         title="سجل النشاط"
         description="كل عملية يقوم بها أي مشرف تُسجَّل هنا تلقائياً: من قبل من، ومن عدّل ماذا ومتى."
         actions={
-          <Button icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />} onClick={() => void load()}>
-            تحديث
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              icon={<Download className="w-4 h-4" />}
+              onClick={() => {
+                const headers = ['التاريخ والوقت', 'المشرف', 'القسم', 'نوع الإجراء', 'ملخص العملية'];
+                const csvRows = shown.map((r) => [
+                  r.created_at,
+                  r.actor_email || '—',
+                  TYPE_LABELS[r.entity_type] || r.entity_type,
+                  r.action,
+                  r.summary,
+                ]);
+                downloadCsv(`UP-Activity-Log-${new Date().toISOString().slice(0, 10)}`, headers, csvRows);
+              }}
+              disabled={shown.length === 0}
+            >
+              تصدير السجل (CSV)
+            </Button>
+            <Button icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />} onClick={() => void load()}>
+              تحديث
+            </Button>
+          </div>
         }
       />
 

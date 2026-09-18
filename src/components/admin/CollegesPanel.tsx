@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   CreditCard,
+  Download,
   Edit3,
   FlaskConical,
   GraduationCap,
@@ -9,6 +10,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import type { College, Major } from '../../types';
+import { downloadCsv } from '../../utils/security';
 
 const DEFAULT_AVATAR = '/brand/emblem.png';
 
@@ -20,6 +22,7 @@ export interface CollegesPanelProps {
   onEditCollege: (college: College) => void;
   onEditMajor: (major: Major) => void;
   onViewCoordinatorBadge?: (college: College) => void;
+  onShowToast?: (msg: string) => void;
 }
 
 export const CollegesPanel: React.FC<CollegesPanelProps> = ({
@@ -28,6 +31,7 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
   onEditCollege,
   onEditMajor,
   onViewCoordinatorBadge,
+  onShowToast,
 }) => {
   const [collegeSubTab, setCollegeSubTab] = useState<'colleges' | 'majors'>('colleges');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -42,6 +46,64 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
         (col.id === 'eng' && (m.collegeName.includes('برمجيات') || m.collegeName.includes('ذكاء'))) ||
         (col.id === 'applied' && (m.collegeName.includes('تطبيقية') || m.collegeName.includes('عمراني')))
     );
+
+  const exportCsv = () => {
+    if (collegeSubTab === 'colleges') {
+      const headers = [
+        'اسم الكلية',
+        'الرمز الكودي',
+        'الاسم المختصر',
+        'المنسق الأكاديمي المعتمد',
+        'المسمى/الرتبة الأكاديمية',
+        'البريد الإلكتروني للمنسق',
+        'عدد المختبرات والورش',
+        'عدد الطلبة التقريبي',
+        'عدد المشاريع',
+        'الإنجاز الرئيسي المميز',
+        'التخصصات المندرجة تحت الكلية',
+      ];
+      const rows = colleges.map((c) => [
+        c.name,
+        c.code,
+        c.shortName,
+        c.coordinator?.name || '—',
+        c.coordinator?.title || c.coordinator?.role || '—',
+        c.coordinator?.email || '—',
+        c.labsCount,
+        c.studentsCount,
+        c.projectsCount,
+        c.flagshipAchievement || '—',
+        getCollegeMajors(c).map((m) => m.name).join(' · ') || '—',
+      ]);
+      downloadCsv(`UP-Engineering-Colleges-${new Date().toISOString().slice(0, 10)}`, headers, rows);
+      onShowToast?.(`تم تصدير ${colleges.length} كليات كملف Excel (CSV) بنجاح`);
+    } else {
+      const headers = [
+        'اسم التخصص الهندسي/التقني',
+        'الرمز الكودي',
+        'الكلية التابع لها',
+        'الشعار التعريفي',
+        'وصف التخصص',
+        'المشروع المميز',
+        'المسارات والفرص المهنية',
+        'حزمة التقنيات والأدوات',
+        'أبرز المساقات الدراسية',
+      ];
+      const rows = majors.map((m) => [
+        m.name,
+        m.code,
+        m.collegeName,
+        m.tagline || '—',
+        m.description || '—',
+        m.featuredProjectTitle || '—',
+        (m.careerPaths || []).join(' · '),
+        (m.techStack || []).join(' · '),
+        (m.keyCourses || []).join(' · '),
+      ]);
+      downloadCsv(`UP-Engineering-Majors-${new Date().toISOString().slice(0, 10)}`, headers, rows);
+      onShowToast?.(`تم تصدير ${majors.length} تخصص هندسي كملف Excel (CSV) بنجاح`);
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -59,7 +121,17 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end">
+        <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end flex-wrap">
+          {/* Export Button */}
+          <button
+            type="button"
+            onClick={exportCsv}
+            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            title={collegeSubTab === 'colleges' ? 'تصدير الكليات كملف Excel (CSV)' : 'تصدير التخصصات كملف Excel (CSV)'}
+          >
+            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <span>تصدير {collegeSubTab === 'colleges' ? 'الكليات' : 'التخصصات'} (CSV)</span>
+          </button>
           {/* Subtab Toggle */}
           <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
             <button

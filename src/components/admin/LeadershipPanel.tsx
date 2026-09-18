@@ -4,6 +4,7 @@ import {
   Camera,
   CreditCard,
   Crown,
+  Download,
   Edit3,
   Eye,
   EyeOff,
@@ -17,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react';
 import type { LeaderMember, StoredApplication } from '../../types';
+import { downloadCsv } from '../../utils/security';
 
 const DEFAULT_AVATAR = '/brand/emblem.png';
 
@@ -32,6 +34,7 @@ export interface LeadershipPanelProps {
   onResetAvatar: (leader: LeaderMember) => void;
   onViewLeaderBadge: (leader: LeaderMember) => void;
   onViewCommitteeCard: (app: StoredApplication) => void;
+  onShowToast?: (msg: string) => void;
 }
 
 export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
@@ -45,6 +48,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
   onResetAvatar,
   onViewLeaderBadge,
   onViewCommitteeCard,
+  onShowToast,
 }) => {
   const [leaderFilter, setLeaderFilter] = useState<'all' | 'executive' | 'committee-lead' | 'college-lead'>('all');
   const [leaderSearch, setLeaderSearch] = useState('');
@@ -75,14 +79,15 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
 
   // Render a single leader card for Grid View
   const renderLeaderCard = (leader: LeaderMember) => {
-    const isPresident = leader.id === 'pres-1' || leader.role.includes('رئيس النادي');
+    const isPresident = leader.id === 'pres-1' || (leader.role.includes('رئيس النادي') && !leader.role.includes('نائب'));
+    const isVicePresident = leader.role.includes('نائب رئيس') || leader.role.includes('نائب');
     return (
       <div
         key={leader.id}
         className={`p-5 rounded-2xl bg-slate-900/60 backdrop-blur-xs border transition-all flex flex-col justify-between group min-h-[310px] ${
           isPresident
             ? 'border-amber-500/40 hover:border-amber-400/70 shadow-[0_0_20px_rgba(245,158,11,0.06)]'
-            : leader.tier === 'executive'
+            : isVicePresident || leader.tier === 'executive'
             ? 'border-blue-500/30 hover:border-blue-400/50'
             : leader.tier === 'college-lead'
             ? 'border-cyan-500/30 hover:border-cyan-400/50'
@@ -123,15 +128,17 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
                 />
               </label>
 
-              {/* Delete Photo / Set Default Button */}
-              <button
-                type="button"
-                onClick={() => onResetAvatar(leader)}
-                className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-red-950/90 hover:bg-red-800 border border-red-500/60 text-red-400 hover:text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95"
-                title="حذف الصورة واستعادة الصورة الافتراضية"
-              >
-                <Trash2 className="w-2.5 h-2.5" />
-              </button>
+              {/* Delete Photo / Set Default Button — only if custom photo exists */}
+              {leader.avatar && leader.avatar !== DEFAULT_AVATAR && (
+                <button
+                  type="button"
+                  onClick={() => onResetAvatar(leader)}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-950/90 hover:bg-red-800 border border-red-500/60 text-red-400 hover:text-white flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                  title="استعادة الصورة الافتراضية"
+                >
+                  <Trash2 className="w-2.5 h-2.5" />
+                </button>
+              )}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -150,8 +157,10 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
                 className={`inline-block font-mono text-[11px] px-2 py-0.5 rounded-md mt-1.5 border ${
                   isPresident
                     ? 'bg-amber-950/50 text-amber-300 border-amber-500/40'
-                    : leader.tier === 'executive'
+                    : isVicePresident
                     ? 'bg-blue-950/50 text-blue-300 border-blue-500/40'
+                    : leader.tier === 'executive'
+                    ? 'bg-indigo-950/50 text-indigo-300 border-indigo-500/40'
                     : leader.tier === 'college-lead'
                     ? 'bg-cyan-950/50 text-cyan-300 border-cyan-500/40'
                     : 'bg-purple-950/50 text-purple-300 border-purple-500/40'
@@ -159,6 +168,8 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
               >
                 {isPresident
                   ? 'رئيس النادي'
+                  : isVicePresident
+                  ? 'نائب رئيس النادي'
                   : leader.tier === 'executive'
                   ? 'الهيئة الإدارية'
                   : leader.tier === 'college-lead'
@@ -243,7 +254,8 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
 
   // Render a single leader row for List View
   const renderLeaderRow = (leader: LeaderMember) => {
-    const isPresident = leader.id === 'pres-1' || leader.role.includes('رئيس النادي');
+    const isPresident = leader.id === 'pres-1' || (leader.role.includes('رئيس النادي') && !leader.role.includes('نائب'));
+    const isVicePresident = leader.role.includes('نائب رئيس') || leader.role.includes('نائب');
     return (
       <div
         key={leader.id}
@@ -286,8 +298,10 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
                 className={`font-mono text-[10px] px-2 py-0.5 rounded border ${
                   isPresident
                     ? 'bg-amber-950/60 text-amber-300 border-amber-500/40'
-                    : leader.tier === 'executive'
+                    : isVicePresident
                     ? 'bg-blue-950/60 text-blue-300 border-blue-500/40'
+                    : leader.tier === 'executive'
+                    ? 'bg-indigo-950/60 text-indigo-300 border-indigo-500/40'
                     : leader.tier === 'college-lead'
                     ? 'bg-cyan-950/60 text-cyan-300 border-cyan-500/40'
                     : 'bg-purple-950/60 text-purple-300 border-purple-500/40'
@@ -295,6 +309,8 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
               >
                 {isPresident
                   ? 'رئيس النادي'
+                  : isVicePresident
+                  ? 'نائب رئيس النادي'
                   : leader.tier === 'executive'
                   ? 'الهيئة الإدارية'
                   : leader.tier === 'college-lead'
@@ -366,6 +382,77 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
     );
   };
 
+  const exportLeadershipCsv = () => {
+    const headers = [
+      'الاسم الكامل',
+      'المسمى الإداري والقيادي',
+      'المستوى التنظيمي',
+      'القسم / الكلية',
+      'البريد الإلكتروني',
+      'رابط لينكد إن',
+      'رابط جيت هاب',
+      'الرؤية / الاقتباس',
+      'المهارات والاهتمامات',
+      'حالة العرض في الموقع',
+    ];
+
+    const rows = filteredLeaders.map((l) => [
+      l.name,
+      l.role,
+      l.id === 'pres-1' || (l.role.includes('رئيس النادي') && !l.role.includes('نائب'))
+        ? 'رئيس النادي'
+        : l.role.includes('نائب')
+        ? 'نائب رئيس النادي'
+        : l.tier === 'executive'
+        ? 'الهيئة الإدارية'
+        : l.tier === 'college-lead'
+        ? 'ممثلو الكليات'
+        : 'رؤساء اللجان',
+      l.department || '—',
+      l.email || '—',
+      l.linkedin || '—',
+      l.github || '—',
+      l.quote || '—',
+      (l.skills || []).join(' · '),
+      l.hidden ? 'مخفي عن الموقع' : 'معروض في الموقع',
+    ]);
+
+    downloadCsv(`UP-Leadership-${new Date().toISOString().slice(0, 10)}`, headers, rows);
+    onShowToast?.(`تم تصدير ${filteredLeaders.length} قيادي كملف Excel (CSV) بنجاح`);
+  };
+
+  const exportCommitteesCsv = () => {
+    const committeeMembers = applications.filter(
+      (a) => a.status === 'تم القبول' && a.targetCommittee && !a.targetCommittee.includes('عامة')
+    );
+    const headers = [
+      'الاسم الكامل',
+      'الرقم الجامعي',
+      'اللجنة المعتمدة',
+      'المسمى التنظيمي',
+      'التخصص',
+      'الكلية',
+      'السنة الدراسية',
+      'البريد الإلكتروني',
+      'رقم الجوال',
+      'رمز العضوية',
+    ];
+    const rows = committeeMembers.map((m) => [
+      m.fullName,
+      m.studentId,
+      m.targetCommittee,
+      m.organizationalRole || 'عضو لجنة',
+      m.major,
+      m.college,
+      m.academicYear,
+      m.email || '—',
+      m.phone || '—',
+      m.memberCode || '—',
+    ]);
+    downloadCsv(`UP-Committee-Taskforce-${new Date().toISOString().slice(0, 10)}`, headers, rows);
+    onShowToast?.(`تم تصدير ${committeeMembers.length} عضو لجنة كملف Excel (CSV) بنجاح`);
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
       {/* Header & Stats Banner */}
@@ -382,13 +469,26 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={onAdd}
-          className="px-4 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.2)] shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>إضافة قائد / مهندس جديد</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <button
+            type="button"
+            onClick={exportLeadershipCsv}
+            disabled={filteredLeaders.length === 0}
+            className="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+            title="تصدير بيانات الكادر القيادي كملف Excel (CSV)"
+          >
+            <Download className="w-4 h-4 text-cyan-400" />
+            <span>تصدير القيادات (CSV)</span>
+          </button>
+          <button
+            type="button"
+            onClick={onAdd}
+            className="px-4 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.2)] shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>إضافة قائد / مهندس جديد</span>
+          </button>
+        </div>
       </div>
 
       {/* Quick Stats / Hierarchy Summary */}
@@ -645,8 +745,19 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
             </p>
           </div>
 
-          <div className="text-xs text-slate-400 font-mono bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800">
-            إجمالي الأعضاء باللجان: <span className="text-cyan-400 font-bold">{applications.filter((a) => a.status === 'تم القبول' && a.targetCommittee && !a.targetCommittee.includes('عامة')).length}</span>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={exportCommitteesCsv}
+              className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="تصدير أعضاء اللجان كملف Excel (CSV)"
+            >
+              <Download className="w-3.5 h-3.5 text-cyan-400" />
+              <span>تصدير كوادر اللجان (CSV)</span>
+            </button>
+            <div className="text-xs text-slate-400 font-mono bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800">
+              إجمالي الأعضاء باللجان: <span className="text-cyan-400 font-bold">{applications.filter((a) => a.status === 'تم القبول' && a.targetCommittee && !a.targetCommittee.includes('عامة')).length}</span>
+            </div>
           </div>
         </div>
 

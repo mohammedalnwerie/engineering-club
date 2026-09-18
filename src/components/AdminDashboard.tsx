@@ -2339,13 +2339,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <p className="text-xs text-gray-400">تظهر هذه المشاريع مباشرة في الصفحة الرئيسية لقسم دراسات الحالة</p>
                   </div>
 
-                  <button
-                    onClick={() => setShowAddProject(true)}
-                    className="px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>إضافة مشروع جديد</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={projects.length === 0}
+                      onClick={() => {
+                        const headers = [
+                          'اسم المشروع',
+                          'الوصف المختصر',
+                          'الكلية التابع لها',
+                          'التصنيف',
+                          'مستوى الإنجاز / الحالة',
+                          'التقنيات المستخدمة',
+                          'فريق العمل الطلابي',
+                          'المشكلة والتحدي',
+                          'الحل الهندسي',
+                          'رابط Github',
+                          'رابط العرض التجريبي',
+                        ];
+                        const rows = projects.map((p) => [
+                          p.title,
+                          p.tagline,
+                          p.collegeName,
+                          p.category,
+                          p.status,
+                          (p.techStack || []).join(' · '),
+                          (p.team || []).map((t) => `${t.name} (${t.role} - ${t.major})`).join(' · '),
+                          p.problem || '—',
+                          p.solution || '—',
+                          p.githubUrl || '—',
+                          p.demoUrl || '—',
+                        ]);
+                        downloadCsv(`UP-Engineering-Club-Projects-${new Date().toISOString().slice(0, 10)}`, headers, rows);
+                        showToast(`تم تصدير ${projects.length} مشروع كملف Excel (CSV) بنجاح`);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                      title="تصدير جدول المشاريع كملف Excel (CSV)"
+                    >
+                      <Download className="w-4 h-4 text-cyan-400" />
+                      <span>تصدير المشاريع (CSV)</span>
+                    </button>
+
+                    <button
+                      onClick={() => setShowAddProject(true)}
+                      className="px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>إضافة مشروع جديد</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Add Project Form Modal */}
@@ -2963,6 +3005,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 onResetAvatar={(leader) => void handleResetLeaderAvatar(leader)}
                 onViewLeaderBadge={setViewingLeaderBadge}
                 onViewCommitteeCard={setViewingCommitteeApp}
+                onShowToast={showToast}
               />
             )}
 
@@ -2994,6 +3037,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   };
                   setViewingLeaderBadge(matchingLeader);
                 }}
+                onShowToast={showToast}
               />
             )}
 

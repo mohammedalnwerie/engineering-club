@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { UserPlus, RefreshCw, Trash2, Mail } from 'lucide-react';
+import { UserPlus, RefreshCw, Trash2, Mail, Download } from 'lucide-react';
 import {
   listTeam,
   inviteTeamMember,
@@ -12,6 +12,7 @@ import {
 } from './adminApi';
 import { Badge, Button, EmptyState, ErrorNote, Field, LoadingRows, PageHeader, Panel, formatDateTime, inputClass } from './ui';
 import { validateEmail } from '../../utils/validation';
+import { downloadCsv } from '../../utils/security';
 
 const ASSIGNABLE: AdminRole[] = ['vp_admin', 'tech_support', 'media', 'owner'];
 
@@ -106,9 +107,30 @@ export const TeamPanel: React.FC<{ myRole: AdminRole | null; myEmail: string; sh
         title="فريق الإدارة"
         description="أضف أعضاء الهيئة الإدارية واللجان إلى لوحة التحكم، وحدد صلاحية كل واحد."
         actions={
-          <Button icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />} onClick={() => void load()}>
-            تحديث
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              icon={<Download className="w-4 h-4" />}
+              onClick={() => {
+                const headers = ['الاسم الكامل', 'البريد الإلكتروني', 'الدور / الصلاحية', 'حالة الحساب', 'تاريخ الإضافة', 'آخر تسجيل دخول'];
+                const rows = team.map((m) => [
+                  m.displayName || '—',
+                  m.email,
+                  ROLE_LABELS[m.role] || m.role,
+                  m.pending ? 'دعوة معلقة' : 'مفعّل',
+                  formatDateTime(m.createdAt),
+                  m.lastSignInAt ? formatDateTime(m.lastSignInAt) : 'لم يسجل بعد',
+                ]);
+                downloadCsv(`UP-Admin-Team-${new Date().toISOString().slice(0, 10)}`, headers, rows);
+                showToast(`تم تصدير ${team.length} عضو في فريق الإدارة كملف Excel (CSV) بنجاح`);
+              }}
+              disabled={team.length === 0}
+            >
+              تصدير الفريق (CSV)
+            </Button>
+            <Button icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />} onClick={() => void load()}>
+              تحديث
+            </Button>
+          </div>
         }
       />
 
