@@ -385,21 +385,38 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   text('— ENGINEERING CLUB —', brandX, headerTop + 33, `600 7.5px ${MONO}`, 'rgba(63, 231, 227, 0.7)', 'right');
   text('University of Palestine', brandX, headerTop + 43, `500 7px ${SANS}`, '#9CA3AF', 'right');
 
-  // Left Side: Academic Year Pill
+  // Left Side: Academic Year / Validity Pill
   const badgeText = card.badge || currentAcademicYear();
-  const pillW = 84;
+  ctx.font = `700 10.5px ${SANS}`;
+  const badgeW = ctx.measureText(badgeText).width;
+  const pillW = Math.max(84, Math.min(136, Math.round(badgeW + 24)));
   const pillH = 22;
   const pillX = P;
   const pillY = headerTop + 10;
   if (draw) {
     roundRect(ctx, pillX, pillY, pillW, pillH, 11);
-    ctx.fillStyle = 'rgba(8, 4, 29, 0.9)';
+    ctx.fillStyle = card.validityStatus === 'expired' ? 'rgba(69, 10, 10, 0.9)' : 'rgba(8, 4, 29, 0.9)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(63, 231, 227, 0.45)';
+    ctx.strokeStyle =
+      card.validityStatus === 'expired'
+        ? 'rgba(239, 68, 68, 0.6)'
+        : card.validityStatus === 'temporary'
+          ? 'rgba(245, 158, 11, 0.5)'
+          : card.validityStatus === 'accredited'
+            ? 'rgba(251, 191, 36, 0.5)'
+            : 'rgba(63, 231, 227, 0.45)';
     ctx.lineWidth = 1;
     ctx.stroke();
   }
-  text(badgeText, pillX + pillW / 2, pillY + 4, `700 11px ${SANS}`, '#FFFFFF', 'center');
+  const pillTextColor =
+    card.validityStatus === 'expired'
+      ? '#FCA5A5'
+      : card.validityStatus === 'temporary'
+        ? '#FDE68A'
+        : card.validityStatus === 'accredited'
+          ? '#FDE68A'
+          : '#FFFFFF';
+  text(badgeText, pillX + pillW / 2, pillY + 4, `700 10.5px ${SANS}`, pillTextColor, 'center');
 
   // Header Divider
   y = headerTop + EMBLEM_SIZE + 16;
@@ -582,7 +599,8 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
   // 3. Middle Cardlet (Highlighted Box with Diagonal Cyber Corner)
   // =========================================================================
   if (card.highlight?.value) {
-    const cardletH = 62;
+    const hasSubvalue = Boolean(card.highlight.subvalue);
+    const cardletH = hasSubvalue ? 70 : 62;
     const cardletY = y + 8;
     const cardletW = W - 2 * P;
 
@@ -616,7 +634,8 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
       ctx.fillRect(P + 52, cardletY + 12, 1, cardletH - 24);
 
       // Icon Representation Badge (Left side)
-      roundRect(ctx, P + 10, cardletY + 11, 40, 40, 12);
+      const iconBoxY = cardletY + Math.round((cardletH - 40) / 2);
+      roundRect(ctx, P + 10, iconBoxY, 40, 40, 12);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
       ctx.fill();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
@@ -632,13 +651,27 @@ function layout(ctx: CanvasRenderingContext2D, card: CardData, assets: Assets, d
             : card.accent === 'gold'
               ? 'crown'
               : 'zap');
-      drawCardletIcon(ctx, iconType, P + 30, cardletY + 31, colors.role || '#3FE7E3');
+      drawCardletIcon(ctx, iconType, P + 30, cardletY + Math.round(cardletH / 2), colors.role || '#3FE7E3');
     }
 
-    // Right Side: Label and Value
+    // Right Side: Label, Value, and Validity Subvalue
     const contentX = right - 14;
-    text(card.highlight.label, contentX, cardletY + 13, `500 11px ${SANS}`, '#9CA3AF', 'right');
-    text(card.highlight.value, contentX, cardletY + 30, `800 15px ${SANS}`, '#FFFFFF', 'right');
+    if (hasSubvalue) {
+      text(card.highlight.label, contentX, cardletY + 11, `500 10px ${SANS}`, '#9CA3AF', 'right');
+      text(card.highlight.value, contentX, cardletY + 28, `800 14px ${SANS}`, '#FFFFFF', 'right');
+      const subtextColor =
+        card.validityStatus === 'expired'
+          ? '#FCA5A5'
+          : card.validityStatus === 'temporary'
+            ? '#FDE68A'
+            : card.validityStatus === 'accredited'
+              ? '#FDE68A'
+              : '#98F7F1';
+      text(`● ${card.highlight.subvalue}`, contentX, cardletY + 47, `600 10px ${SANS}`, subtextColor, 'right');
+    } else {
+      text(card.highlight.label, contentX, cardletY + 13, `500 11px ${SANS}`, '#9CA3AF', 'right');
+      text(card.highlight.value, contentX, cardletY + 30, `800 15px ${SANS}`, '#FFFFFF', 'right');
+    }
 
     y = cardletY + cardletH + 8;
   }

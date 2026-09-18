@@ -636,7 +636,14 @@ class DataService {
   }
 
   public updateApplicationStatus(id: string, status: StoredApplication['status']) {
-    this.applications = this.applications.map((a) => (a.id === id ? { ...a, status } : a));
+    this.applications = this.applications.map((a) => {
+      if (a.id !== id) return a;
+      const validUntil =
+        a.validUntil || (status === 'تم القبول' ? new Date(Date.now() + 14 * 86_400_000).toISOString() : a.validUntil);
+      const membershipType =
+        a.membershipType || (status === 'تم القبول' ? 'temporary' : a.membershipType);
+      return { ...a, status, validUntil, membershipType };
+    });
     this.notify();
     void this.runAdminWrite('فشل تحديث حالة الطلب', (client) =>
       client.from('club_applications').update({ status }).eq('id', id)

@@ -5,6 +5,8 @@ import type { LeaderMember, StoredApplication } from '../types';
 export interface CardField {
   label: string;
   value: string;
+  /** Sub-line under value, e.g. "صالحة حتى 2 أكتوبر 2026" */
+  subvalue?: string;
   /** Long, low-priority values (an email) render smaller and full width. */
   small?: boolean;
 }
@@ -29,12 +31,16 @@ export interface CardData {
   qrValue: string;
   code: string;
   accent?: CardAccent;
-  /** Header pill; defaults to the current academic year */
+  /** Header pill; e.g. "2026 / 2027" or "فصلية حتى 15/02" or "مؤقتة حتى 02/10" */
   badge?: string;
   /** Layout style: 'general' (centered photo for general members) or 'executive' (side-by-side for committees/leadership) */
   layoutVariant?: 'general' | 'executive';
   /** Icon for the middle cardlet */
   cardletIcon?: 'users' | 'megaphone' | 'zap' | 'graduation' | 'crown';
+  /** Membership validity state */
+  validityStatus?: 'active' | 'temporary' | 'expired' | 'suspended' | 'accredited';
+  /** Descriptive validity subtext, e.g. "صالحة حتى 2 أكتوبر 2026" */
+  validitySubtext?: string;
 }
 
 export type CardAccent = 'purple' | 'cyan' | 'green' | 'gold';
@@ -128,6 +134,69 @@ export function memberCodeFor(app: CardApplication, reveal = false): string {
   return `UP-MEM-2026-${cleanId.length >= 5 ? cleanId.slice(-5) : cleanId.padStart(5, '0')}`;
 }
 
+/** Computes accurate validity status, pill text, and subline for member cards. */
+export function computeCardValidity(app: CardApplication): {
+  status: 'active' | 'temporary' | 'expired' | 'suspended' | 'accredited';
+  badgeText: string;
+  cardletTitle: string;
+  validitySubtext: string;
+} {
+  const isExpired = Boolean(app.validUntil && new Date(app.validUntil).getTime() < Date.now());
+
+  if (isExpired && app.validUntil) {
+    const d = new Date(app.validUntil);
+    const dateFormatted = d.toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' });
+    return {
+      status: 'expired',
+      badgeText: 'عضوية منتهية',
+      cardletTitle: 'عضوية غير سارية',
+      validitySubtext: `انتهت الصلاحية بتاريخ ${dateFormatted}`,
+    };
+  }
+
+  // Semester Membership
+  if (app.membershipType === 'semester') {
+    if (app.validUntil) {
+      const d = new Date(app.validUntil);
+      const dateFormatted = d.toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' });
+      const shortDate = `${d.getDate()}/${d.getMonth() + 1}`;
+      return {
+        status: 'active',
+        badgeText: `فصلية حتى ${shortDate}`,
+        cardletTitle: 'عضوية فصلية معتمدة',
+        validitySubtext: `صالحة حتى ${dateFormatted}`,
+      };
+    }
+    return {
+      status: 'active',
+      badgeText: `فصلية ${currentAcademicYear()}`,
+      cardletTitle: 'عضوية فصلية معتمدة',
+      validitySubtext: `صالحة للعام الأكاديمي ${currentAcademicYear()}`,
+    };
+  }
+
+  // Temporary Membership (فور قبول الطلب: 14 يوماً مؤقتة لحين التثبيت)
+  if (app.validUntil) {
+    const d = new Date(app.validUntil);
+    const dateFormatted = d.toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' });
+    const shortDate = `${d.getDate()}/${d.getMonth() + 1}`;
+    return {
+      status: 'temporary',
+      badgeText: `مؤقتة حتى ${shortDate}`,
+      cardletTitle: 'عضوية مؤقتة (14 يوماً)',
+      validitySubtext: `صالحة حتى ${dateFormatted} • لحين التثبيت`,
+    };
+  }
+
+  // Default / Prospective
+  return {
+    status: 'active',
+    badgeText: currentAcademicYear(),
+    cardletTitle: 'عضوية عامة',
+    validitySubtext: `العام الأكاديمي ${currentAcademicYear()}`,
+  };
+}
+
 /** General club membership card (centered portrait layout as per brief). */
 export function memberCardFor(app: CardApplication, options: CardOptions = {}): CardData {
   const committeeName = effectiveCommittee(app);
@@ -138,41 +207,57 @@ export function memberCardFor(app: CardApplication, options: CardOptions = {}): 
     return committeeCardFor(app, options);
   }
 
-  const membershipVal = app.membershipType === 'semester' ? 'عضوية فصلية' : 'عضو عادي';
+  const validity = computeCardValidity(app);
 
   return {
     name: app.fullName,
     role: app.organizationalRole || 'عضو في النادي الهندسي',
-    highlight: { label: 'نوع العضوية', value: membershipVal },
+    highlight: {
+      label: 'نوع العضوية والاعتماد',
+      value: validity.cardletTitle,
+      subvalue: validity.validitySubtext,
+    },
     qrValue: memberVerifyUrl(app),
     code: memberCodeFor(app, options.revealCode),
-    badge: currentAcademicYear(),
-    accent: 'purple',
+    badge: validity.badgeText,
+    accent: validity.status === 'expired' ? 'gold' : 'purple',
     layoutVariant: 'general',
     cardletIcon: 'users',
+    validityStatus: validity.status,
+    validitySubtext: validity.validitySubtext,
   };
 }
 
 /** Committee member card (side-by-side executive layout as per brief). */
-export function committeeCardFor(app: CardApplication, _options: CardOptions = {}): CardData {
+export function committeeCardFor(app: CardApplication, options: CardOptions = {}): CardData {
   const committeeName = effectiveCommittee(app);
   const isMedia = committeeName.includes('إعلام') || committeeName.includes('media');
   const isEvents = committeeName.includes('فعاليات') || committeeName.includes('events');
 
   const cleanId = (app.studentId || app.id || '001').replace(/[^0-9]/g, '');
   const suffix = isMedia ? 'MEDIA' : isEvents ? 'EVENTS' : 'COMM';
-  const code = `UP-EC-${suffix}-${cleanId.slice(-4).padStart(3, '0')}`;
+  const defaultCode = `UP-EC-${suffix}-${cleanId.slice(-4).padStart(3, '0')}`;
+  const code = app.memberCode && options.revealCode ? app.memberCode : defaultCode;
+
+  const validity = computeCardValidity(app);
+  const cleanValiditySubtext = validity.validitySubtext.replace(' • لحين التثبيت', '');
 
   return {
     name: app.fullName,
     role: app.organizationalRole || `عضو ${committeeName}`,
-    highlight: { label: 'الجهة', value: committeeName },
+    highlight: {
+      label: 'الجهة واللجنة',
+      value: committeeName,
+      subvalue: `${validity.cardletTitle} • ${cleanValiditySubtext}`,
+    },
     qrValue: memberVerifyUrl(app),
     code,
-    badge: currentAcademicYear(),
-    accent: isMedia ? 'green' : isEvents ? 'cyan' : 'purple',
+    badge: validity.badgeText,
+    accent: validity.status === 'expired' ? 'gold' : isMedia ? 'green' : isEvents ? 'cyan' : 'purple',
     layoutVariant: 'executive',
     cardletIcon: isMedia ? 'megaphone' : 'zap',
+    validityStatus: validity.status,
+    validitySubtext: validity.validitySubtext,
   };
 }
 
@@ -242,6 +327,8 @@ export function executiveCardFor(
     highlightValue = leader.department || leader.role;
   }
 
+  const validitySubtext = 'تكليف رسمي معتمد • العام الأكاديمي 2026 / 2027';
+
   return {
     name: leader.name || leader.role,
     role: leader.name ? leader.role : undefined,
@@ -249,13 +336,16 @@ export function executiveCardFor(
     highlight: {
       label: highlightLabel,
       value: highlightValue,
+      subvalue: validitySubtext,
     },
-    badge: currentAcademicYear(),
+    badge: 'اعتماد 2026 / 2027',
     qrValue: `${window.location.origin}/#leadership`,
     code,
     accent,
     layoutVariant: 'executive',
     cardletIcon,
+    validityStatus: 'accredited',
+    validitySubtext,
   };
 }
 

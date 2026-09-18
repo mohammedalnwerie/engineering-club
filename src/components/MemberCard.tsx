@@ -133,6 +133,8 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
   badge,
   layoutVariant = 'general',
   cardletIcon,
+  validityStatus,
+  validitySubtext,
   className = '',
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState('');
@@ -216,10 +218,30 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
             </div>
           </div>
 
-          {/* Left: Academic Year Pill */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#08041D]/90 border border-[#3FE7E3]/40 shadow-[0_0_10px_rgba(63,231,227,0.15)] text-white text-[11px] font-bold shrink-0">
-            <Calendar className="w-3 h-3 text-[#3FE7E3]" />
-            <span dir="ltr">{badge || currentAcademicYear()}</span>
+          {/* Left: Academic Year / Validity Pill */}
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-sm text-[11px] font-bold shrink-0 transition-colors ${
+              validityStatus === 'expired'
+                ? 'bg-red-950/80 border-red-500/60 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.25)]'
+                : validityStatus === 'temporary'
+                ? 'bg-[#08041D]/90 border-amber-400/50 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                : validityStatus === 'accredited'
+                ? 'bg-[#08041D]/90 border-[#FBBF24]/50 text-[#FDE68A] shadow-[0_0_10px_rgba(251,191,36,0.2)]'
+                : 'bg-[#08041D]/90 border-[#3FE7E3]/40 text-white shadow-[0_0_10px_rgba(63,231,227,0.15)]'
+            }`}
+          >
+            <Calendar
+              className={`w-3 h-3 ${
+                validityStatus === 'expired'
+                  ? 'text-red-400'
+                  : validityStatus === 'temporary'
+                  ? 'text-amber-400'
+                  : validityStatus === 'accredited'
+                  ? 'text-[#FBBF24]'
+                  : 'text-[#3FE7E3]'
+              }`}
+            />
+            <span>{badge || currentAcademicYear()}</span>
           </div>
         </div>
 
@@ -367,14 +389,40 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
                 <div className="absolute -bottom-4 -left-4 w-8 h-8 rotate-45 bg-gradient-to-r from-[#35BC2B] to-[#3FE7E3] opacity-80" />
               </div>
 
-              {/* Right Side: Label and Value */}
+              {/* Right Side: Label, Value and Validity Subline */}
               <div className="text-right min-w-0 flex-1">
-                <div className="text-xs text-gray-400 font-medium">
+                <div className="text-[11px] text-gray-400 font-medium">
                   {highlight.label}
                 </div>
-                <div className="text-base font-black text-white mt-0.5 break-words">
+                <div className="text-sm sm:text-base font-black text-white mt-0.5 break-words leading-snug">
                   {highlight.value}
                 </div>
+                {(highlight.subvalue || validitySubtext) && (
+                  <div
+                    className={`text-[10px] sm:text-[10.5px] mt-1 font-semibold flex items-center gap-1.5 break-words leading-tight ${
+                      validityStatus === 'expired'
+                        ? 'text-red-300'
+                        : validityStatus === 'temporary'
+                        ? 'text-amber-300'
+                        : validityStatus === 'accredited'
+                        ? 'text-[#FDE68A]'
+                        : 'text-[#98F7F1]'
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                        validityStatus === 'expired'
+                          ? 'bg-red-400'
+                          : validityStatus === 'temporary'
+                          ? 'bg-amber-400 animate-pulse'
+                          : validityStatus === 'accredited'
+                          ? 'bg-[#FBBF24]'
+                          : 'bg-emerald-400 animate-pulse'
+                      }`}
+                    />
+                    <span>{highlight.subvalue || validitySubtext}</span>
+                  </div>
+                )}
               </div>
 
               {/* Center Divider & Left Side: Icon */}
