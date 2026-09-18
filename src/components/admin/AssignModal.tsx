@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserCog } from 'lucide-react';
+import { UserCog, ShieldCheck } from 'lucide-react';
 import type { StoredApplication } from '../../types';
 import { COMMITTEES, effectiveCommittee, findCommittee } from '../../data/committees';
 import { Button, Field, inputClass } from './ui';
@@ -84,6 +84,13 @@ export const AssignModal: React.FC<{
                 بدون مسمى
               </button>
             )}
+          </div>
+        )}
+
+        {(role.includes('رئيس') || role.includes('ممثل') || role.includes('منسق') || role.includes('صندوق') || role.includes('نائب')) && (
+          <div className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-xs text-cyan-300 flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 shrink-0 text-cyan-400" />
+            <span>سيتم إدراج الطالب تلقائياً في الكادر القيادي والهيكل التنظيمي للنادي عند الحفظ ✓</span>
           </div>
         )}
 

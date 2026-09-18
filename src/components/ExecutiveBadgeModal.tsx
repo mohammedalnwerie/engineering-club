@@ -2,7 +2,7 @@ import React from 'react';
 import type { LeaderMember } from '../types';
 import { X, ShieldCheck, Printer, Download } from 'lucide-react';
 import { downloadCardPng, printCard } from '../utils/cardRenderer';
-import { currentAcademicYear, type CardData } from '../utils/memberCard';
+import { executiveCardFor } from '../utils/memberCard';
 import { MemberCard } from './MemberCard';
 
 interface ExecutiveBadgeModalProps {
@@ -16,24 +16,7 @@ export const ExecutiveBadgeModal: React.FC<ExecutiveBadgeModalProps> = ({ isOpen
 
   if (!isOpen || !leader) return null;
 
-  const serialKind = leader.tier === 'college-lead' ? 'COL' : 'EXEC';
-  const badgeSerial = `UP-${serialKind}-2026-${leader.id.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toUpperCase()}`;
-  // The department only earns its own block when the title doesn't already say it.
-  const department = (leader.department || '').trim();
-  const roleSaysDepartment = Boolean(department) && (leader.role || '').includes(department);
-  const card: CardData = {
-    name: leader.name || leader.role,
-    role: leader.name ? leader.role : undefined,
-    photoUrl: leader.avatar || undefined,
-    highlight: department && !roleSaysDepartment ? { label: 'الجهة', value: department } : undefined,
-    // The email is not printed: the card is shown around, and the QR already
-    // points at the club's leadership page.
-    fields: [],
-    badge: `${leader.tier === 'college-lead' ? 'تمثيل' : 'تكليف'} ${currentAcademicYear()}`,
-    qrValue: `${window.location.origin}/#leadership`,
-    code: badgeSerial,
-    accent: leader.tier === 'college-lead' ? 'cyan' : 'green',
-  };
+  const card = executiveCardFor(leader);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg overflow-y-auto">

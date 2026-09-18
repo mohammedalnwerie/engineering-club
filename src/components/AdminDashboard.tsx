@@ -214,6 +214,27 @@ const ROLE_TEMPLATES = [
     department: 'اللجنة الإعلامية',
     skills: 'صناعة المحتوى الرقمي, التغطيات الإعلامية, الهوية والتصميم والإنتاج المرئي',
     quote: 'نترجم الإنجازات والابتكارات الهندسية إلى قصص بصرية ومحتوى رقمي ملهم.'
+  },
+  {
+    role: 'منسق وممثل كلية هندسة برمجيات وذكاء اصطناعي',
+    tier: 'college-lead' as const,
+    department: 'كلية هندسة برمجيات وذكاء اصطناعي',
+    skills: 'تمثيل الكلية, التنسيق الأكاديمي, هندسة البرمجيات والذكاء الاصطناعي',
+    quote: 'تمثيل طلبة الكلية والتنسيق الفعّال مع إدارة النادي لإطلاق المبادرات والحلول البرمجية والذكية.'
+  },
+  {
+    role: 'منسق وممثل كلية تكنولوجيا المعلومات IT',
+    tier: 'college-lead' as const,
+    department: 'كلية تكنولوجيا المعلومات IT',
+    skills: 'تمثيل الكلية, إدارة النظم والمعلومات, الوسائط الرقمية والتصميم',
+    quote: 'تمثيل طلبة تكنولوجيا المعلومات وتفعيل مشاريع قواعد البيانات والوسائط المتعددة بالأنشطة الجامعية.'
+  },
+  {
+    role: 'منسق وممثل كلية الهندسة التطبيقية والتخطيط العمراني',
+    tier: 'college-lead' as const,
+    department: 'كلية الهندسة التطبيقية و التخطيط العمراني',
+    skills: 'تمثيل الكلية, التصميم المعماري, الهندسة الإنشائية والتخطيط',
+    quote: 'تمثيل طلبة الهندسة المعمارية والمدنية وربط الابتكارات العمرانية بمبادرات التطوير وإعادة البناء الذكي.'
   }
 ];
 
@@ -535,6 +556,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
     dataService.saveLeader(saved);
     setLeadership(dataService.getLeadership());
+    setColleges(dataService.getColleges());
+
+    // Synchronize matching applicant's organizational role to prevent conflicts
+    const matchingApp = applications.find(
+      (a) =>
+        a.fullName.trim() === saved.name.trim() ||
+        (saved.email && a.email.toLowerCase() === saved.email.toLowerCase())
+    );
+    if (matchingApp && matchingApp.organizationalRole !== saved.role) {
+      dataService.updateApplicationAssignment(matchingApp.id, {
+        assignedCommittee: saved.department || matchingApp.assignedCommittee || matchingApp.targetCommittee,
+        organizationalRole: saved.role,
+      });
+      setApplications(dataService.getApplications());
+    }
+
     setShowLeaderModal(false);
     setEditingLeader(null);
     showToast(`تم حفظ بيانات المهندس (${saved.name}) بنجاح`);
@@ -553,6 +590,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       if (leader) void trashContentItem('leader', id, `قيادة: ${leader.role}${leader.name ? ` — ${leader.name}` : ''}`, leader);
       dataService.deleteLeader(id);
       setLeadership(dataService.getLeadership());
+      setColleges(dataService.getColleges());
       showToast(`تم حذف عضو الكادر (${name})`);
     }
   };
@@ -569,6 +607,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!editingCollege) return;
     dataService.saveCollege(editingCollege);
+    setColleges(dataService.getColleges());
+    setLeadership(dataService.getLeadership());
+    showToast(`تم حفظ بيانات (${editingCollege.name}) وتحديث ممثل الكلية`);
     setEditingCollege(null);
   };
 
@@ -1101,6 +1142,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             onClose={() => setAssignApp(null)}
             onSave={(assignment) => {
               dataService.updateApplicationAssignment(assignApp.id, assignment);
+              setApplications(dataService.getApplications());
+              setLeadership(dataService.getLeadership());
+              setColleges(dataService.getColleges());
               showToast(
                 `${assignApp.fullName}: ${assignment.assignedCommittee}${
                   assignment.organizationalRole ? ` — ${assignment.organizationalRole}` : ''
@@ -2944,6 +2988,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 majors={majors}
                 onEditCollege={setEditingCollege}
                 onEditMajor={setEditingMajor}
+                onViewCoordinatorBadge={(col) => {
+                  const matchingLeader = leadership.find(
+                    (l) =>
+                      l.id === `lead-col-${col.id}` ||
+                      (l.tier === 'college-lead' && (l.department.includes(col.shortName) || l.role.includes(col.shortName)))
+                  ) || {
+                    id: `lead-col-${col.id}`,
+                    name: col.coordinator.name === 'ممثلو الكلية في النادي' ? '' : col.coordinator.name,
+                    role:
+                      col.coordinator.role && col.coordinator.role !== 'لجنة التنسيق والمتابعة الطلابية'
+                        ? col.coordinator.role
+                        : `منسق وممثل ${col.name}`,
+                    tier: 'college-lead' as const,
+                    department: col.name,
+                    avatar: col.coordinator.avatar || '',
+                    quote: `تمثيل طلبة ${col.name} في النادي الهندسي والتنسيق المستمر للأنشطة والمبادرات.`,
+                    email: col.coordinator.email || '',
+                    skills: ['تمثيل الكلية', 'التنسيق الأكاديمي', 'المبادرات الطلابية'],
+                  };
+                  setViewingLeaderBadge(matchingLeader);
+                }}
               />
             )}
 
@@ -4001,6 +4066,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   ))}
                 </div>
 
+                {(assignRole.includes('رئيس') || assignRole.includes('ممثل') || assignRole.includes('منسق') || assignRole.includes('صندوق') || assignRole.includes('نائب')) && (
+                  <div className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-xs text-cyan-300 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-cyan-400" />
+                    <span>سيتم إدراج الطالب تلقائياً في الكادر القيادي والهيكل التنظيمي للنادي عند الحفظ ✓</span>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   disabled={
@@ -4010,7 +4082,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     const assignment = { assignedCommittee: assignCommittee, organizationalRole: assignRole.trim() };
                     dataService.updateApplicationAssignment(inspectApp.id, assignment);
                     setInspectApp({ ...inspectApp, ...assignment });
-                    showToast(`تم حفظ تعيين (${inspectApp.fullName})`);
+                    setApplications(dataService.getApplications());
+                    setLeadership(dataService.getLeadership());
+                    setColleges(dataService.getColleges());
+                    showToast(`تم حفظ تعيين (${inspectApp.fullName}) وتحديث الكادر القيادي بنجاح`);
                   }}
                   className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -4396,6 +4471,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   </div>
                 </div>
 
+                {/* Select from Accepted Applicants to populate leader card automatically */}
+                {applications.filter((a) => a.status === 'تم القبول').length > 0 && (
+                  <div className="p-3 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-1.5">
+                    <label className="block text-xs font-bold text-cyan-300 font-mono">
+                      ربط بطالب مقبول في النادي (تعبئة تلقائية للبيانات):
+                    </label>
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        const student = applications.find((a) => a.id === e.target.value);
+                        if (student) {
+                          setLeaderForm((prev) => ({
+                            ...prev,
+                            name: student.fullName,
+                            email: student.email || prev.email,
+                            department: prev.department || student.targetCommittee || student.college,
+                          }));
+                          if (student.skills && student.skills.length > 0) {
+                            setLeaderSkillsInput(student.skills.join(', '));
+                          }
+                          showToast(`تم استيراد وتعبئة بيانات الطالب (${student.fullName})`);
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-cyan-500/30 text-white font-mono text-xs focus:outline-none"
+                    >
+                      <option value="">-- اختر طالباً مقبولاً لربطه بهذا المقعد القيادي --</option>
+                      {applications
+                        .filter((a) => a.status === 'تم القبول')
+                        .map((student) => (
+                          <option key={student.id} value={student.id}>
+                            {student.fullName} ({student.major} — {student.targetCommittee || 'عضوية عامة'})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Name & Role Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -4543,7 +4655,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
-                  <div className="font-bold text-cyan-400 font-mono text-xs">بيانات المنسق الأكاديمي للكلية:</div>
+                  <div className="font-bold text-cyan-400 font-mono text-xs flex items-center justify-between">
+                    <span>بيانات المنسق الأكاديمي وممثل الكلية في النادي:</span>
+                  </div>
+
+                  <div className="text-xs text-cyan-300 bg-cyan-950/60 p-2.5 rounded-xl border border-cyan-500/30 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-cyan-400" />
+                    <span>تعديل منسق الكلية يُزامن تلقائياً بطاقة ممثل الكلية في «الكادر القيادي» ويصدر بطاقة التكليف المعتمدة فور الحفظ.</span>
+                  </div>
+
+                  {/* Pick Accepted Student from this college */}
+                  {applications.filter((a) => a.status === 'تم القبول' && (a.college.includes(editingCollege.shortName) || editingCollege.name.includes(a.college))).length > 0 && (
+                    <div className="space-y-1">
+                      <label className="block text-gray-400">اختيار طالب مقبول لتمثيل الكلية (تعبئة فورية):</label>
+                      <select
+                        defaultValue=""
+                        onChange={(e) => {
+                          const picked = applications.find((a) => a.id === e.target.value);
+                          if (picked) {
+                            setEditingCollege({
+                              ...editingCollege,
+                              coordinator: {
+                                ...editingCollege.coordinator,
+                                name: picked.fullName,
+                                email: picked.email || editingCollege.coordinator.email,
+                                title: `منسق وممثل ${editingCollege.name}`,
+                              },
+                            });
+                            showToast(`تم تعيين الطالب (${picked.fullName}) ممثلاً للكلية`);
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-xl bg-black/60 border border-cyan-500/30 text-white font-mono text-xs focus:outline-none"
+                      >
+                        <option value="">-- اختر طالباً من طلبة الكلية المقبولين --</option>
+                        {applications
+                          .filter((a) => a.status === 'تم القبول' && (a.college.includes(editingCollege.shortName) || editingCollege.name.includes(a.college)))
+                          .map((student) => (
+                            <option key={student.id} value={student.id}>
+                              {student.fullName} ({student.major} — {student.studentId})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-gray-400 mb-1">اسم المنسق:</label>

@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
 import { effectiveCommittee, findCommittee } from '../data/committees';
-import type { StoredApplication } from '../types';
+import type { LeaderMember, StoredApplication } from '../types';
 
 export interface CardField {
   label: string;
@@ -165,3 +165,95 @@ export function committeeCardFor(app: CardApplication, options: CardOptions = {}
     accent: 'cyan',
   };
 }
+
+/** Executive & Representative Commission Badge */
+export function executiveCardFor(leader: LeaderMember): CardData {
+  const isPresident = leader.id === 'pres-1' || (leader.role.includes('رئيس النادي') && !leader.role.includes('نائب'));
+  const isCollegeLead = leader.tier === 'college-lead';
+  const isExecutive = leader.tier === 'executive';
+
+  // Format short serial: UP-EXEC-XXXX or UP-COL-XXXX
+  const prefix = isCollegeLead ? 'UP-COL' : 'UP-EXEC';
+  const rawId = (leader.id || '').replace(/[^a-zA-Z0-9]/g, '');
+  const shortId = rawId.length > 6 ? rawId.slice(-6).toUpperCase() : (rawId || '0001').toUpperCase();
+  const code = `${prefix}-${shortId}`;
+
+  // Official badge (clean Arabic commission without date clutter):
+  const badge = isPresident
+    ? 'رئاسة النادي المعتمدة'
+    : isCollegeLead
+    ? 'اعتماد تمثيل الكلية'
+    : isExecutive
+    ? 'اعتماد الهيئة الإدارية'
+    : 'اعتماد رئاسة اللجنة';
+
+  // Highlight band (entity name):
+  let highlightValue = (leader.department || '').trim();
+  if (!highlightValue || highlightValue === 'ممثلين الكليات' || highlightValue === 'ممثلو الكليات') {
+    if (isCollegeLead) {
+      highlightValue = (leader.role || '').replace(/^(منسق\s+وممثل|منسق|ممثل)\s+/, '').trim() || 'الكليات الهندسية';
+    } else if (isPresident) {
+      highlightValue = 'مجلس إدارة النادي الهندسي';
+    } else if (isExecutive) {
+      highlightValue = 'الهيئة الإدارية العليا';
+    } else {
+      highlightValue = leader.role;
+    }
+  }
+
+  const highlightLabel = isCollegeLead
+    ? 'التمثيل الأكاديمي'
+    : isPresident || isExecutive
+    ? 'الهيئة التنظيمية'
+    : 'اللجنة التنفيذية';
+
+  // Rich official fields (informative & balanced layout):
+  const fields: CardField[] = [
+    {
+      label: 'التكليف التنظيمي',
+      value: isPresident
+        ? 'رئيس مجلس الإدارة'
+        : isExecutive
+        ? 'عضو الهيئة الإدارية'
+        : isCollegeLead
+        ? 'ممثل الكلية في النادي'
+        : 'رئيس لجنة تنفيذية',
+    },
+    {
+      label: 'الجهة التابعة',
+      value: highlightValue,
+    },
+    {
+      label: 'الصفة الرسمية',
+      value: leader.role,
+    },
+    {
+      label: 'حالة الاعتماد',
+      value: 'معتمد رسمياً ✓',
+    },
+  ];
+
+  if (leader.email && leader.email.trim()) {
+    fields.push({
+      label: 'البريد الرسمي',
+      value: leader.email.trim(),
+      small: true,
+    });
+  }
+
+  return {
+    name: leader.name || leader.role,
+    role: leader.name ? leader.role : undefined,
+    photoUrl: leader.avatar || undefined,
+    highlight: {
+      label: highlightLabel,
+      value: highlightValue,
+    },
+    fields,
+    badge,
+    qrValue: `${window.location.origin}/#leadership`,
+    code,
+    accent: isCollegeLead ? 'cyan' : isPresident ? 'purple' : 'green',
+  };
+}
+

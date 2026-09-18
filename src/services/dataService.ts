@@ -383,11 +383,60 @@ class DataService {
   }
 
   public saveLeader(member: LeaderMember) {
-    this.setContent('leadership', this.upsertById(this.getLeadership(), member));
+    const leadership = this.upsertById(this.getLeadership(), member);
+    this.setContent('leadership', leadership);
+
+    // If leader is a college representative, bi-directionally sync with Colleges
+    if (member.tier === 'college-lead') {
+      const colleges = this.getColleges();
+      const memberColId = member.id.replace('lead-col-', '');
+      const college = colleges.find(
+        (c) =>
+          c.id === memberColId ||
+          (member.department && (c.name.includes(member.department) || member.department.includes(c.shortName) || member.department.includes(c.name))) ||
+          (member.role && (c.name.includes(member.role) || (c.shortName && member.role.includes(c.shortName))))
+      );
+
+      if (college) {
+        const updatedCollege: College = {
+          ...college,
+          coordinator: {
+            ...college.coordinator,
+            name: member.name || 'ممثلو الكلية في النادي',
+            role: member.role || college.coordinator.role,
+            avatar: member.avatar || college.coordinator.avatar,
+            email: member.email || college.coordinator.email,
+          },
+        };
+        this.setContent('colleges', this.upsertById(colleges, updatedCollege));
+      }
+    }
   }
 
   public deleteLeader(id: string) {
+    const leader = this.getLeadership().find((m) => m.id === id);
     this.setContent('leadership', this.getLeadership().filter((m) => m.id !== id));
+
+    if (leader && leader.tier === 'college-lead') {
+      const colleges = this.getColleges();
+      const college = colleges.find(
+        (c) =>
+          c.id === leader.id.replace('lead-col-', '') ||
+          (leader.department && (c.name.includes(leader.department) || leader.department.includes(c.shortName)))
+      );
+      if (college) {
+        const updatedCollege: College = {
+          ...college,
+          coordinator: {
+            ...college.coordinator,
+            name: 'ممثلو الكلية في النادي',
+            avatar: '',
+            email: '',
+          },
+        };
+        this.setContent('colleges', this.upsertById(colleges, updatedCollege));
+      }
+    }
   }
 
   // --- COLLEGES ---
@@ -396,7 +445,50 @@ class DataService {
   }
 
   public saveCollege(college: College) {
-    this.setContent('colleges', this.upsertById(this.getColleges(), college));
+    const colleges = this.upsertById(this.getColleges(), college);
+    this.setContent('colleges', colleges);
+
+    // Bi-directionally synchronize matching college-lead in leadership
+    const leadership = this.getLeadership();
+    const coord = college.coordinator;
+    const isNamed = Boolean(coord && coord.name && coord.name.trim() && coord.name !== 'ممثلو الكلية في النادي');
+
+    const collegeKey = college.id.toLowerCase();
+    const existingIndex = leadership.findIndex(
+      (l) =>
+        l.id === `lead-col-${college.id}` ||
+        (l.tier === 'college-lead' &&
+          (l.department.toLowerCase().includes(collegeKey) ||
+            (college.shortName && l.department.includes(college.shortName)) ||
+            (college.name && l.department.includes(college.name)) ||
+            (l.role && college.shortName && l.role.includes(college.shortName))))
+    );
+
+    if (existingIndex >= 0) {
+      const existing = leadership[existingIndex];
+      const updatedLeader: LeaderMember = {
+        ...existing,
+        name: isNamed ? coord.name.trim() : '',
+        avatar: coord.avatar || existing.avatar,
+        email: coord.email || existing.email,
+        role: coord.role && coord.role !== 'لجنة التنسيق والمتابعة الطلابية' ? coord.role : existing.role || `منسق وممثل ${college.name}`,
+        department: college.name,
+      };
+      this.setContent('leadership', this.upsertById(leadership, updatedLeader));
+    } else {
+      const newLeader: LeaderMember = {
+        id: `lead-col-${college.id}`,
+        name: isNamed ? coord.name.trim() : '',
+        role: coord.role && coord.role !== 'لجنة التنسيق والمتابعة الطلابية' ? coord.role : `منسق وممثل ${college.name}`,
+        tier: 'college-lead',
+        department: college.name,
+        avatar: coord.avatar || '',
+        quote: `تمثيل طلبة ${college.name} في النادي الهندسي والتنسيق المستمر للأنشطة والمبادرات.`,
+        email: coord.email || '',
+        skills: ['تمثيل الكلية', 'التنسيق الأكاديمي', 'المبادرات الطلابية'],
+      };
+      this.setContent('leadership', [...leadership, newLeader]);
+    }
   }
 
   // --- MAJORS ---
@@ -551,10 +643,16 @@ class DataService {
     );
   }
 
-  /** Admin: place a member in a committee and give them a title. Stored inside the application's data. */
+  /** Admin: place a member in a committee and give them a title. Stored inside the application's data.
+   * Automatically synchronizes with Leadership Cadre and College Representatives when appointed to leadership roles.
+   */
   public updateApplicationAssignment(id: string, assignment: { assignedCommittee: string; organizationalRole: string }) {
     const app = this.applications.find((a) => a.id === id);
     if (!app) return;
+    const oldRole = (app.organizationalRole || '').trim();
+    const newRole = (assignment.organizationalRole || '').trim();
+    const targetComm = assignment.assignedCommittee || app.targetCommittee || '';
+
     const updated: StoredApplication = { ...app, ...assignment };
     this.applications = this.applications.map((a) => (a.id === id ? updated : a));
     this.notify();
@@ -563,6 +661,77 @@ class DataService {
     void this.runAdminWrite('فشل حفظ التعيين', (client) =>
       client.from('club_applications').update({ data }).eq('id', id)
     );
+
+    // --- AUTOMATIC LEADERSHIP SYNCHRONIZATION ---
+    // 1. If oldRole was a leadership role and newRole changed, vacate the old seat if it holds this student's name
+    if (oldRole && oldRole !== newRole) {
+      const leadership = this.getLeadership();
+      const previouslyOccupied = leadership.find((l) => l.name.trim() === app.fullName.trim());
+      if (previouslyOccupied) {
+        const isStillLeaderRole =
+          newRole.includes('رئيس') || newRole.includes('ممثل') || newRole.includes('منسق') || newRole.includes('صندوق') || newRole.includes('نائب');
+        if (!isStillLeaderRole) {
+          this.saveLeader({ ...previouslyOccupied, name: '', email: '', avatar: '' });
+        }
+      }
+    }
+
+    // 2. If newRole is a leadership position, automatically occupy the leadership cadre
+    if (newRole) {
+      const isPresident = newRole.includes('رئيس النادي') && !newRole.includes('نائب');
+      const isVpAdmin = newRole.includes('نائب') && (newRole.includes('إداري') || targetComm.includes('إداري'));
+      const isVpExec = newRole.includes('نائب') && (newRole.includes('تنفيذي') || targetComm.includes('تنفيذي'));
+      const isTreasurer = newRole.includes('صندوق');
+
+      const isCommitteeHead =
+        newRole.includes('رئيس اللجنة') || newRole.includes('رئيس لجنة') || (newRole === 'رئيس' && !isPresident);
+      const isCollegeRep =
+        newRole.includes('ممثل كلية') || newRole.includes('منسق كلية') || targetComm.includes('ممثلو الكليات');
+
+      const leadership = this.getLeadership();
+      let targetLeader: LeaderMember | undefined;
+
+      if (isPresident) {
+        targetLeader = leadership.find((l) => l.id === 'pres-1' || (l.role.includes('رئيس النادي') && !l.role.includes('نائب')));
+      } else if (isVpAdmin) {
+        targetLeader = leadership.find((l) => l.id === 'vp-admin' || (l.role.includes('نائب') && l.role.includes('إداري')));
+      } else if (isVpExec) {
+        targetLeader = leadership.find((l) => l.id === 'vp-exec' || (l.role.includes('نائب') && l.role.includes('تنفيذي')));
+      } else if (isTreasurer) {
+        targetLeader = leadership.find((l) => l.id === 'treasurer-1' || l.role.includes('صندوق'));
+      } else if (isCommitteeHead) {
+        if (targetComm.includes('فعاليات') || newRole.includes('فعاليات')) {
+          targetLeader = leadership.find((l) => l.id === 'comm-events' || l.department.includes('فعاليات'));
+        } else if (
+          targetComm.includes('علاقات') ||
+          targetComm.includes('تدريب') ||
+          newRole.includes('تدريب') ||
+          newRole.includes('علاقات')
+        ) {
+          targetLeader = leadership.find((l) => l.id === 'comm-training' || l.department.includes('تدريب') || l.department.includes('علاقات'));
+        } else if (targetComm.includes('إعلام') || newRole.includes('إعلام')) {
+          targetLeader = leadership.find((l) => l.id === 'comm-media' || l.department.includes('إعلام'));
+        }
+      } else if (isCollegeRep) {
+        const colStr = `${app.college || ''} ${app.major || ''} ${targetComm} ${newRole}`;
+        if (colStr.includes('برمجيات') || colStr.includes('ذكاء')) {
+          targetLeader = leadership.find((l) => l.id === 'lead-col-software-ai' || l.department.includes('برمجيات'));
+        } else if (colStr.includes('معلومات') || colStr.includes('IT') || colStr.includes('وسائط')) {
+          targetLeader = leadership.find((l) => l.id === 'lead-col-it-computing' || l.department.includes('معلومات'));
+        } else if (colStr.includes('تطبيقية') || colStr.includes('عمراني') || colStr.includes('معمارية') || colStr.includes('مدنية')) {
+          targetLeader = leadership.find((l) => l.id === 'lead-col-applied-urban' || l.department.includes('عمراني') || l.department.includes('تطبيقية'));
+        }
+      }
+
+      if (targetLeader) {
+        const updatedLeader: LeaderMember = {
+          ...targetLeader,
+          name: app.fullName,
+          email: app.email || targetLeader.email,
+        };
+        this.saveLeader(updatedLeader);
+      }
+    }
   }
 
   /** Admin: set (or clear) the interview appointment kept inside the application's data. */

@@ -7,6 +7,7 @@ import {
   Edit3,
   Eye,
   EyeOff,
+  GraduationCap,
   Plus,
   Search,
   Trash2,
@@ -74,7 +75,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
   </div>
 
   {/* Quick Stats / Hierarchy Summary */}
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
     <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex items-center justify-between">
       <div>
         <div className="text-xs font-mono text-amber-300/80">رئاسة ومجلس الإدارة</div>
@@ -89,25 +90,37 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
 
     <div className="p-3.5 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 flex items-center justify-between">
       <div>
-        <div className="text-xs font-mono text-cyan-300/80">رؤساء اللجان التنفيذية</div>
+        <div className="text-xs font-mono text-cyan-300/80">ممثلو الكليات الهندسية</div>
         <div className="text-base font-bold text-white mt-0.5">
-          {leadership.filter((l) => l.tier === 'committee-lead').length} لجان
+          {leadership.filter((l) => l.tier === 'college-lead').length} كليات
         </div>
       </div>
       <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
-        <Zap className="w-4 h-4" />
+        <GraduationCap className="w-4 h-4" />
       </div>
     </div>
 
     <div className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/30 flex items-center justify-between">
       <div>
-        <div className="text-xs font-mono text-purple-300/80">تغيير الصور الفوري</div>
-        <div className="text-xs text-gray-300 mt-0.5">
-          انقر على أيقونة الكاميرا على أي بطاقة
+        <div className="text-xs font-mono text-purple-300/80">رؤساء اللجان التنفيذية</div>
+        <div className="text-base font-bold text-white mt-0.5">
+          {leadership.filter((l) => l.tier === 'committee-lead').length} لجان
         </div>
       </div>
       <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-        <Camera className="w-4 h-4" />
+        <Zap className="w-4 h-4" />
+      </div>
+    </div>
+
+    <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 flex items-center justify-between">
+      <div>
+        <div className="text-xs font-mono text-emerald-300/80">كوادر وفرق اللجان</div>
+        <div className="text-base font-bold text-white mt-0.5">
+          {applications.filter((a) => a.status === 'تم القبول' && a.targetCommittee && !a.targetCommittee.includes('عامة')).length} عضواً
+        </div>
+      </div>
+      <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+        <Users className="w-4 h-4" />
       </div>
     </div>
   </div>
@@ -262,6 +275,8 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
                         ? 'bg-amber-950/60 text-amber-300 border-amber-500/40'
                         : leader.tier === 'executive'
                         ? 'bg-blue-950/60 text-blue-300 border-blue-500/40'
+                        : leader.tier === 'college-lead'
+                        ? 'bg-cyan-950/60 text-cyan-300 border-cyan-500/40'
                         : 'bg-purple-950/60 text-purple-300 border-purple-500/40'
                     }`}
                   >
@@ -269,6 +284,8 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
                       ? 'رئيس النادي'
                       : leader.tier === 'executive'
                       ? 'الهيئة الإدارية'
+                      : leader.tier === 'college-lead'
+                      ? 'ممثلو الكليات / منسق الكلية'
                       : 'رئيس لجنة تنفيذي'}
                   </span>
                 </div>
