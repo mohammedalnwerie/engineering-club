@@ -189,16 +189,17 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
 
       {/* Card Content (Elevated above background) */}
       <div className="relative z-10">
-        {/* Header: Academic Year Pill + Club & University Names + Hexagon Emblem */}
+        {/* Header: Club & University Branding (Right) + Academic Year Pill (Left) */}
         <div className="px-5 pt-4 pb-3 flex items-center justify-between gap-2 border-b border-white/10">
-          {/* Academic Year Pill */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#08041D]/90 border border-[#3FE7E3]/40 shadow-[0_0_10px_rgba(63,231,227,0.15)] text-white text-[11px] font-bold shrink-0">
-            <Calendar className="w-3 h-3 text-[#3FE7E3]" />
-            <span dir="ltr">{badge || currentAcademicYear()}</span>
-          </div>
-
-          {/* Club & University Branding */}
+          {/* Right: Club & University Branding with Hexagon Emblem */}
           <div className="flex items-center gap-2.5 min-w-0">
+            {/* Official Isometric Hexagon Emblem */}
+            <img
+              src="/brand/emblem-on-dark.png"
+              alt="النادي الهندسي"
+              className="w-10 h-10 object-contain shrink-0 drop-shadow-[0_0_12px_rgba(63,231,227,0.35)]"
+            />
+
             <div className="text-right">
               <div className="text-base sm:text-lg font-black text-white leading-tight">
                 النادي الهندسي
@@ -213,13 +214,12 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
                 University of Palestine
               </div>
             </div>
+          </div>
 
-            {/* Official Isometric Hexagon Emblem */}
-            <img
-              src="/brand/emblem-on-dark.png"
-              alt="النادي الهندسي"
-              className="w-10 h-10 object-contain shrink-0 drop-shadow-[0_0_12px_rgba(63,231,227,0.35)]"
-            />
+          {/* Left: Academic Year Pill */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#08041D]/90 border border-[#3FE7E3]/40 shadow-[0_0_10px_rgba(63,231,227,0.15)] text-white text-[11px] font-bold shrink-0">
+            <Calendar className="w-3 h-3 text-[#3FE7E3]" />
+            <span dir="ltr">{badge || currentAcademicYear()}</span>
           </div>
         </div>
 
@@ -416,6 +416,30 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
         {/* Verification Strip (Footer) — ZERO EMAIL, HUD QR, Shield & Official Signature */}
         <div className="px-5 pt-3.5 pb-4 bg-[#050214]/90 border-t border-white/10 relative backdrop-blur-md">
           <div className="flex items-center justify-between gap-3">
+            {/* Right: Palestine University & Club Signature */}
+            <div className="text-right shrink-0 min-w-[78px]">
+              <div className="text-xs font-bold text-gray-200 leading-tight">
+                النادي الهندسي
+              </div>
+              <div className="text-[11px] text-[#98F7F1]/75 leading-tight mt-0.5">
+                جامعة فلسطين
+              </div>
+            </div>
+
+            {/* Center: Shield Verification Badge & Code Pill */}
+            <div className="flex flex-col items-center justify-center text-center px-1">
+              <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-300">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#35BC2B]" />
+                <span>كود التحقق</span>
+              </div>
+              <div
+                className="mt-1 px-2.5 py-0.5 rounded-full bg-[#0A0524] border border-[#3FE7E3]/45 text-[#3FE7E3] font-mono text-[11px] font-bold tracking-wide whitespace-nowrap shadow-[0_0_10px_rgba(63,231,227,0.18)]"
+                dir="ltr"
+              >
+                {code}
+              </div>
+            </div>
+
             {/* Left: QR Code with 4 Cyber HUD Corner Brackets */}
             <div className="relative p-1 shrink-0">
               {/* HUD Brackets */}
@@ -424,36 +448,12 @@ export const MemberCard: React.FC<CardData & { className?: string }> = ({
               <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-[#3FE7E3]" />
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-[#3FE7E3]" />
 
-              <div className="w-[62px] h-[62px] rounded-lg bg-white p-1 flex items-center justify-center shadow-md">
+              <div className="w-[58px] h-[58px] rounded-lg bg-white p-1 flex items-center justify-center shadow-md">
                 {qrDataUrl ? (
                   <img src={qrDataUrl} alt="QR Code" className="w-full h-full object-contain" />
                 ) : (
                   <div className="w-full h-full bg-gray-200 animate-pulse rounded" />
                 )}
-              </div>
-            </div>
-
-            {/* Center: Shield Verification Badge & Code Pill */}
-            <div className="flex flex-col items-center justify-center text-center min-w-0 flex-1">
-              <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-300">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#35BC2B]" />
-                <span>كود التحقق</span>
-              </div>
-              <div
-                className="mt-1 px-3 py-0.5 rounded-full bg-[#0A0524] border border-[#3FE7E3]/45 text-[#3FE7E3] font-mono text-xs font-bold tracking-wider whitespace-nowrap shadow-[0_0_10px_rgba(63,231,227,0.18)]"
-                dir="ltr"
-              >
-                {code}
-              </div>
-            </div>
-
-            {/* Right: Palestine University & Club Signature */}
-            <div className="text-right shrink-0">
-              <div className="text-xs font-bold text-gray-200 leading-tight">
-                النادي الهندسي
-              </div>
-              <div className="text-[11px] text-[#98F7F1]/75 leading-tight mt-0.5">
-                جامعة فلسطين
               </div>
             </div>
           </div>

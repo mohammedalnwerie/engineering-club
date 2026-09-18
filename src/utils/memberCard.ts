@@ -12,8 +12,8 @@ export interface CardField {
 /** Long names drop a size instead of wrapping; a photo leaves less room for them. */
 export const cardNameFontSize = (name: string, hasPhoto = false) => {
   const length = name.trim().length;
-  if (hasPhoto) return length > 20 ? 15 : length > 16 ? 17 : length > 12 ? 19 : 21;
-  return length > 26 ? 17 : length > 20 ? 19 : 22;
+  if (hasPhoto) return length > 24 ? 14 : length > 18 ? 16 : length > 12 ? 18 : 20;
+  return length > 26 ? 16 : length > 20 ? 18 : 22;
 };
 
 /** Everything a club ID card shows. Rendered on screen by <MemberCard> and to PNG by renderCardPng(). */
@@ -185,16 +185,27 @@ export function executiveCardFor(
   const isCollegeLead = leader.tier === 'college-lead';
   const isExecutive = leader.tier === 'executive';
 
-  // Format short serial matching brief: UP-EXEC-2026-COMMEDIA / UP-COL-2026-IT / UP-EXEC-2026-PRES
-  let serialSuffix = (leader.id || '').replace(/^lead-col-/, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  if (leader.id === 'pres-1') serialSuffix = 'PRES';
-  else if (leader.id === 'comm-media') serialSuffix = 'COMMEDIA';
-  else if (leader.id === 'comm-events') serialSuffix = 'EVENTS';
-  else if (leader.id === 'comm-relations') serialSuffix = 'RELATIONS';
-  else if (serialSuffix.length > 8) serialSuffix = serialSuffix.slice(0, 8);
+  // Format short, clean serial matching brief: UP-EXEC-2026-MEDIA / UP-COL-2026-AI / UP-EXEC-2026-PRES
+  let serialSuffix = '001';
+  const dep = (leader.department || '').toLowerCase();
+  const role = (leader.role || '').toLowerCase();
+
+  if (isPresident) {
+    serialSuffix = 'PRES';
+  } else if (isCollegeLead) {
+    if (dep.includes('برمج') || dep.includes('ذكاء') || role.includes('برمج')) serialSuffix = 'AI';
+    else if (dep.includes('it') || dep.includes('تكنولوجيا') || role.includes('it')) serialSuffix = 'IT';
+    else if (dep.includes('عمارة') || dep.includes('تطبيق') || dep.includes('مدني')) serialSuffix = 'ENG';
+    else serialSuffix = 'COL';
+  } else {
+    if (dep.includes('إعلام') || role.includes('إعلام')) serialSuffix = 'MEDIA';
+    else if (dep.includes('فعاليات') || role.includes('فعاليات')) serialSuffix = 'EVENTS';
+    else if (dep.includes('علاقات') || role.includes('تدريب')) serialSuffix = 'REL';
+    else serialSuffix = 'EXEC';
+  }
 
   const prefix = isCollegeLead ? 'UP-COL-2026' : 'UP-EXEC-2026';
-  const code = `${prefix}-${serialSuffix || '001'}`;
+  const code = `${prefix}-${serialSuffix}`;
 
   // Cardlet highlight info:
   let highlightLabel = 'الجهة';

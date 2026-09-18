@@ -1,4 +1,3 @@
-import { dataService, trialValidityText } from '../services/dataService';
 import React, { useState } from 'react';
 import { ChevronDown, HelpCircle, MessageSquare, ArrowLeft } from 'lucide-react';
 
@@ -17,13 +16,12 @@ interface FaqSectionProps {
 export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpenJoin }) => {
   const [openId, setOpenId] = useState<string | null>('faq-1');
 
-  const membership = dataService.getMembershipSettings();
   const faqs: FaqItem[] = [
     {
       id: 'faq-1',
       category: 'العضوية والتسجيل',
-      question: 'كيف تتم العضوية؟ وهل فيها رسوم؟',
-      answer: `بعد قبول طلبك تصلك على إيميلك بطاقة عضوية ${trialValidityText(membership)}، مع رمز عضو سري تدخل به إلى «حسابي». بعدها تطلب العضوية الفصلية برسوم ${membership.semesterFee} ${membership.currency} من صفحة «حسابي»، وتبقى فعّالة حتى نهاية الفصل وتتيح لك التسجيل في الورش والدورات والهاكاثونات.`
+      question: 'كيف تتم العضوية وتفعيلها في النادي؟',
+      answer: 'بعد مراجعة وقبول طلب انضمامك، تُصدر لك أولاً بطاقة عضوية رقمية مؤقتة صالحة لمدة 14 يوماً مع رمز دخول خاص بك لصفحة «حسابي». تُمنح هذه البطاقة مؤقتاً لحين استكمال إجراءات الاعتماد والتثبيت الرسمي للعضوية من قِبل إدارة النادي، لتصبح عضويتك معتمدة بشكل دائم وتتيح لك المشاركة في كافة الورش والدورات والهاكاثونات.'
     },
     {
       id: 'faq-2',
@@ -46,8 +44,8 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
     {
       id: 'faq-5',
       category: 'البطاقات الرقمية',
-      question: 'كيف أحصل على بطاقة عضويتي الرقمية المعتمدة وكيف أتحقق من صحتها؟',
-      answer: 'بمجرد مراجعة طلب انضمامك من قِبل إدارة النادي، يتم إصدار بطاقتك الرقمية المعتمدة تلقائياً. ستصلك رسالة عبر البريد الإلكتروني والواتساب تحتوي على رابط مباشر لبطاقتك، ويمكنك دائماً استخدام خانة "التحقق من العضوية" في أعلى الموقع للاستعلام عن بطاقتك وتنزيلها كصورة أو PDF.'
+      question: 'كيف أحصل على بطاقتي الرقمية وكيف أتحقق من صحتها؟',
+      answer: 'بمجرد قبول طلب انضمامك، تصدر لك بطاقة عضوية مؤقتة صالحة لمدة 14 يوماً مع كود التحقق الخاص بك، وتصلك تفاصيلها عبر رسالة برابط مباشر لبطاقتك لحين اعتمادها النهائي. ويمكنك دائماً استخدام زر «التحقق من العضوية» في أعلى الموقع بالرقم الجامعي للاستعلام عن بطاقتك وتنزيلها كصورة أو طباعتها.'
     },
     {
       id: 'faq-6',

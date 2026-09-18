@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { ArrowUp, MapPin, Check, Sparkles } from 'lucide-react';
+import React from 'react';
+import { ArrowUp, MapPin, Sparkles } from 'lucide-react';
 import { ClubLogo } from './ClubLogo';
 import { dataService } from '../services/dataService';
-import { validateEmail } from '../utils/validation';
 import { SocialLinks } from './SocialLinks';
 
 
@@ -12,32 +11,8 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }) => {
-  const [subscribed, setSubscribed] = useState(false);
-  const [email, setEmail] = useState('');
   const settings = dataService.getSettings();
   const contact = dataService.getContactSettings();
-
-  const [subscribeState, setSubscribeState] = useState<'idle' | 'sending' | 'error'>('idle');
-  const [subscribeError, setSubscribeError] = useState('');
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const problem = validateEmail(email);
-    if (problem) {
-      setSubscribeState('error');
-      setSubscribeError(problem);
-      return;
-    }
-    setSubscribeState('sending');
-    try {
-      await dataService.subscribeNewsletter(email);
-      setSubscribed(true);
-      setSubscribeState('idle');
-    } catch (err) {
-      setSubscribeState('error');
-      setSubscribeError(err instanceof Error && !err.message.includes('Failed to fetch') ? err.message : 'تعذر الاشتراك حالياً، حاول لاحقاً.');
-    }
-  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -74,52 +49,18 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
 
         {/* 4 Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-16">
-          {/* Col 1 & 2: Manifesto & Newsletter */}
+          {/* Col 1 & 2: Manifesto & Social Community */}
           <div className="lg:col-span-2">
             <h4 className="text-sm font-bold text-white mb-3">رسالة النادي الرسمية</h4>
-            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-light mb-6 text-balance">
+            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-light mb-5 text-balance">
               {settings.mission}
             </p>
-
-            {subscribed ? (
-              <div role="status" className="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-200 text-sm flex items-center gap-2">
-                <Check className="w-4 h-4 shrink-0" />
-                <span>تم اشتراكك. ستصلك أخبار الفعاليات والورش على بريدك.</span>
+            <div className="pt-2">
+              <div className="text-xs text-gray-400 mb-3 font-medium">
+                تابع جديد الفعاليات والمشاريع عبر منصاتنا الرسمية:
               </div>
-            ) : (
-              <form onSubmit={handleSubscribe} noValidate className="space-y-2">
-                <label htmlFor="newsletter-email" className="block text-sm text-gray-300">
-                  اشترك ليصلك جديد الفعاليات والورش
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    id="newsletter-email"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    placeholder="name@std.up.edu.ps"
-                    value={email}
-                    aria-invalid={subscribeState === 'error'}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (subscribeState === 'error') setSubscribeState('idle');
-                    }}
-                    className="px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-sm text-white focus:border-cyan-400 focus:outline-none flex-1 min-w-0 text-left"
-                    dir="ltr"
-                  />
-                  <button
-                    type="submit"
-                    disabled={subscribeState === 'sending'}
-                    className="px-4 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-60 text-black text-sm font-bold transition-colors cursor-pointer shrink-0"
-                  >
-                    {subscribeState === 'sending' ? 'جاري…' : 'اشتراك'}
-                  </button>
-                </div>
-                {subscribeState === 'error' && (
-                  <p role="alert" className="text-sm text-red-300">{subscribeError}</p>
-                )}
-              </form>
-            )}
+              <SocialLinks links={contact.links} />
+            </div>
           </div>
 
           {/* Col 3: Colleges */}
