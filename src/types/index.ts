@@ -47,6 +47,8 @@ export interface ProjectCaseStudy {
   collegeName: string;
   featured: boolean;
   award?: string;
+  /** صورة غلاف المشروع — اختيارية */
+  imageUrl?: string;
   problem: string;
   solution: string;
   impactMetrics: { label: string; value: string }[];
@@ -56,6 +58,27 @@ export interface ProjectCaseStudy {
   githubUrl?: string;
   schematicType: string;
   status: 'Deployed' | 'Prototyped' | 'In Testing';
+}
+
+export type EventScope = 'club' | 'internal' | 'university' | 'local' | 'international';
+
+export interface HackathonTeamMember {
+  studentId: string;
+  fullName: string;
+  major: string;
+  role: string;
+}
+
+export interface HackathonRegistrationData {
+  participationType: 'team' | 'solo';
+  teamName?: string;
+  projectTitle?: string;
+  projectSummary?: string;
+  track?: string;
+  members?: HackathonTeamMember[];
+  primarySkill?: string;
+  desiredRole?: string;
+  links?: string;
 }
 
 export interface EventItem {

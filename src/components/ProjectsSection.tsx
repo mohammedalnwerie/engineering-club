@@ -154,7 +154,20 @@ export const ProjectsSection: React.FC = () => {
               className="rounded-3xl glass-panel border border-white/10 hover:border-cyan-400/50 p-6 flex flex-col justify-between transition-all duration-300 relative group overflow-hidden"
             >
               {/* Subtle top indicator */}
-              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent group-hover:via-cyan-400 transition-all duration-500" />
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent group-hover:via-cyan-400 transition-all duration-500 z-10" />
+
+              {/* Optional Project Cover Image */}
+              {project.imageUrl && (
+                <div className="relative -mx-6 -mt-6 mb-4 h-48 sm:h-52 overflow-hidden bg-black/40">
+                  <img
+                    src={project.imageUrl}
+                    alt={project.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B0624] via-transparent to-black/20" />
+                </div>
+              )}
 
               <div>
                 {/* Header Meta: Category & Status */}
@@ -293,6 +306,17 @@ export const ProjectsSection: React.FC = () => {
                     {activeModalProject.tagline}
                   </p>
                 </div>
+
+                {/* Optional Project Cover Image */}
+                {activeModalProject.imageUrl && (
+                  <div className="mb-6 rounded-2xl overflow-hidden border border-white/10 max-h-80 bg-black/40 shadow-xl">
+                    <img
+                      src={activeModalProject.imageUrl}
+                      alt={activeModalProject.title}
+                      className="w-full h-full max-h-80 object-cover"
+                    />
+                  </div>
+                )}
 
                 {/* Architecture Schema / Blueprint Visualizer */}
                 <div className="mb-8 p-5 rounded-2xl bg-black/40 border border-white/10 relative overflow-hidden">

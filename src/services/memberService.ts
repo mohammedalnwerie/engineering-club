@@ -1,6 +1,7 @@
 import { publicRpc } from './supabaseClient';
 import { normalizeCode } from '../utils/validation';
 import { safeStorage } from './safeStorage';
+import type { EventScope, HackathonRegistrationData } from '../types';
 
 // Members sign in with their student ID and a secret: the card code the first
 // time, then the password they choose. The code is printed on the card, so once
@@ -70,6 +71,13 @@ export interface PublicEvent {
   committee: string | null;
   committeeOnly: boolean;
   status: 'published' | 'cancelled' | 'completed';
+  coverImage?: string | null;
+  scope?: EventScope;
+  prizes?: string | null;
+  minTeamSize?: number;
+  maxTeamSize?: number;
+  tracks?: string[];
+  allowSolo?: boolean;
   registeredCount: number;
   waitlistCount: number;
 }
@@ -242,12 +250,12 @@ class MemberService {
     this.notify();
   }
 
-  async registerForEvent(eventId: string): Promise<{ status: 'registered' | 'waitlisted'; alreadyRegistered: boolean }> {
+  async registerForEvent(eventId: string, teamData?: HackathonRegistrationData): Promise<{ status: 'registered' | 'waitlisted'; alreadyRegistered: boolean }> {
     try {
       const result = unwrap(
         await publicRpc<{ status: 'registered' | 'waitlisted'; alreadyRegistered: boolean } | { error: string }>(
           'register_for_event',
-          { ...this.args(), p_event_id: eventId }
+          { ...this.args(), p_event_id: eventId, p_team_data: teamData || null }
         )
       );
       await this.refresh().catch(() => undefined);

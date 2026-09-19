@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { LIVE_ACTIVITY_STREAM } from '../data/clubData';
 import { dataService } from '../services/dataService';
 import { normalizeCode } from '../utils/validation';
 import { Award, Send, Check, X, Lightbulb, Users, Trophy, ShieldCheck, AlertCircle, ArrowLeft } from 'lucide-react';
@@ -125,134 +124,90 @@ export const LiveFeedSection: React.FC<LiveFeedSectionProps> = ({ onOpenJoin }) 
 
   return (
     <section className="py-14 sm:py-20 px-4 sm:px-6 lg:px-8 relative z-10 border-t border-white/5 bg-[#08041D]/80">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          
-          {/* Left: Inspiring Student Spotlight & Call to Nomination (Members Only) */}
-          <div className="lg:col-span-7 rounded-3xl glass-panel p-6 sm:p-10 border border-emerald-500/20 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="max-w-6xl mx-auto">
+        {/* Inspiring Student Spotlight & Call to Nomination (Members Only) */}
+        <div className="rounded-3xl glass-panel p-6 sm:p-10 md:p-12 border border-emerald-500/20 flex flex-col justify-between relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
+          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
-            <div>
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-xs font-mono">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>خاص وحصري بأعضاء النادي الهندسي</span>
-                </div>
-                <span className="text-xs text-gray-400 font-mono">جامعة فلسطين</span>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-xs font-mono">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>خاص وحصري بأعضاء النادي الهندسي</span>
               </div>
-
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight mb-4">
-                كُن أنت مهندس الشهر القادم!
-              </h3>
-
-              <p className="text-sm sm:text-base text-gray-300 leading-relaxed font-light mb-8 text-balance">
-                يفتح النادي الهندسي باب التكريم والمنافسة <strong className="text-emerald-400 font-semibold">حصرياً لأعضائه المنتسبين المعتمدين</strong> للاحتفاء بنماذج التميز والمشاريع النوعية في كليات هندسة البرمجيات والذكاء الاصطناعي، والهندسة التطبيقية والتخطيط العمراني، وتكنولوجيا المعلومات. إذا كنت عضواً في النادي وقدمت إنجازاً أو مشروعاً مميزاً، بادر بترشيح نفسك أو ترشيح زميلك العضو لتسليط الضوء على إبداعه وتكريمه رسمياً.
-              </p>
-
-              {/* 3 Pillars of Recognition */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-2.5">
-                    <Lightbulb className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-xs font-bold text-white mb-1">الابتكار التطبيقي</h4>
-                  <p className="text-xs text-gray-400 leading-relaxed font-light">
-                    مشاريع تخرج أو نماذج برمجية ومعمارية وإنشائية قابلة للتطبيق.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-2.5">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-xs font-bold text-white mb-1">الأثر والمشاركة</h4>
-                  <p className="text-xs text-gray-400 leading-relaxed font-light">
-                    نقل المعرفة، مساعدة الزملاء، والمساهمة الفاعلة في الحياة الجامعية.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-2.5">
-                    <Trophy className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-xs font-bold text-white mb-1">المسابقات والجوائز</h4>
-                  <p className="text-xs text-gray-400 leading-relaxed font-light">
-                    المشاركة في الهاكاثونات والمسابقات المحلية والدولية.
-                  </p>
-                </div>
-              </div>
+              <span className="text-xs text-gray-400 font-mono">جامعة فلسطين • التكريم والتميز الطلابي</span>
             </div>
 
-            {/* Bottom Actions */}
-            <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight mb-4">
+              كُن أنت مهندس الشهر القادم!
+            </h3>
+
+            <p className="text-sm sm:text-base md:text-lg text-gray-300 leading-relaxed font-light mb-8 max-w-4xl text-balance">
+              يفتح النادي الهندسي باب التكريم والمنافسة <strong className="text-emerald-400 font-semibold">حصرياً لأعضائه المنتسبين المعتمدين</strong> للاحتفاء بنماذج التميز والمشاريع النوعية في كليات هندسة البرمجيات والذكاء الاصطناعي، والهندسة التطبيقية والتخطيط العمراني، وتكنولوجيا المعلومات. إذا كنت عضواً في النادي وقدمت إنجازاً أو مشروعاً مميزاً، بادر بترشيح نفسك أو ترشيح زميلك العضو لتسليط الضوء على إبداعه وتكريمه رسمياً.
+            </p>
+
+            {/* 3 Pillars of Recognition */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              <div className="p-5 rounded-2xl bg-black/40 border border-white/5 hover:border-emerald-500/30 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-3">
+                  <Lightbulb className="w-5 h-5" />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1.5">الابتكار التطبيقي</h4>
+                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-light">
+                  مشاريع تخرج أو نماذج برمجية ومعمارية وإنشائية قابلة للتطبيق وخدمة المجتمع.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-black/40 border border-white/5 hover:border-blue-500/30 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-3">
+                  <Users className="w-5 h-5" />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1.5">الأثر والمشاركة</h4>
+                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-light">
+                  نقل المعرفة، مساعدة الزملاء، والمساهمة الفاعلة في الورش والأنشطة الجامعية.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-black/40 border border-white/5 hover:border-amber-500/30 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-3">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1.5">المسابقات والجوائز</h4>
+                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-light">
+                  المشاركة الفاعلة وحصد المراكز الأولى في الهاكاثونات والمسابقات المحلية والدولية.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Actions */}
+          <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
+            <button
+              type="button"
+              onClick={() => setShowNominateModal(true)}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-sm font-bold shadow-[0_0_25px_rgba(22,163,74,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Award className="w-5 h-5" />
+              <span>رشّح عضواً / رشّح نفسك (خاص بأعضاء النادي)</span>
+            </button>
+
+            {onOpenJoin ? (
               <button
                 type="button"
-                onClick={() => setShowNominateModal(true)}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white text-xs sm:text-sm font-bold shadow-[0_0_20px_rgba(22,163,74,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
+                onClick={onOpenJoin}
+                className="text-xs sm:text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer underline underline-offset-4 transition-colors"
               >
-                <Award className="w-4 h-4" />
-                <span>رشّح عضواً / رشّح نفسك (خاص بأعضاء النادي)</span>
+                <span>لست عضواً بعد؟ قدّم طلب انتساب للنادي</span>
+                <ArrowLeft className="w-4 h-4" />
               </button>
-
-              {onOpenJoin ? (
-                <button
-                  type="button"
-                  onClick={onOpenJoin}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer underline underline-offset-4 transition-colors"
-                >
-                  <span>لست عضواً بعد؟ قدّم طلب انتساب للنادي</span>
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <span className="text-xs text-gray-400 font-mono text-center sm:text-right">
-                  الترشيح متاح لأعضاء النادي المسجلين فقط
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Real-time Live Activity Feed */}
-          <div className="lg:col-span-5 rounded-3xl glass-panel p-6 sm:p-8 border border-white/10 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-sm font-bold text-white">نبض وتحديثات النادي</span>
-                </div>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
-                  تحديثات حية
-                </span>
-              </div>
-
-              {/* Feed Stream */}
-              <div className="space-y-4">
-                {LIVE_ACTIVITY_STREAM.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-2xl bg-black/30 border border-white/5 hover:border-emerald-500/30 transition-all flex items-start gap-3"
-                  >
-                    <span className="text-xs font-mono px-2 py-1 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/20 shrink-0 mt-0.5">
-                      {item.tag}
-                    </span>
-                    <div className="flex-1">
-                      <div className="text-xs font-bold text-gray-200 mb-0.5 leading-snug">
-                        {item.title}
-                      </div>
-                      <div className="text-xs text-gray-400 font-mono">{item.time}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-white/10 text-center">
-              <span className="text-xs text-gray-400 font-light">
-                تابع منصات النادي للحصول على آخر التنبيهات والفرص الهندسية أولاً بأول.
+            ) : (
+              <span className="text-xs text-gray-400 font-mono text-center sm:text-right">
+                الترشيح متاح لأعضاء النادي المسجلين فقط
               </span>
-            </div>
+            )}
           </div>
-
         </div>
       </div>
 

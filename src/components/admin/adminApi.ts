@@ -1,5 +1,6 @@
 import { getSupabase } from '../../services/supabaseClient';
 import type { EventType } from '../../services/memberService';
+import type { EventScope, HackathonRegistrationData } from '../../types';
 
 // Data access for the newer dashboard sections (roles, members, events, team, activity, trash).
 // Row-level security in the database enforces what each role may read or change.
@@ -170,6 +171,13 @@ export interface EventRow {
   committee: string | null;
   committee_only: boolean;
   status: 'draft' | 'published' | 'cancelled' | 'completed';
+  cover_image?: string | null;
+  scope?: EventScope;
+  prizes?: string | null;
+  min_team_size?: number;
+  max_team_size?: number;
+  tracks?: string[];
+  allow_solo?: boolean;
   created_at: string;
 }
 
@@ -197,6 +205,7 @@ export interface RegistrationRow {
   status: 'registered' | 'waitlisted' | 'cancelled';
   checked_in_at: string | null;
   created_at: string;
+  team_data?: HackathonRegistrationData | null;
   club_applications: { full_name: string; student_id: string; phone: string | null; email: string | null; data: MemberRow['data'] } | null;
 }
 
@@ -204,7 +213,7 @@ export const listRegistrations = (eventId: string) =>
   run<RegistrationRow[]>((c) =>
     c
       .from('club_event_registrations')
-      .select('id, event_id, status, checked_in_at, created_at, club_applications(full_name, student_id, phone, email, data)')
+      .select('id, event_id, status, checked_in_at, created_at, team_data, club_applications(full_name, student_id, phone, email, data)')
       .eq('event_id', eventId)
       .order('created_at')
   );

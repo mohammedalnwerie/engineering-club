@@ -5237,6 +5237,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                   </div>
                 </div>
 
+                <div>
+                  <label className="block text-gray-300 mb-1 font-mono">صورة غلاف المشروع (اختيارية — 16:9):</label>
+                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                    <input
+                      type="url"
+                      placeholder="رابط صورة مباشر https://... أو اضغط رفع ملف"
+                      value={editingProject.imageUrl || ''}
+                      onChange={(e) => setEditingProject({ ...editingProject, imageUrl: e.target.value })}
+                      className="w-full sm:flex-1 px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-xs"
+                    />
+                    <label className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs text-white cursor-pointer inline-flex items-center gap-1.5 shrink-0">
+                      <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>رفع صورة</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            processImageFile(
+                              file,
+                              (b64) => setEditingProject((prev) => (prev ? { ...prev, imageUrl: b64 } : null)),
+                              showToast
+                            );
+                          }
+                        }}
+                      />
+                    </label>
+                    {editingProject.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingProject({ ...editingProject, imageUrl: undefined })}
+                        className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 text-xs cursor-pointer"
+                      >
+                        إزالة
+                      </button>
+                    )}
+                  </div>
+                  {editingProject.imageUrl && (
+                    <div className="mt-2 h-24 w-44 rounded-xl overflow-hidden border border-white/10 bg-black/40">
+                      <img src={editingProject.imageUrl} alt="معاينة" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex gap-2 pt-3 border-t border-white/10">
                   <button
                     type="submit"

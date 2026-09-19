@@ -30,6 +30,7 @@ import {
   type PublicEvent,
 } from '../services/memberService';
 import { MemberLoginForm } from './member/MemberLoginForm';
+import { HackathonRegisterModal } from './HackathonRegisterModal';
 
 interface EventsSectionProps {
   onOpenMemberPortal?: () => void;
@@ -44,6 +45,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
   const [eventsState, setEventsState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [profile, setProfile] = useState<MemberProfile | null>(memberService.currentProfile);
   const [loginForEvent, setLoginForEvent] = useState<PublicEvent | null>(null);
+  const [hackathonForRegistration, setHackathonForRegistration] = useState<PublicEvent | null>(null);
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
@@ -107,6 +109,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
   const handleRegisterClick = (event: PublicEvent) => {
     if (!memberService.isLoggedIn) {
       setLoginForEvent(event);
+      return;
+    }
+    if (event.eventType === 'hackathon') {
+      setHackathonForRegistration(event);
       return;
     }
     void register(event);
@@ -268,12 +274,35 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
               return (
                 <article
                   key={event.id}
-                  className="rounded-3xl p-6 bg-white/[0.03] border border-white/10 hover:border-[#3FE7E3]/30 transition-colors flex flex-col text-right"
+                  className="rounded-3xl p-6 bg-white/[0.03] border border-white/10 hover:border-[#3FE7E3]/30 transition-colors flex flex-col text-right group"
                 >
+                  {event.coverImage && (
+                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-4 bg-white/5 border border-white/10">
+                      <img
+                        src={event.coverImage}
+                        alt={event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                      {event.scope && event.scope !== 'club' && event.scope !== 'internal' && (
+                        <div className="absolute top-2.5 right-2.5">
+                          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md text-cyan-300 border border-cyan-400/30">
+                            {event.scope === 'university' ? 'جامعة فلسطين' : event.scope === 'local' ? 'محلي (فلسطين)' : 'دولي / إقليمي'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#7F1AB2]/25 text-[#D1B5E3] border border-[#7F1AB2]/50">
                       {EVENT_TYPE_LABELS[event.eventType] || 'فعالية'}
                     </span>
+                    {!event.coverImage && event.scope && event.scope !== 'club' && event.scope !== 'internal' && (
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                        {event.scope === 'university' ? 'جامعة فلسطين' : event.scope === 'local' ? 'محلي (فلسطين)' : 'دولي / إقليمي'}
+                      </span>
+                    )}
                     {event.committeeOnly && event.committee && (
                       <span className="text-xs px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-200 border border-cyan-500/30 flex items-center gap-1">
                         <Lock className="w-3 h-3" />
@@ -285,9 +314,29 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
                     )}
                   </div>
 
+                  {event.prizes && (
+                    <div className="flex items-center gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl mb-3">
+                      <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span className="truncate">{event.prizes}</span>
+                    </div>
+                  )}
+
                   <h3 className="text-lg font-bold text-white leading-snug">{event.title}</h3>
                   {event.description && (
                     <p className="text-sm text-gray-400 mt-2 leading-relaxed line-clamp-3">{event.description}</p>
+                  )}
+
+                  {event.tracks && event.tracks.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 my-3">
+                      {event.tracks.slice(0, 3).map((tr, i) => (
+                        <span key={i} className="text-[11px] px-2 py-0.5 rounded-md bg-white/5 text-gray-300 border border-white/10">
+                          {tr}
+                        </span>
+                      ))}
+                      {event.tracks.length > 3 && (
+                        <span className="text-[11px] px-1.5 py-0.5 text-gray-400">+{event.tracks.length - 3}</span>
+                      )}
+                    </div>
                   )}
 
                   <ul className="mt-4 space-y-2 text-sm text-gray-300">
@@ -359,7 +408,9 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
                               ? 'التسجيل مغلق'
                               : full
                                 ? 'انضم لقائمة الانتظار'
-                                : 'سجّل الآن'}
+                                : event.eventType === 'hackathon'
+                                  ? 'تسجيل فريق / فكرة'
+                                  : 'سجّل الآن'}
                       </button>
                     )}
                   </div>
@@ -575,6 +626,33 @@ export const EventsSection: React.FC<EventsSectionProps> = ({ onOpenMemberPortal
           </div>,
           document.body
         )}
+
+      {hackathonForRegistration && profile && (
+        <HackathonRegisterModal
+          event={hackathonForRegistration}
+          profile={profile}
+          isOpen={Boolean(hackathonForRegistration)}
+          onClose={() => setHackathonForRegistration(null)}
+          onSuccess={(status, alreadyRegistered) => {
+            setFeedback({
+              eventId: hackathonForRegistration.id,
+              tone: status === 'registered' ? 'success' : 'warning',
+              message:
+                status === 'registered'
+                  ? alreadyRegistered
+                    ? 'أنت مسجّل في هذا الهاكاثون مسبقاً.'
+                    : 'تم تسجيل فريقك في الهاكاثون بنجاح! تجد التسجيل في «حسابي».'
+                  : alreadyRegistered
+                    ? 'أنت مدرج في قائمة الانتظار لهذا الهاكاثون مسبقاً.'
+                    : 'المقاعد اكتملت، أُضيف فريقك إلى قائمة الانتظار وسيتم إشعاركم في حال توفر مقعد.',
+            });
+            if (status === 'registered' && !alreadyRegistered) {
+              confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 }, colors: ['#3FE7E3', '#7F1AB2', '#35BC2B'] });
+            }
+            void loadEvents();
+          }}
+        />
+      )}
 
     </section>
   );
