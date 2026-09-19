@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { dataService } from '../services/dataService';
+import { dataService, DEFAULT_COMMITTEE_CRITERIA } from '../services/dataService';
 import { MemberCard } from './MemberCard';
 import { memberCardFor } from '../utils/memberCard';
 import type { ClubApplication } from '../types';
@@ -37,6 +37,9 @@ import {
   Ban,
   Camera,
   Check,
+  CheckCircle2,
+  FileCheck2,
+  Info,
   Lock,
   ShieldCheck,
   Sparkles,
@@ -51,6 +54,8 @@ export const JoinClubSection: React.FC = () => {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<'fullName' | 'studentId' | 'email' | 'phone' | 'portfolioUrl', string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [pledgeAgreed, setPledgeAgreed] = useState(false);
+  const [duplicateErrorData, setDuplicateErrorData] = useState<{ studentId: string } | null>(null);
 
   const [recruitment, setRecruitment] = useState(() => dataService.getRecruitmentSettings());
 
@@ -162,12 +167,19 @@ export const JoinClubSection: React.FC = () => {
         return;
       }
 
+      // Mandatory pledge validation for specialized committees
+      if (selectedCommId !== 'general' && !pledgeAgreed) {
+        setFormError('يرجى تأكيد وقراءة التعهد والإقرار بالشروط والمعايير قبل إرسال طلب الانضمام.');
+        return;
+      }
+
       void handleSubmit();
     }
   };
 
   const handlePrev = () => {
     setFormError(null);
+    setDuplicateErrorData(null);
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
@@ -192,10 +204,22 @@ export const JoinClubSection: React.FC = () => {
     }
 
     setIsSending(true);
+    setDuplicateErrorData(null);
     try {
       await dataService.submitApplication(formData);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'خطأ غير معروف';
+      // Detect duplicate student ID error from database RPC
+      if (
+        message.includes('يوجد بالفعل طلب') ||
+        message.includes('مسجل بهذا الرقم الجامعي') ||
+        message.includes('الرقم الجامعي مسجل مسبقاً') ||
+        message.includes('مكرر')
+      ) {
+        setDuplicateErrorData({ studentId: formData.studentId });
+        setFormError(message);
+        return;
+      }
       // Problems with personal details are fixed on step 1
       if (/الاسم|الرقم الجامعي|البريد|الجوال/.test(message)) setCurrentStep(1);
       setFormError(message.includes('Failed to fetch') ? 'تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى.' : message);
@@ -686,6 +710,64 @@ export const JoinClubSection: React.FC = () => {
                           );
                         })}
                       </div>
+
+                      {/* Criteria & Requirements Box for Selected Specialized Committee */}
+                      {(() => {
+                        const selectedCommObj = committees.find((c) => c.name === formData.targetCommittee);
+                        const selectedCommId = selectedCommObj?.id || 'general';
+                        if (selectedCommId === 'general') return null;
+
+                        const requirements =
+                          recruitment.criteria?.requirements?.[selectedCommId as 'training' | 'media' | 'events'] ||
+                          DEFAULT_COMMITTEE_CRITERIA.requirements[selectedCommId as 'training' | 'media' | 'events'] ||
+                          [];
+                        const pledgeText =
+                          recruitment.criteria?.pledgeText || DEFAULT_COMMITTEE_CRITERIA.pledgeText;
+                        const evaluationNote =
+                          recruitment.criteria?.evaluationNote || DEFAULT_COMMITTEE_CRITERIA.evaluationNote;
+
+                        return (
+                          <div className="mt-4 p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-3.5 animate-in fade-in duration-200 text-right">
+                            <div className="flex items-center gap-2">
+                              <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0" />
+                              <h4 className="text-xs font-bold text-white">
+                                الشروط والمعايير المطلوبة للانضمام إلى ({selectedCommObj?.name}):
+                              </h4>
+                            </div>
+
+                            <ul className="space-y-2 text-xs text-gray-300 leading-relaxed pr-1">
+                              {requirements.map((req, idx) => (
+                                <li key={idx} className="flex items-start gap-2">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                                  <span>{req}</span>
+                                </li>
+                              ))}
+                            </ul>
+
+                            {/* Fair Evaluation & Single Application Notice */}
+                            <div className="p-3 rounded-xl bg-black/40 border border-white/10 text-xs text-amber-300/90 leading-relaxed flex items-start gap-2">
+                              <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                              <span>{evaluationNote}</span>
+                            </div>
+
+                            {/* Mandatory Pledge Checkbox */}
+                            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-black/50 border border-cyan-500/40 hover:border-cyan-400 cursor-pointer transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={pledgeAgreed}
+                                onChange={(e) => {
+                                  setPledgeAgreed(e.target.checked);
+                                  if (e.target.checked) setFormError(null);
+                                }}
+                                className="mt-0.5 w-4 h-4 rounded accent-cyan-400 cursor-pointer shrink-0"
+                              />
+                              <span className="text-xs font-medium text-white leading-relaxed select-none">
+                                {pledgeText}
+                              </span>
+                            </label>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div>
@@ -712,9 +794,40 @@ export const JoinClubSection: React.FC = () => {
                 )}
 
                 {formError && (
-                  <div role="alert" className="mt-6 p-4 rounded-2xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm flex items-start gap-2.5">
-                    <AlertCircle className="w-5 h-5 text-red-300 shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">{formError}</span>
+                  <div
+                    role="alert"
+                    className="mt-6 p-4 rounded-2xl bg-red-950/50 border border-red-500/40 text-red-200 text-sm space-y-3 animate-in fade-in"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <AlertCircle className="w-5 h-5 text-red-300 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed font-medium">{formError}</span>
+                    </div>
+
+                    {duplicateErrorData && (
+                      <div className="p-3.5 rounded-xl bg-black/50 border border-cyan-500/30 text-xs text-cyan-200 space-y-2">
+                        <div className="font-bold text-white flex items-center gap-1.5">
+                          <FileCheck2 className="w-4 h-4 text-cyan-400" />
+                          <span>إشعار للطلبة المسجلين مسبقاً:</span>
+                        </div>
+                        <p className="text-gray-300 leading-relaxed">
+                          نظراً لأنه يُسمح بطلب واحد فقط لكل طالب لضمان عدالة الفرص، يمكنك مراجعة حالة طلبك أو بطاقتك مباشرة دون الحاجة لإعادة التسجيل:
+                        </p>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <a
+                            href={`/?verify=${encodeURIComponent(duplicateErrorData.studentId)}`}
+                            className="px-3 py-2 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs transition-colors"
+                          >
+                            التحقق من حالة الطلب والبطاقة
+                          </a>
+                          <a
+                            href="/?member=1"
+                            className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors border border-white/10"
+                          >
+                            تسجيل الدخول في «حسابي»
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { dataService } from '../services/dataService';
+import { dataService, DEFAULT_COMMITTEE_CRITERIA, DEFAULT_MESSAGE_TEMPLATES } from '../services/dataService';
 import { getSupabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from '../services/supabaseClient';
 import { ClubLogo } from './ClubLogo';
 import {
@@ -103,6 +103,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Megaphone,
+  RotateCcw,
+  FileText,
 } from 'lucide-react';
 
 // Client-side image compressor & lightweight base64 converter
@@ -313,6 +315,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [settings, setSettings] = useState<SiteSettings>(dataService.getSettings());
   const [spotlight, setSpotlight] = useState<StudentSpotlightData>(dataService.getSpotlight());
   const [recruitmentSettings, setRecruitmentSettings] = useState(() => dataService.getRecruitmentSettings());
+  const [recruitmentHubTab, setRecruitmentHubTab] = useState<'status' | 'criteria' | 'templates'>('status');
+  const [criteriaForm, setCriteriaForm] = useState(() => recruitmentSettings.criteria || DEFAULT_COMMITTEE_CRITERIA);
+  const [templatesForm, setTemplatesForm] = useState(() => recruitmentSettings.messageTemplates || DEFAULT_MESSAGE_TEMPLATES);
+  const [activeTemplateTab, setActiveTemplateTab] = useState<'regular' | 'leadership' | 'transferred' | 'interview'>('regular');
 
   // Complaints & Suggestions state
   const [complaints, setComplaints] = useState<ComplaintItem[]>([]);
@@ -442,7 +448,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       return prev;
     });
     setComplaints(dataService.getComplaints());
-    setRecruitmentSettings(dataService.getRecruitmentSettings());
+    const freshRecruitment = dataService.getRecruitmentSettings();
+    setRecruitmentSettings(freshRecruitment);
+    if (freshRecruitment.criteria) setCriteriaForm(freshRecruitment.criteria);
+    if (freshRecruitment.messageTemplates) setTemplatesForm(freshRecruitment.messageTemplates);
     setSubscribers(dataService.getSubscribers());
   };
 
@@ -995,6 +1004,113 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       if (found) {
         setDispatchModalApp({ ...found, status: 'تم القبول' });
       }
+    }
+  };
+
+  // Transfer committee applicant to general membership with explanation
+  const handleTransferAppToGeneral = async (app: StoredApplication) => {
+    const ok = await confirm({
+      title: `قبول وتحويل (${app.fullName}) لعضوية عامة؟`,
+      message: `المتقدم مسجل أساساً في (${app.targetCommittee}). سيتم قبوله كـ "عضو عام" ببطاقة رقمية صالحة لمدة 14 يوماً مع إمكانية إرسال رسالة القبول الموضحة.`,
+      confirmLabel: 'تأكيد القبول والتحويل',
+    });
+    if (!ok) return;
+
+    dataService.updateApplicationAssignment(app.id, {
+      assignedCommittee: 'عضوية عامة (عضو بالنادي)',
+      organizationalRole: 'عضو في النادي',
+    });
+    dataService.updateApplicationStatus(app.id, 'تم القبول');
+
+    const updatedApp: StoredApplication = {
+      ...app,
+      assignedCommittee: 'عضوية عامة (عضو بالنادي)',
+      organizationalRole: 'عضو في النادي',
+      status: 'تم القبول',
+    };
+    (updatedApp as { isTransferredToGeneral?: boolean }).isTransferredToGeneral = true;
+
+    setApplications((prev) => prev.map((a) => (a.id === app.id ? updatedApp : a)));
+    setDispatchModalApp(updatedApp);
+    showToast(`تم قبول (${app.fullName}) وتحويله لعضوية عامة`);
+  };
+
+  // Status change handler with transfer option for committee applicants
+  const handleStatusChangeWithTransferCheck = async (app: StoredApplication, status: StoredApplication['status']) => {
+    if (status === 'مرفوض') {
+      const isCommitteeApplicant = Boolean(app.targetCommittee) && !app.targetCommittee.includes('عامة');
+      if (isCommitteeApplicant && app.status !== 'مرفوض') {
+        const shouldTransfer = await confirm({
+          title: `معالجة طلب (${app.fullName})`,
+          message: `المتقدم مسجل في (${app.targetCommittee}). هل ترغب في تحويله وقبوله كـ "عضو عام" ببطاقة رقمية بدلاً من رفضه نهائياً؟`,
+          confirmLabel: 'قبول وتحويل لعضو عام',
+          cancelLabel: 'رفض نهائي للطلب',
+          danger: false,
+        });
+        if (shouldTransfer) {
+          await handleTransferAppToGeneral(app);
+          return;
+        }
+      }
+    }
+    handleUpdateAppStatus(app.id, status);
+  };
+
+  const handleSaveCriteria = () => {
+    const updated = {
+      ...recruitmentSettings,
+      criteria: criteriaForm,
+    };
+    setRecruitmentSettings(updated);
+    dataService.saveRecruitmentSettings(updated);
+    showToast('تم حفظ شروط ومعايير اللجان بنجاح');
+  };
+
+  const handleResetCriteria = async () => {
+    if (
+      await confirm({
+        title: 'استعادة معايير وشروط اللجان الافتراضية؟',
+        message: 'سيتم استرجاع نصوص الشروط الرسمية والتعهد الافتراضي للنادي.',
+        confirmLabel: 'استعادة الافتراضي',
+      })
+    ) {
+      setCriteriaForm(DEFAULT_COMMITTEE_CRITERIA);
+      const updated = {
+        ...recruitmentSettings,
+        criteria: DEFAULT_COMMITTEE_CRITERIA,
+      };
+      setRecruitmentSettings(updated);
+      dataService.saveRecruitmentSettings(updated);
+      showToast('تمت استعادة الشروط الافتراضية');
+    }
+  };
+
+  const handleSaveTemplates = () => {
+    const updated = {
+      ...recruitmentSettings,
+      messageTemplates: templatesForm,
+    };
+    setRecruitmentSettings(updated);
+    dataService.saveRecruitmentSettings(updated);
+    showToast('تم حفظ قوالب رسائل القبول والإشعارات بنجاح');
+  };
+
+  const handleResetTemplates = async () => {
+    if (
+      await confirm({
+        title: 'استعادة قوالب الرسائل الافتراضية؟',
+        message: 'سيتم استرجاع نصوص القوالب الرسمية (العادية، القيادية، والتحويل لعضو عام، والمقابلات).',
+        confirmLabel: 'استعادة الافتراضي',
+      })
+    ) {
+      setTemplatesForm(DEFAULT_MESSAGE_TEMPLATES);
+      const updated = {
+        ...recruitmentSettings,
+        messageTemplates: DEFAULT_MESSAGE_TEMPLATES,
+      };
+      setRecruitmentSettings(updated);
+      dataService.saveRecruitmentSettings(updated);
+      showToast('تمت استعادة القوالب الافتراضية');
     }
   };
 
@@ -2075,109 +2191,419 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 {showRecruitmentControls && (
-                <div className="p-5 rounded-2xl bg-black/40 border border-white/10 mb-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-white/5">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2.5 rounded-xl border ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400' : 'bg-red-950/60 border-red-500/30 text-red-400'}`}>
-                        <Sliders className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-bold text-white">إدارة استقطاب اللجان والتسجيل</h4>
-                          <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-red-500/10 text-red-300 border-red-500/20'}`}>
-                            {recruitmentSettings.isGlobalRecruitmentOpen ? 'الاستقطاب العام: مفتوح' : 'الاستقطاب العام: متوقف'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          التحكم في فتح وإغلاق باب التقديم لكل لجنة بشكل فردي لحماية المقاعد أو إيقاف الاستقطاب بالكامل.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Master Global Toggle */}
+                <div className="p-5 rounded-2xl bg-black/40 border border-white/10 mb-6 space-y-4 text-right">
+                  {/* Sub-tabs Header */}
+                  <div className="flex items-center gap-2 border-b border-white/10 pb-3 overflow-x-auto">
                     <button
                       type="button"
-                      onClick={() => {
-                        const next = !recruitmentSettings.isGlobalRecruitmentOpen;
-                        const updated = {
-                          ...recruitmentSettings,
-                          isGlobalRecruitmentOpen: next,
-                        };
-                        setRecruitmentSettings(updated);
-                        dataService.saveRecruitmentSettings(updated);
-                      }}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-red-950/50 hover:bg-red-900/60 border border-red-500/40 text-red-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                      onClick={() => setRecruitmentHubTab('status')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+                        recruitmentHubTab === 'status'
+                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                          : 'bg-white/5 text-gray-400 hover:text-white'
+                      }`}
                     >
-                      <Power className="w-4 h-4" />
-                      <span>{recruitmentSettings.isGlobalRecruitmentOpen ? 'إيقاف استقطاب جميع اللجان مؤقتاً' : 'تفعيل استقطاب اللجان العام'}</span>
+                      <Sliders className="w-4 h-4" />
+                      <span>حالة الاستقطاب والشواغر</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecruitmentHubTab('criteria')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+                        recruitmentHubTab === 'criteria'
+                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                          : 'bg-white/5 text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>شروط ومعايير اللجان والتعهد</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecruitmentHubTab('templates')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+                        recruitmentHubTab === 'templates'
+                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                          : 'bg-white/5 text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>قوالب رسائل القبول والإشعارات</span>
                     </button>
                   </div>
 
-                  {/* Committees Recruitment Status Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {[
-                      { id: 'general', name: 'عضوية عامة (عضو بالنادي)', filterKeyword: 'عامة', defaultNotice: 'الاستقطاب مغلق حالياً' },
-                      { id: 'events', name: 'لجنة الفعاليات والأنشطة', filterKeyword: 'فعاليات', defaultNotice: 'اكتملت المقاعد المتاحة للفعاليات' },
-                      { id: 'training', name: 'لجنة العلاقات والتدريب', filterKeyword: 'تدريب', defaultNotice: 'اكتملت المقاعد المتاحة للتدريب' },
-                      { id: 'media', name: 'اللجنة الإعلامية', filterKeyword: 'إعلام', defaultNotice: 'اكتملت المقاعد المتاحة للإعلام' },
-                    ].map((comm) => {
-                      const commStatus = recruitmentSettings.committees[comm.id] || { isOpen: true };
-                      const isCommOpen = recruitmentSettings.isGlobalRecruitmentOpen && commStatus.isOpen !== false;
-                      const appCount = applications.filter((a) => a.targetCommittee.includes(comm.filterKeyword) || a.targetCommittee.includes(comm.name)).length;
-
-                      return (
-                        <div key={comm.id} className={`p-3.5 rounded-xl border transition-all ${isCommOpen ? 'bg-black/30 border-white/10' : 'bg-red-950/20 border-red-500/30'}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-white truncate max-w-[130px]">{comm.name}</span>
-                            <span className={`text-xs font-mono px-2 py-0.5 rounded border ${isCommOpen ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30' : 'bg-red-950/60 text-red-400 border-red-500/30'}`}>
-                              {isCommOpen ? 'مفتوح' : 'مغلق'}
-                            </span>
+                  {/* Tab 1: Status & Vacancies */}
+                  {recruitmentHubTab === 'status' && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2.5 rounded-xl border ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-400' : 'bg-red-950/60 border-red-500/30 text-red-400'}`}>
+                            <Sliders className="w-5 h-5" />
                           </div>
-
-                          <div className="text-xs text-gray-400 mb-3 font-mono">
-                            المتقدمون: <strong className="text-white">{appCount}</strong> طالب/ة
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-bold text-white">إدارة شواغر اللجان والتسجيل</h4>
+                              <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-red-500/10 text-red-300 border-red-500/20'}`}>
+                                {recruitmentSettings.isGlobalRecruitmentOpen ? 'الاستقطاب العام: مفتوح' : 'الاستقطاب العام: متوقف'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              التحكم في فتح وإغلاق باب التقديم لكل لجنة بشكل فردي لحماية المقاعد أو إيقاف الاستقطاب بالكامل.
+                            </p>
                           </div>
+                        </div>
 
+                        {/* Master Global Toggle */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !recruitmentSettings.isGlobalRecruitmentOpen;
+                            const updated = {
+                              ...recruitmentSettings,
+                              isGlobalRecruitmentOpen: next,
+                            };
+                            setRecruitmentSettings(updated);
+                            dataService.saveRecruitmentSettings(updated);
+                          }}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow ${recruitmentSettings.isGlobalRecruitmentOpen ? 'bg-red-950/50 hover:bg-red-900/60 border border-red-500/40 text-red-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}
+                        >
+                          <Power className="w-4 h-4" />
+                          <span>{recruitmentSettings.isGlobalRecruitmentOpen ? 'إيقاف استقطاب جميع اللجان مؤقتاً' : 'تفعيل استقطاب اللجان العام'}</span>
+                        </button>
+                      </div>
+
+                      {/* Committees Recruitment Status Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {[
+                          { id: 'general', name: 'عضوية عامة (عضو بالنادي)', filterKeyword: 'عامة', defaultNotice: 'الاستقطاب مغلق حالياً' },
+                          { id: 'events', name: 'لجنة الفعاليات والأنشطة', filterKeyword: 'فعاليات', defaultNotice: 'اكتملت المقاعد المتاحة للفعاليات' },
+                          { id: 'training', name: 'لجنة العلاقات والتدريب', filterKeyword: 'تدريب', defaultNotice: 'اكتملت المقاعد المتاحة للتدريب' },
+                          { id: 'media', name: 'اللجنة الإعلامية', filterKeyword: 'إعلام', defaultNotice: 'اكتملت المقاعد المتاحة للإعلام' },
+                        ].map((comm) => {
+                          const commStatus = recruitmentSettings.committees[comm.id] || { isOpen: true };
+                          const isCommOpen = recruitmentSettings.isGlobalRecruitmentOpen && commStatus.isOpen !== false;
+                          const appCount = applications.filter((a) => a.targetCommittee.includes(comm.filterKeyword) || a.targetCommittee.includes(comm.name)).length;
+
+                          return (
+                            <div key={comm.id} className={`p-3.5 rounded-xl border transition-all ${isCommOpen ? 'bg-black/30 border-white/10' : 'bg-red-950/20 border-red-500/30'}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-white truncate max-w-[130px]">{comm.name}</span>
+                                <span className={`text-xs font-mono px-2 py-0.5 rounded border ${isCommOpen ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30' : 'bg-red-950/60 text-red-400 border-red-500/30'}`}>
+                                  {isCommOpen ? 'مفتوح' : 'مغلق'}
+                                </span>
+                              </div>
+
+                              <div className="text-xs text-gray-400 mb-3 font-mono">
+                                المتقدمون: <strong className="text-white">{appCount}</strong> طالب/ة
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextStatus = !commStatus.isOpen;
+                                  const updated = {
+                                    ...recruitmentSettings,
+                                    committees: {
+                                      ...recruitmentSettings.committees,
+                                      [comm.id]: {
+                                        ...commStatus,
+                                        isOpen: nextStatus,
+                                        closedNotice: commStatus.closedNotice || comm.defaultNotice,
+                                      },
+                                    },
+                                  };
+                                  setRecruitmentSettings(updated);
+                                  dataService.saveRecruitmentSettings(updated);
+                                }}
+                                className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                                  isCommOpen
+                                    ? 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/30 text-amber-300'
+                                    : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/30 text-emerald-300'
+                                }`}
+                              >
+                                {isCommOpen ? (
+                                  <>
+                                    <Lock className="w-3.5 h-3.5" />
+                                    <span>إيقاف استقطاب اللجنة</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Unlock className="w-3.5 h-3.5" />
+                                    <span>فتح باب الاستقطاب</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 2: Committee Criteria & Requirements */}
+                  {recruitmentHubTab === 'criteria' && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+                        <div>
+                          <h4 className="text-sm font-bold text-white">معايير وشروط الانضمام للجان والتعهد</h4>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            تظهر هذه الشروط للطالب فور اختياره للجنة في استمارة الانضمام، مع إقرار وتعهد إلزامي قبل الإرسال.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => {
-                              const nextStatus = !commStatus.isOpen;
-                              const updated = {
-                                ...recruitmentSettings,
-                                committees: {
-                                  ...recruitmentSettings.committees,
-                                  [comm.id]: {
-                                    ...commStatus,
-                                    isOpen: nextStatus,
-                                    closedNotice: commStatus.closedNotice || comm.defaultNotice,
-                                  },
-                                },
-                              };
-                              setRecruitmentSettings(updated);
-                              dataService.saveRecruitmentSettings(updated);
-                            }}
-                            className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
-                              isCommOpen
-                                ? 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/30 text-amber-300'
-                                : 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/30 text-emerald-300'
-                            }`}
+                            onClick={() => void handleResetCriteria()}
+                            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                           >
-                            {isCommOpen ? (
-                              <>
-                                <Lock className="w-3.5 h-3.5" />
-                                <span>إيقاف استقطاب اللجنة</span>
-                              </>
-                            ) : (
-                              <>
-                                <Unlock className="w-3.5 h-3.5" />
-                                <span>فتح باب الاستقطاب</span>
-                              </>
-                            )}
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>استعادة الافتراضي</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveCriteria}
+                            className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            <span>حفظ الشروط والمعايير</span>
                           </button>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        {/* Training Committee Requirements */}
+                        <div className="p-4 rounded-xl bg-black/30 border border-white/10 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-cyan-300">لجنة العلاقات والتدريب</span>
+                            <span className="text-[10px] text-gray-400 font-mono">شرط في كل سطر</span>
+                          </div>
+                          <textarea
+                            rows={6}
+                            value={criteriaForm.requirements.training.join('\n')}
+                            onChange={(e) =>
+                              setCriteriaForm({
+                                ...criteriaForm,
+                                requirements: {
+                                  ...criteriaForm.requirements,
+                                  training: e.target.value.split('\n').filter((l) => l.trim()),
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-gray-200 leading-relaxed focus:border-cyan-400 focus:outline-none resize-y font-mono"
+                          />
+                        </div>
+
+                        {/* Media Committee Requirements */}
+                        <div className="p-4 rounded-xl bg-black/30 border border-white/10 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-purple-300">اللجنة الإعلامية</span>
+                            <span className="text-[10px] text-gray-400 font-mono">شرط في كل سطر</span>
+                          </div>
+                          <textarea
+                            rows={6}
+                            value={criteriaForm.requirements.media.join('\n')}
+                            onChange={(e) =>
+                              setCriteriaForm({
+                                ...criteriaForm,
+                                requirements: {
+                                  ...criteriaForm.requirements,
+                                  media: e.target.value.split('\n').filter((l) => l.trim()),
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-gray-200 leading-relaxed focus:border-cyan-400 focus:outline-none resize-y font-mono"
+                          />
+                        </div>
+
+                        {/* Events Committee Requirements */}
+                        <div className="p-4 rounded-xl bg-black/30 border border-white/10 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-300">لجنة الفعاليات والأنشطة</span>
+                            <span className="text-[10px] text-gray-400 font-mono">شرط في كل سطر</span>
+                          </div>
+                          <textarea
+                            rows={6}
+                            value={criteriaForm.requirements.events.join('\n')}
+                            onChange={(e) =>
+                              setCriteriaForm({
+                                ...criteriaForm,
+                                requirements: {
+                                  ...criteriaForm.requirements,
+                                  events: e.target.value.split('\n').filter((l) => l.trim()),
+                                },
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-gray-200 leading-relaxed focus:border-cyan-400 focus:outline-none resize-y font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
+                        {/* Mandatory Pledge Text */}
+                        <div className="p-4 rounded-xl bg-black/30 border border-white/10 space-y-2">
+                          <span className="block text-xs font-bold text-amber-300">
+                            صيغة التعهد والإقرار الإلزامي (Checkbox):
+                          </span>
+                          <textarea
+                            rows={3}
+                            value={criteriaForm.pledgeText}
+                            onChange={(e) => setCriteriaForm({ ...criteriaForm, pledgeText: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-gray-200 leading-relaxed focus:border-cyan-400 focus:outline-none resize-y"
+                          />
+                          <p className="text-[11px] text-gray-400">
+                            هذا النص يظهر مع مربع اختيار إلزامي للطالب عند اختيار أي لجنة متخصصة.
+                          </p>
+                        </div>
+
+                        {/* Evaluation & Fair Representation Note */}
+                        <div className="p-4 rounded-xl bg-black/30 border border-white/10 space-y-2">
+                          <span className="block text-xs font-bold text-cyan-300">
+                            ملاحظة التقييم والتمثيل العادل والطلب الواحد:
+                          </span>
+                          <textarea
+                            rows={3}
+                            value={criteriaForm.evaluationNote}
+                            onChange={(e) => setCriteriaForm({ ...criteriaForm, evaluationNote: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-gray-200 leading-relaxed focus:border-cyan-400 focus:outline-none resize-y"
+                          />
+                          <p className="text-[11px] text-gray-400">
+                            تنويه يوضح للطلبة فرز الطلبات بلجنة تقييم حسب الكفاءة وتوزيع الكليات، ومنع تكرار تقديم الطلبات.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 3: Acceptance Message Templates */}
+                  {recruitmentHubTab === 'templates' && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
+                        <div>
+                          <h4 className="text-sm font-bold text-white">قوالب رسائل القبول والاعتماد والإشعارات</h4>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            خصص صيغ الرسائل الرسمية التي يتم إرسالها للطلبة مع دعم المتغيرات التلقائية المدرجة أدناه.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleResetTemplates()}
+                            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>استعادة الافتراضي</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveTemplates}
+                            className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            <span>حفظ قوالب الرسائل</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Placeholders Reference Chips */}
+                      <div className="p-3 rounded-xl bg-black/30 border border-white/10 text-xs">
+                        <span className="text-gray-400 block mb-1.5 font-bold">المتغيرات المتاحة للدمج التلقائي:</span>
+                        <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
+                          {[
+                            '{الاسم}',
+                            '{الرقم_الجامعي}',
+                            '{اللجنة}',
+                            '{المسمى}',
+                            '{رمز_العضو}',
+                            '{الكلية}',
+                            '{التخصص}',
+                            '{الصلاحية}',
+                            '{رابط_البطاقة}',
+                            '{رابط_حسابي}',
+                            '{اللجنة_المطلوبة}',
+                            '{موعد_المقابلة}',
+                          ].map((ph) => (
+                            <span key={ph} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-cyan-300 select-all">
+                              {ph}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Template Selector Sub-tabs */}
+                      <div className="flex items-center gap-2 border-b border-white/10 pb-2 overflow-x-auto">
+                        {[
+                          { id: 'regular', name: 'قبول عضوية رسمي' },
+                          { id: 'leadership', name: 'اعتماد تكليف قيادي' },
+                          { id: 'transferred', name: 'قبول وتحويل لعضو عام' },
+                          { id: 'interview', name: 'دعوة المقابلة الشخصية' },
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setActiveTemplateTab(t.id as 'regular' | 'leadership' | 'transferred' | 'interview')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
+                              activeTemplateTab === t.id
+                                ? 'bg-white/15 text-white border border-white/20'
+                                : 'text-gray-400 hover:text-white'
+                            }`}
+                          >
+                            {t.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Active Template Editor */}
+                      <div>
+                        {activeTemplateTab === 'regular' && (
+                          <div className="space-y-1.5">
+                            <span className="block text-xs font-bold text-gray-300">قالب قبول العضوية (عامة أو لجان):</span>
+                            <textarea
+                              rows={12}
+                              value={templatesForm.regularAcceptance}
+                              onChange={(e) => setTemplatesForm({ ...templatesForm, regularAcceptance: e.target.value })}
+                              className="w-full px-3 py-2.5 rounded-xl bg-black/60 border border-white/15 text-xs text-white leading-relaxed focus:border-cyan-400 focus:outline-none font-mono resize-y"
+                            />
+                          </div>
+                        )}
+
+                        {activeTemplateTab === 'leadership' && (
+                          <div className="space-y-1.5">
+                            <span className="block text-xs font-bold text-gray-300">قالب اعتماد تكليف الكادر القيادي:</span>
+                            <textarea
+                              rows={12}
+                              value={templatesForm.leadershipAcceptance}
+                              onChange={(e) => setTemplatesForm({ ...templatesForm, leadershipAcceptance: e.target.value })}
+                              className="w-full px-3 py-2.5 rounded-xl bg-black/60 border border-white/15 text-xs text-white leading-relaxed focus:border-cyan-400 focus:outline-none font-mono resize-y"
+                            />
+                          </div>
+                        )}
+
+                        {activeTemplateTab === 'transferred' && (
+                          <div className="space-y-1.5">
+                            <span className="block text-xs font-bold text-gray-300">قالب القبول والتحويل لعضوية عامة (مع توضيح أسباب المنافسة باللجنة وتشجيعه):</span>
+                            <textarea
+                              rows={12}
+                              value={templatesForm.transferredAcceptance}
+                              onChange={(e) => setTemplatesForm({ ...templatesForm, transferredAcceptance: e.target.value })}
+                              className="w-full px-3 py-2.5 rounded-xl bg-black/60 border border-white/15 text-xs text-white leading-relaxed focus:border-cyan-400 focus:outline-none font-mono resize-y"
+                            />
+                          </div>
+                        )}
+
+                        {activeTemplateTab === 'interview' && (
+                          <div className="space-y-1.5">
+                            <span className="block text-xs font-bold text-gray-300">قالب دعوة المقابلة الشخصية:</span>
+                            <textarea
+                              rows={10}
+                              value={templatesForm.interviewInvitation}
+                              onChange={(e) => setTemplatesForm({ ...templatesForm, interviewInvitation: e.target.value })}
+                              className="w-full px-3 py-2.5 rounded-xl bg-black/60 border border-white/15 text-xs text-white leading-relaxed focus:border-cyan-400 focus:outline-none font-mono resize-y"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 )}
 
@@ -2347,7 +2773,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     };
                     setViewingLeaderBadge(matchedLeader);
                   }}
-                  onStatus={(app, status) => handleUpdateAppStatus(app.id, status)}
+                  onStatus={(app, status) => void handleStatusChangeWithTransferCheck(app, status)}
+                  onTransferToGeneral={handleTransferAppToGeneral}
                   onSchedule={(app) => setInterviewApp(app)}
                   onAssign={(app) => setAssignApp(app)}
                   onDelete={(app) => void handleDeleteApplication(app.id, app.fullName)}

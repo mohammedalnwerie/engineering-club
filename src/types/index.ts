@@ -297,9 +297,31 @@ export interface MembershipSettings {
   paymentInstructions: string;
 }
 
+export interface CommitteeCriteriaSettings {
+  /** Requirements list per committee ID ('training', 'media', 'events') */
+  requirements: Record<string, string[]>;
+  /** The text of the mandatory pledge/declaration checkbox */
+  pledgeText?: string;
+  /** Official evaluation & fair representation notice */
+  evaluationNote?: string;
+}
+
+export interface MessageTemplatesSettings {
+  /** Acceptance email & WhatsApp body template for regular members */
+  regularAcceptance?: string;
+  /** Acceptance email & WhatsApp body template for leadership appointees */
+  leadershipAcceptance?: string;
+  /** Acceptance email & WhatsApp body template for committee applicants transferred to general membership */
+  transferredAcceptance?: string;
+  /** Interview invitation message template */
+  interviewInvitation?: string;
+}
+
 export interface RecruitmentSettings {
   isGlobalRecruitmentOpen: boolean;
   globalClosedMessage?: string;
   committees: Record<string, CommitteeRecruitmentStatus>;
+  criteria?: CommitteeCriteriaSettings;
+  messageTemplates?: MessageTemplatesSettings;
   lastUpdated?: string;
 }

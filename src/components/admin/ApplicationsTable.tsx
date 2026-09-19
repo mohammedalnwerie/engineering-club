@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Send, CreditCard, Award, CheckCircle, Clock, Trash2, XCircle, Link as LinkIcon, UserCog, Crown } from 'lucide-react';
+import { Eye, Send, CreditCard, Award, CheckCircle, Clock, Trash2, XCircle, Link as LinkIcon, UserCog, Crown, UserCheck } from 'lucide-react';
 import type { StoredApplication } from '../../types';
 import { effectiveCommittee } from '../../data/committees';
 import { isExecutiveLeader } from '../../utils/memberCard';
@@ -20,6 +20,7 @@ export interface ApplicationsTableProps {
   onCommitteeBadge: (app: StoredApplication) => void;
   onExecutiveBadge?: (app: StoredApplication) => void;
   onStatus: (app: StoredApplication, status: StoredApplication['status']) => void;
+  onTransferToGeneral?: (app: StoredApplication) => void;
   onSchedule: (app: StoredApplication) => void;
   onAssign: (app: StoredApplication) => void;
   onDelete: (app: StoredApplication) => void;
@@ -61,6 +62,7 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
   onCommitteeBadge,
   onExecutiveBadge,
   onStatus,
+  onTransferToGeneral,
   onSchedule,
   onAssign,
   onDelete,
@@ -107,6 +109,12 @@ export const ApplicationsTable: React.FC<ApplicationsTableProps> = ({
         icon: <CheckCircle className="w-4 h-4 text-emerald-300" />,
         onClick: () => onStatus(app, 'تم القبول'),
         hidden: accepted,
+      },
+      {
+        label: 'قبول وتحويل لعضو عام',
+        icon: <UserCheck className="w-4 h-4 text-cyan-300" />,
+        onClick: () => onTransferToGeneral?.(app),
+        hidden: !inCommittee || (app.assignedCommittee?.includes('عامة') && accepted),
       },
       {
         label: app.status === 'مقابلة مجدولة' ? 'تعديل موعد المقابلة' : 'تحديد موعد مقابلة',

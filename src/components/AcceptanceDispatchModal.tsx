@@ -1,10 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { StoredApplication } from '../types';
-import { emailService } from '../services/emailService';
+import { emailService, getAcceptanceType } from '../services/emailService';
 import { effectiveCommittee } from '../data/committees';
 import { dataService } from '../services/dataService';
 import { normalizePhone, suggestEmailFix, validateEmail, validatePhone } from '../utils/validation';
-import { X, Mail, MessageCircle, Copy, Check, ExternalLink, ShieldCheck, Send, AlertCircle, CreditCard, Pencil } from 'lucide-react';
+import {
+  X,
+  Mail,
+  MessageCircle,
+  Copy,
+  Check,
+  ExternalLink,
+  ShieldCheck,
+  Send,
+  AlertCircle,
+  CreditCard,
+  Pencil,
+  FileText,
+  RotateCcw,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 
 interface AcceptanceDispatchModalProps {
   isOpen: boolean;
@@ -16,7 +32,12 @@ interface AcceptanceDispatchModalProps {
 const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString('ar', { dateStyle: 'medium', timeStyle: 'short' });
 
-export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = ({ isOpen, onClose, app, onViewBadge }) => {
+export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = ({
+  isOpen,
+  onClose,
+  app,
+  onViewBadge,
+}) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedMsg, setCopiedMsg] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -28,11 +49,31 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   const [contactError, setContactError] = useState<string | null>(null);
   const [isSavingContact, setIsSavingContact] = useState(false);
 
+  // Message draft editing
+  const [customMessageBody, setCustomMessageBody] = useState('');
+  const [customSubject, setCustomSubject] = useState('');
+  const [showDraftEditor, setShowDraftEditor] = useState(false);
+
+  // Update draft whenever app or modal opens
+  useEffect(() => {
+    if (app && isOpen) {
+      setContact({ email: app.email || '', phone: app.phone || '' });
+      setSentAt(app.acceptanceEmailSentAt);
+      const initial = emailService.formatAcceptanceEmail(app);
+      setCustomMessageBody(initial.body);
+      setCustomSubject(initial.subject);
+      setStatus(null);
+      setIsEditingContact(false);
+      setShowDraftEditor(false);
+    }
+  }, [app?.id, isOpen]);
+
   if (!isOpen || !app) return null;
 
   // Messages and sending always use the latest corrected contact details.
   const current: StoredApplication = { ...app, ...contact };
   const emailProblem = validateEmail(contact.email);
+  const acceptanceType = getAcceptanceType(current);
 
   const startEditing = () => {
     setDraft(contact);
@@ -53,11 +94,21 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
       setContact(next);
       setIsEditingContact(false);
       setStatus(null);
+      // Re-render draft body with new contact info
+      const updatedFormatted = emailService.formatAcceptanceEmail({ ...current, ...next });
+      setCustomMessageBody(updatedFormatted.body);
+      setCustomSubject(updatedFormatted.subject);
     } catch (err) {
       setContactError(`تعذر الحفظ: ${err instanceof Error ? err.message : 'خطأ غير معروف'}`);
     } finally {
       setIsSavingContact(false);
     }
+  };
+
+  const handleResetDraft = () => {
+    const fresh = emailService.formatAcceptanceEmail(current);
+    setCustomMessageBody(fresh.body);
+    setCustomSubject(fresh.subject);
   };
 
   const verifyUrl = `${window.location.origin}/?verify=${encodeURIComponent(current.studentId || current.id)}`;
@@ -71,7 +122,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   };
 
   const handleCopyMessage = () => {
-    navigator.clipboard.writeText(emailService.formatAcceptanceEmail(current).body);
+    navigator.clipboard.writeText(customMessageBody);
     setCopiedMsg(true);
     setTimeout(() => setCopiedMsg(false), 2500);
   };
@@ -79,7 +130,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   const handleSendEmail = async () => {
     setIsSending(true);
     setStatus(null);
-    const result = await emailService.sendAcceptanceEmail(current);
+    const result = await emailService.sendAcceptanceEmail(current, customMessageBody, customSubject);
     setStatus(result);
     if (result.sentAt) setSentAt(result.sentAt);
     else if (/عنوان البريد|غير صحيح|غير موجود/.test(result.message)) startEditing();
@@ -100,22 +151,40 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
           <X className="w-4 h-4" />
         </button>
 
-        <h3 className="text-xl font-black text-white">إشعار الطالب بالقبول</h3>
-        <p className="text-sm text-gray-400 mt-1 mb-5">راجع البيانات، ثم أرسل رسالة القبول ورابط البطاقة.</p>
+        <h3 className="text-xl font-black text-white">إشعار الطالب بالقبول والاعتماد</h3>
+        <p className="text-sm text-gray-400 mt-1 mb-5">راجع بيانات الطالب ومسودة الرسالة، ثم أرسل إشعار القبول والبطاقة.</p>
 
         {/* Student summary */}
         <div className="p-4 rounded-2xl bg-black/40 border border-white/10 mb-5 space-y-2 text-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="font-bold text-white text-base">{app.fullName}</div>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 text-xs font-bold shrink-0">
-              مقبول
-            </span>
+            {acceptanceType === 'leadership' ? (
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/30 text-xs font-bold shrink-0">
+                اعتماد كادر قيادي
+              </span>
+            ) : acceptanceType === 'transferred' ? (
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/30 text-xs font-bold shrink-0">
+                قبول وتحويل لعضو عام
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30 text-xs font-bold shrink-0">
+                مقبول
+              </span>
+            )}
           </div>
           <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-gray-300">
             <span className="text-gray-500">الرقم الجامعي</span>
-            <span dir="ltr" className="text-right">{app.studentId}</span>
+            <span dir="ltr" className="text-right">
+              {app.studentId}
+            </span>
             <span className="text-gray-500">اللجنة</span>
             <span>{committee}</span>
+            {app.targetCommittee && app.targetCommittee !== committee && (
+              <>
+                <span className="text-gray-500">اللجنة المطلوبة</span>
+                <span className="text-gray-400">{app.targetCommittee}</span>
+              </>
+            )}
             {app.organizationalRole && (
               <>
                 <span className="text-gray-500">المسمى</span>
@@ -125,9 +194,13 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
             {!isEditingContact && (
               <>
                 <span className="text-gray-500">الإيميل</span>
-                <span dir="ltr" className={`text-right break-all ${emailProblem ? 'text-red-300' : ''}`}>{contact.email || '—'}</span>
+                <span dir="ltr" className={`text-right break-all ${emailProblem ? 'text-red-300' : ''}`}>
+                  {contact.email || '—'}
+                </span>
                 <span className="text-gray-500">الجوال</span>
-                <span dir="ltr" className="text-right">{contact.phone || '—'}</span>
+                <span dir="ltr" className="text-right">
+                  {contact.phone || '—'}
+                </span>
               </>
             )}
           </div>
@@ -201,14 +274,72 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
           )}
         </div>
 
+        {/* Message Draft Preview & Editor */}
+        <div className="p-4 rounded-2xl bg-black/30 border border-white/10 mb-5 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowDraftEditor(!showDraftEditor)}
+              className="flex items-center gap-2 text-sm font-bold text-white hover:text-cyan-300 cursor-pointer transition-colors"
+            >
+              <FileText className="w-4 h-4 text-cyan-400" />
+              <span>معاينة وتخصيص نص الرسالة قبل الإرسال</span>
+              {showDraftEditor ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {showDraftEditor && (
+              <button
+                type="button"
+                onClick={handleResetDraft}
+                title="استعادة النص الافتراضي من القالب"
+                className="text-xs text-gray-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>استعادة القالب</span>
+              </button>
+            )}
+          </div>
+
+          {showDraftEditor ? (
+            <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+              <label className="block">
+                <span className="block text-xs text-gray-400 mb-1">عنوان البريد (الموضوع):</span>
+                <input
+                  type="text"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-xs"
+                />
+              </label>
+
+              <label className="block">
+                <span className="block text-xs text-gray-400 mb-1">نص الرسالة:</span>
+                <textarea
+                  rows={8}
+                  value={customMessageBody}
+                  onChange={(e) => setCustomMessageBody(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-xs font-mono leading-relaxed resize-y"
+                />
+              </label>
+              <p className="text-xs text-gray-400">
+                أي تعديل هنا سيتم اعتماده عند الإرسال عبر Gmail أو واتساب أو زر إيميل النادي.
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+              {customMessageBody.replace(/\n+/g, ' ')}
+            </p>
+          )}
+        </div>
+
         {/* Club email (primary) */}
         <div className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/[0.04] mb-5 space-y-3">
           <div className="flex items-center gap-2">
             <Mail className="w-5 h-5 text-cyan-300" />
-            <div className="font-bold text-white">إيميل القبول من إيميل النادي</div>
+            <div className="font-bold text-white">إيميل القبول والاعتماد من إيميل النادي</div>
           </div>
           <p className="text-sm text-gray-300 leading-relaxed">
-            تصل للطالب رسالة تهنئة فيها لجنته ومسماه وكود التحقق وزر لفتح بطاقته.
+            تصل للطالب رسالة تهنئة رسمية تتضمن بيانات العضوية، كود الدخول الأول، ورابط استعراض البطاقة.
           </p>
 
           {lastSentAt && (
@@ -244,29 +375,33 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
           >
             <Send className="w-4 h-4" />
             <span>
-              {isSending ? 'جاري الإرسال…' : lastSentAt ? 'إعادة إرسال الإيميل' : `إرسال الإيميل إلى ${contact.email || 'الطالب'}`}
+              {isSending
+                ? 'جاري الإرسال…'
+                : lastSentAt
+                  ? 'إعادة إرسال الإيميل'
+                  : `إرسال الإيميل إلى ${contact.email || 'الطالب'}`}
             </span>
           </button>
         </div>
 
         {/* Other channels */}
-        <div className="text-sm text-gray-400 mb-2">طرق أخرى</div>
+        <div className="text-sm text-gray-400 mb-2">طرق إشعار بديلة</div>
         <div className="space-y-2">
           <button
             type="button"
-            onClick={() => emailService.openWhatsAppChat(current)}
+            onClick={() => emailService.openWhatsAppChat(current, customMessageBody)}
             className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm cursor-pointer flex items-center justify-between transition-all"
           >
             <span className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
-              <span>إرسال عبر واتساب</span>
+              <span>إرسال نص الرسالة عبر واتساب</span>
             </span>
             <ExternalLink className="w-4 h-4 opacity-70" />
           </button>
 
           <button
             type="button"
-            onClick={() => emailService.openGmailWebmail(current)}
+            onClick={() => emailService.openGmailWebmail(current, customSubject, customMessageBody)}
             className="w-full py-3 px-4 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 text-white font-bold text-sm cursor-pointer flex items-center justify-between transition-all"
           >
             <span className="flex items-center gap-2">

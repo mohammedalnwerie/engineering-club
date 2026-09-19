@@ -1839,33 +1839,14 @@ begin
 
   if found then
     if v_existing.status = 'تم القبول' then
-      raise exception 'هذا الرقم الجامعي مسجل كعضو مقبول في النادي. لتعديل بياناتك تواصل مع إدارة النادي.';
+      raise exception 'هذا الرقم الجامعي مسجل كعضو معتمد بالفعل في النادي الهندسي. يمكنك الدخول لحسابك عبر صفحة «حسابي».';
     end if;
-    if lower(coalesce(v_existing.email, '')) <> v_email
-       and public.club_phone_key(v_existing.phone) <> public.club_phone_key(v_phone) then
-      raise exception 'يوجد طلب سابق بهذا الرقم الجامعي. لتحديثه استخدم نفس البريد الإلكتروني أو رقم الجوال الذي سجلت به، أو تواصل مع إدارة النادي.';
-    end if;
-
-    update public.club_applications
-    set full_name    = v_full_name,
-        email        = v_email,
-        phone        = v_phone,
-        -- ما تكتبه الإدارة يبقى كما هو
-        data         = v_data || jsonb_strip_nulls(jsonb_build_object(
-                         'assignedCommittee', v_existing.data->'assignedCommittee',
-                         'organizationalRole', v_existing.data->'organizationalRole',
-                         'interviewAt', v_existing.data->'interviewAt',
-                         'interviewTimeTbd', v_existing.data->'interviewTimeTbd',
-                         'acceptanceEmailSentAt', v_existing.data->'acceptanceEmailSentAt')),
-        submitted_at = now(),
-        status       = case when v_existing.status = 'مرفوض' then 'قيد المراجعة' else v_existing.status end
-    where id = v_existing.id
-    returning * into v_row;
-  else
-    insert into public.club_applications (student_id, full_name, email, phone, data)
-    values (v_student_id, v_full_name, v_email, v_phone, v_data)
-    returning * into v_row;
+    raise exception 'عذراً، هذا الرقم الجامعي مسجل مسبقاً في سجلات النظام وطلبك قيد المراجعة والتقييم حالياً. لا يُسمح بتقديم أكثر من طلب لضمان العدالة وتكافؤ الفرص.';
   end if;
+
+  insert into public.club_applications (student_id, full_name, email, phone, data)
+  values (v_student_id, v_full_name, v_email, v_phone, v_data)
+  returning * into v_row;
 
   return jsonb_build_object('id', v_row.id, 'status', v_row.status, 'submittedAt', v_row.submitted_at);
 end;
