@@ -21,6 +21,7 @@ export interface MemberRegistration {
   timeTbd?: boolean;
   location: string | null;
   eventType: EventType;
+  teamData?: HackathonRegistrationData | null;
 }
 
 export interface MemberPaymentRequest {

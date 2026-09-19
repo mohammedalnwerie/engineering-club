@@ -235,6 +235,30 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                 <div className="min-w-0">
                   <div className="text-sm text-gray-400">مرحباً</div>
                   <h2 className="text-2xl font-black text-white break-words">{profile.fullName}</h2>
+                  {/* Activity & Badges Strip */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2">
+                    <span className="text-xs px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-gray-300">
+                      الفعاليات المسجلة: <strong className="text-white">{profile.registrations.length}</strong>
+                    </span>
+                    <span className="text-xs px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+                      حضور معتمد: <strong className="text-emerald-200">{profile.registrations.filter((r) => r.checkedInAt).length}</strong>
+                    </span>
+                    {profile.registrations.filter((r) => r.checkedInAt).length >= 2 && (
+                      <span className="text-xs px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold">
+                        عضو نشط 🌟
+                      </span>
+                    )}
+                    {profile.membershipType === 'executive' && (
+                      <span className="text-xs px-2.5 py-1 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 font-bold">
+                        كادر قيادي 👑
+                      </span>
+                    )}
+                    {profile.assignedCommittee && (
+                      <span className="text-xs px-2.5 py-1 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">
+                        {profile.assignedCommittee} 🛡️
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
@@ -789,46 +813,94 @@ const RegistrationsPanel: React.FC<{ profile: MemberProfile; onBrowseEvents: () 
           {profile.registrations.map((r) => {
             const upcoming = !r.startsAt || new Date(r.startsAt).getTime() > Date.now();
             return (
-              <li key={r.id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-start justify-between gap-3">
-                <div className="min-w-0 space-y-1">
-                  <div className="text-xs text-gray-400">{EVENT_TYPE_LABELS[r.eventType] || 'فعالية'}</div>
-                  <div className="font-bold text-white break-words">{r.title}</div>
-                  <div className="text-sm text-gray-300 flex flex-wrap gap-x-4 gap-y-1">
-                    <span className="flex items-center gap-1.5">
-                      <CalendarDays className="w-4 h-4 shrink-0" />
-                      {eventWhenLabel(r)}
-                    </span>
-                    {r.location && (
+              <li key={r.id} className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1">
+                    <div className="text-xs text-gray-400">{EVENT_TYPE_LABELS[r.eventType] || 'فعالية'}</div>
+                    <div className="font-bold text-white break-words">{r.title}</div>
+                    <div className="text-sm text-gray-300 flex flex-wrap gap-x-4 gap-y-1">
                       <span className="flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4 shrink-0" />
-                        {r.location}
+                        <CalendarDays className="w-4 h-4 shrink-0 text-cyan-400" />
+                        {eventWhenLabel(r)}
                       </span>
+                      {r.location && (
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="w-4 h-4 shrink-0 text-cyan-400" />
+                          {r.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0 flex flex-col items-end gap-2">
+                    <span
+                      className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                        r.checkedInAt
+                          ? 'bg-emerald-500/15 text-emerald-300'
+                          : r.status === 'waitlisted'
+                            ? 'bg-amber-500/15 text-amber-300'
+                            : 'bg-cyan-500/15 text-cyan-300'
+                      }`}
+                    >
+                      {r.checkedInAt ? 'حضرت' : r.status === 'waitlisted' ? 'قائمة انتظار' : 'مسجّل'}
+                    </span>
+                    {upcoming && !r.checkedInAt && (
+                      <button
+                        type="button"
+                        disabled={cancelling === r.eventId}
+                        onClick={() => void cancel(r.eventId)}
+                        className="text-xs text-gray-400 hover:text-red-300 cursor-pointer disabled:opacity-50"
+                      >
+                        {cancelling === r.eventId ? 'جاري…' : 'إلغاء التسجيل'}
+                      </button>
                     )}
                   </div>
                 </div>
-                <div className="shrink-0 flex flex-col items-end gap-2">
-                  <span
-                    className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                      r.checkedInAt
-                        ? 'bg-emerald-500/15 text-emerald-300'
-                        : r.status === 'waitlisted'
-                          ? 'bg-amber-500/15 text-amber-300'
-                          : 'bg-cyan-500/15 text-cyan-300'
-                    }`}
-                  >
-                    {r.checkedInAt ? 'حضرت' : r.status === 'waitlisted' ? 'قائمة انتظار' : 'مسجّل'}
-                  </span>
-                  {upcoming && !r.checkedInAt && (
-                    <button
-                      type="button"
-                      disabled={cancelling === r.eventId}
-                      onClick={() => void cancel(r.eventId)}
-                      className="text-xs text-gray-400 hover:text-red-300 cursor-pointer disabled:opacity-50"
-                    >
-                      {cancelling === r.eventId ? 'جاري…' : 'إلغاء التسجيل'}
-                    </button>
-                  )}
-                </div>
+
+                {/* Team Details for Hackathons */}
+                {r.teamData && (
+                  <div className="pt-2 border-t border-white/5 space-y-2 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold">
+                          {r.teamData.participationType === 'team' ? 'فريق عمل' : 'مشارك فردي'}
+                        </span>
+                        {r.teamData.track && (
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                            مسار: {r.teamData.track}
+                          </span>
+                        )}
+                      </div>
+                      {r.teamData.teamName && (
+                        <span className="font-bold text-white text-sm">اسم الفريق: {r.teamData.teamName}</span>
+                      )}
+                    </div>
+
+                    {r.teamData.projectTitle && (
+                      <div className="text-cyan-300 font-semibold">
+                        المشروع: {r.teamData.projectTitle}
+                      </div>
+                    )}
+
+                    {r.teamData.projectSummary && (
+                      <p className="text-gray-300 leading-relaxed whitespace-pre-line bg-black/30 p-2.5 rounded-xl border border-white/5">
+                        {r.teamData.projectSummary}
+                      </p>
+                    )}
+
+                    {r.teamData.members && r.teamData.members.length > 0 && (
+                      <div>
+                        <div className="text-gray-400 font-bold mb-1">أعضاء الفريق:</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {r.teamData.members.map((m, idx) => (
+                            <span key={idx} className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-200">
+                              {m.fullName} {m.role ? `(${m.role})` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}

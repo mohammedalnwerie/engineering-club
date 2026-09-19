@@ -213,6 +213,15 @@ export interface SiteSettings {
   showProjectsSection?: boolean;
   showLiveFeedSection?: boolean;
   showFaqSection?: boolean;
+  announcement?: SiteAnnouncement;
+}
+
+export interface SiteAnnouncement {
+  enabled: boolean;
+  text: string;
+  linkText?: string;
+  linkUrl?: string;
+  tone?: 'warning' | 'info' | 'success';
 }
 
 export interface FaqItem {

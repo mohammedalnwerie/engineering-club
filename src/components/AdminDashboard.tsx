@@ -102,6 +102,7 @@ import {
   ChevronRight,
   CheckCircle2,
   ArrowRight,
+  Megaphone,
 } from 'lucide-react';
 
 // Client-side image compressor & lightweight base64 converter
@@ -889,7 +890,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
         (app.customSkill || '').toLowerCase().includes(q) ||
         (app.personalStatement || '').toLowerCase().includes(q) ||
         (app.organizationalRole || '').toLowerCase().includes(q);
-      const matchesStatus = appStatusFilter === 'all' || app.status === appStatusFilter;
+      const matchesStatus =
+        appStatusFilter === 'all'
+          ? true
+          : appStatusFilter === 'unnotified'
+          ? app.status === 'تم القبول' && !app.acceptanceEmailSentAt
+          : app.status === appStatusFilter;
       const matchesCommittee = appCommitteeFilter === 'الكل' || effectiveCommittee(app).includes(appCommitteeFilter);
       const matchesPortfolio = !onlyWithPortfolio || Boolean(app.portfolioUrl);
       return matchesSearch && matchesStatus && matchesCommittee && matchesPortfolio;
@@ -2195,11 +2201,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       className="px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-gray-300 focus:outline-none cursor-pointer"
                     >
                       <option value="all">كافة الحالات</option>
+                      <option value="unnotified">
+                        مقبولون بانتظار الإيميل ({applications.filter((a) => a.status === 'تم القبول' && !a.acceptanceEmailSentAt).length})
+                      </option>
                       <option value="قيد المراجعة">قيد المراجعة</option>
                       <option value="مقابلة مجدولة">مقابلة مجدولة</option>
                       <option value="تم القبول">تم القبول</option>
                       <option value="مرفوض">مرفوض</option>
                     </select>
+
+                    {applications.some((a) => a.status === 'تم القبول' && !a.acceptanceEmailSentAt) && (
+                      <button
+                        type="button"
+                        onClick={() => setAppStatusFilter((v) => (v === 'unnotified' ? 'all' : 'unnotified'))}
+                        aria-pressed={appStatusFilter === 'unnotified'}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                          appStatusFilter === 'unnotified'
+                            ? 'bg-amber-400 text-black border-amber-300 shadow-md'
+                            : 'bg-amber-950/40 border-amber-500/40 text-amber-300 hover:bg-amber-900/50'
+                        }`}
+                      >
+                        <span>مقبولون بانتظار الإيميل</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                            appStatusFilter === 'unnotified' ? 'bg-black/20 text-black font-bold' : 'bg-amber-400/20 text-amber-200'
+                          }`}
+                        >
+                          {applications.filter((a) => a.status === 'تم القبول' && !a.acceptanceEmailSentAt).length}
+                        </span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -3220,6 +3251,207 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         )}
                       </button>
                     </div>
+                  </div>
+                </div>
+
+                {/* Broadcast Announcement Banner Control Card */}
+                <div className="p-6 rounded-2xl bg-black/50 border border-cyan-500/30 space-y-4 shadow-xl">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-white/10 gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-300">
+                        <Megaphone className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                          شريط الإعلانات والتنبيهات العاجلة أعلى الموقع
+                          {settings.announcement?.enabled && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                              مفعّل الآن
+                            </span>
+                          )}
+                        </h4>
+                        <p className="text-xs text-gray-400">
+                          نشر شريط إعلاني ملفت يظهر في أعلى الموقع للزوار بخصوص هاكاثون، موعد تسجيل، أو حدث هام
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-[#162744] text-cyan-300 border border-cyan-500/30 w-fit">
+                      ANNOUNCEMENT BANNER
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Toggle */}
+                    <label className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/10 cursor-pointer hover:border-white/20 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(settings.announcement?.enabled)}
+                        onChange={(e) => {
+                          const updated: SiteSettings = {
+                            ...settings,
+                            announcement: {
+                              enabled: e.target.checked,
+                              text: settings.announcement?.text || '',
+                              linkText: settings.announcement?.linkText || '',
+                              linkUrl: settings.announcement?.linkUrl || '',
+                              tone: settings.announcement?.tone || 'warning',
+                            },
+                          };
+                          setSettings(updated);
+                        }}
+                        className="w-4 h-4 rounded text-cyan-500 focus:ring-cyan-400 bg-black/60 border-white/20 cursor-pointer"
+                      />
+                      <div className="flex-1">
+                        <span className="text-xs font-bold text-white block">
+                          تفعيل عرض شريط الإعلان في أعلى الموقع للزوار
+                        </span>
+                        <span className="text-[11px] text-gray-400">
+                          عند التفعيل، سيظهر الشريط لكافة زوار الموقع في أعلى الصفحة فوراً
+                        </span>
+                      </div>
+                    </label>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Announcement Text */}
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-xs font-bold text-gray-300">نص الإعلان أو التنبيه العاجل</label>
+                        <input
+                          type="text"
+                          placeholder="مثال: تم تمديد التسجيل في هاكاثون فلسطين الهندسي الأول حتى الثلاثاء القادم!"
+                          value={settings.announcement?.text || ''}
+                          onChange={(e) => {
+                            const updated: SiteSettings = {
+                              ...settings,
+                              announcement: {
+                                enabled: settings.announcement?.enabled ?? false,
+                                text: e.target.value,
+                                linkText: settings.announcement?.linkText || '',
+                                linkUrl: settings.announcement?.linkUrl || '',
+                                tone: settings.announcement?.tone || 'warning',
+                              },
+                            };
+                            setSettings(updated);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-gray-500 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Link Text */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-300">نص الزر / الرابط (اختياري)</label>
+                        <input
+                          type="text"
+                          placeholder="مثال: سجّل الآن، أو تفاصيل الفعالية"
+                          value={settings.announcement?.linkText || ''}
+                          onChange={(e) => {
+                            const updated: SiteSettings = {
+                              ...settings,
+                              announcement: {
+                                enabled: settings.announcement?.enabled ?? false,
+                                text: settings.announcement?.text || '',
+                                linkText: e.target.value,
+                                linkUrl: settings.announcement?.linkUrl || '',
+                                tone: settings.announcement?.tone || 'warning',
+                              },
+                            };
+                            setSettings(updated);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-gray-500 focus:border-cyan-400 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Link URL */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-300">رابط التوجيه (اختياري)</label>
+                        <input
+                          type="text"
+                          placeholder="مثال: #events أو #join أو رابط خارجي"
+                          value={settings.announcement?.linkUrl || ''}
+                          onChange={(e) => {
+                            const updated: SiteSettings = {
+                              ...settings,
+                              announcement: {
+                                enabled: settings.announcement?.enabled ?? false,
+                                text: settings.announcement?.text || '',
+                                linkText: settings.announcement?.linkText || '',
+                                linkUrl: e.target.value,
+                                tone: settings.announcement?.tone || 'warning',
+                              },
+                            };
+                            setSettings(updated);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-gray-500 focus:border-cyan-400 focus:outline-none font-mono"
+                          dir="ltr"
+                        />
+                      </div>
+
+                      {/* Tone selector */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-300">نوع ولون التنبيه</label>
+                        <select
+                          value={settings.announcement?.tone || 'warning'}
+                          onChange={(e) => {
+                            const updated: SiteSettings = {
+                              ...settings,
+                              announcement: {
+                                enabled: settings.announcement?.enabled ?? false,
+                                text: settings.announcement?.text || '',
+                                linkText: settings.announcement?.linkText || '',
+                                linkUrl: settings.announcement?.linkUrl || '',
+                                tone: e.target.value as 'warning' | 'info' | 'success',
+                              },
+                            };
+                            setSettings(updated);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
+                        >
+                          <option value="warning">تحذيري / عاجل (أصفر / برتقالي)</option>
+                          <option value="info">إخباري / مميز (سماوي / أزرق)</option>
+                          <option value="success">إنجاز / نجاح (زمردي / أخضر)</option>
+                        </select>
+                      </div>
+
+                      {/* Save Button */}
+                      <div className="flex items-end justify-end">
+                        <Button
+                          type="button"
+                          variant="primary"
+                          icon={<Save className="w-4 h-4" />}
+                          onClick={() => {
+                            dataService.saveSettings(settings);
+                            showToast('تم حفظ إعدادات الإعلان العاجل بنجاح');
+                          }}
+                        >
+                          حفظ إعدادات الإعلان
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Live Preview Box */}
+                    {settings.announcement?.text && (
+                      <div className="pt-2 border-t border-white/10">
+                        <span className="text-[11px] text-gray-400 block mb-1.5">معاينة حية لشكل الشريط أعلى الموقع:</span>
+                        <div
+                          className={`p-2.5 rounded-xl border flex flex-wrap items-center justify-between gap-2 text-xs ${
+                            settings.announcement.tone === 'info'
+                              ? 'bg-cyan-950/80 border-cyan-500/40 text-cyan-200'
+                              : settings.announcement.tone === 'success'
+                              ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-200'
+                              : 'bg-amber-950/80 border-amber-500/40 text-amber-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Megaphone className="w-4 h-4 shrink-0" />
+                            <span>{settings.announcement.text}</span>
+                          </div>
+                          {settings.announcement.linkText && (
+                            <span className="px-2.5 py-1 rounded-lg font-bold bg-white/10 text-white border border-white/20 text-[11px]">
+                              {settings.announcement.linkText} ←
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

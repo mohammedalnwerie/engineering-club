@@ -12,6 +12,7 @@ import {
   PlayCircle,
   KeyRound,
   Copy,
+  Printer,
 } from 'lucide-react';
 import {
   listMembers,
@@ -30,6 +31,7 @@ import { dataService } from '../../services/dataService';
 import { downloadCsv } from '../../utils/security';
 import { isExecutivePosition } from '../../data/committees';
 import type { MembershipSettings } from '../../types';
+import { BulkCardPrintModal } from './BulkCardPrintModal';
 
 type View = 'payments' | 'members' | 'settings';
 
@@ -279,6 +281,7 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resetSuccessModal, setResetSuccessModal] = useState<{ name: string; memberCode: string; studentId: string } | null>(null);
+  const [showBulkPrint, setShowBulkPrint] = useState(false);
   const settings = dataService.getMembershipSettings();
 
   const counts = useMemo(() => {
@@ -374,6 +377,9 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
           <option value="expired">منتهية ({counts.expired})</option>
           <option value="suspended">معلّقة ({counts.suspended})</option>
         </select>
+        <Button icon={<Printer className="w-4 h-4" />} variant="secondary" onClick={() => setShowBulkPrint(true)} disabled={shown.length === 0}>
+          طباعة ورقة A4
+        </Button>
         <Button icon={<Download className="w-4 h-4" />} onClick={exportCsv} disabled={shown.length === 0}>
           تصدير
         </Button>
@@ -540,6 +546,14 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
             </div>
           </div>
         </div>
+      )}
+      {/* Bulk A4 Card Print Modal */}
+      {showBulkPrint && (
+        <BulkCardPrintModal
+          isOpen={showBulkPrint}
+          onClose={() => setShowBulkPrint(false)}
+          members={shown}
+        />
       )}
     </div>
   );

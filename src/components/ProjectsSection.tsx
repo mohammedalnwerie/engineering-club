@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { dataService } from '../services/dataService';
 import type { ProjectCaseStudy } from '../types';
-import { ArrowUpRight, ExternalLink, X, Award, Users, Cpu, Sparkles, ArrowLeft } from 'lucide-react';
+import { ArrowUpRight, ExternalLink, X, Award, Users, Cpu, Sparkles, ArrowLeft, Search } from 'lucide-react';
 
 const PROJECT_CATEGORY_LABELS: Record<string, string> = {
   software: 'البرمجيات والأنظمة',
@@ -13,6 +13,7 @@ const PROJECT_CATEGORY_LABELS: Record<string, string> = {
 export const ProjectsSection: React.FC = () => {
   const [projectsList, setProjectsList] = useState<ProjectCaseStudy[]>([]);
   const [filter, setFilter] = useState<'all' | 'ai' | 'architecture' | 'software'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeModalProject, setActiveModalProject] = useState<ProjectCaseStudy | null>(null);
 
   const [isVisible, setIsVisible] = useState<boolean>(() => {
@@ -30,8 +31,17 @@ export const ProjectsSection: React.FC = () => {
   }, []);
 
   const filteredProjects = projectsList.filter((p) => {
-    if (filter === 'all') return true;
-    return p.category === filter;
+    const matchesCategory = filter === 'all' || p.category === filter;
+    if (!matchesCategory) return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    const matchesTitle = p.title?.toLowerCase().includes(q);
+    const matchesTagline = p.tagline?.toLowerCase().includes(q);
+    const matchesProblem = p.problem?.toLowerCase().includes(q);
+    const matchesSolution = p.solution?.toLowerCase().includes(q);
+    const matchesTech = p.techStack?.some((t) => t.toLowerCase().includes(q));
+    const matchesTeam = p.team?.some((m) => m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q));
+    return Boolean(matchesTitle || matchesTagline || matchesProblem || matchesSolution || matchesTech || matchesTeam);
   });
 
   const openProjectModal = (proj: ProjectCaseStudy) => {
@@ -113,42 +123,102 @@ export const ProjectsSection: React.FC = () => {
         </div>
 
         {/* Initiatives Header & Filters */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-          <div>
-            <h3 className="text-xl sm:text-2xl font-bold text-white">المبادرات والمشاريع قيد التأسيس في النادي</h3>
-            <p className="text-xs sm:text-sm text-gray-400 mt-1">
-              نماذج ومبادرات طلابية مفتوحة للمساهمة والانضمام لكافة طلبة الكليات الهندسية والـ IT
-            </p>
+        <div className="space-y-4 mb-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-bold text-white">المبادرات والمشاريع قيد التأسيس في النادي</h3>
+              <p className="text-xs sm:text-sm text-gray-400 mt-1">
+                نماذج ومبادرات طلابية مفتوحة للمساهمة والانضمام لكافة طلبة الكليات الهندسية والـ IT
+              </p>
+            </div>
+
+            {/* Filter Chips */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'الكل', value: 'all' },
+                { label: 'البرمجيات والأنظمة', value: 'software' },
+                { label: 'الذكاء الاصطناعي والتنظيم', value: 'ai' },
+                { label: 'العمارة والتخطيط', value: 'architecture' },
+              ].map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => {
+                    setFilter(tab.value as any);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                    filter === tab.value
+                      ? 'bg-cyan-400 text-black font-bold shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                      : 'bg-white/[0.04] text-gray-400 hover:text-white border border-white/5'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Filter Chips */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { label: 'الكل', value: 'all' },
-              { label: 'البرمجيات والأنظمة', value: 'software' },
-              { label: 'الذكاء الاصطناعي والتنظيم', value: 'ai' },
-              { label: 'العمارة والتخطيط', value: 'architecture' },
-            ].map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => {
-                  setFilter(tab.value as any);
-                }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                  filter === tab.value
-                    ? 'bg-cyan-400 text-black font-bold shadow-[0_0_15px_rgba(0,240,255,0.3)]'
-                    : 'bg-white/[0.04] text-gray-400 hover:text-white border border-white/5'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          {/* Live Search & Counter Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ابحث في المشاريع، التقنيات (Python, React...) أو أسماء الطلبة..."
+                className="w-full pr-10 pl-9 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:border-cyan-400/60 transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="مسح البحث"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-white rounded-lg cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="text-xs text-gray-400 flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <span>عرض <strong className="text-white">{filteredProjects.length}</strong> من أصل {projectsList.length} مشروع</span>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="text-cyan-300 hover:text-cyan-200 underline cursor-pointer text-xs"
+                >
+                  إلغاء تصفية البحث
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filteredProjects.map((project) => (
+        {/* Projects Grid or Empty State */}
+        {filteredProjects.length === 0 ? (
+          <div className="p-12 rounded-3xl bg-white/[0.02] border border-white/10 text-center space-y-3 mb-12">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 text-gray-400 flex items-center justify-center mx-auto mb-2">
+              <Search className="w-6 h-6 text-cyan-400" />
+            </div>
+            <h4 className="text-base font-bold text-white">لا توجد مشاريع مطابقة لمعايير البحث</h4>
+            <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+              لم نعثر على أي مشروع يطابق الكلمة المكتوبة. يمكنك تجربة كتابة تقنية أخرى أو مسح البحث.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setFilter('all');
+                setSearchQuery('');
+              }}
+              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs text-white font-bold transition-all cursor-pointer"
+            >
+              عرض كافة المشاريع
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {filteredProjects.map((project) => (
             <div
               key={project.id}
               className="rounded-3xl glass-panel border border-white/10 hover:border-cyan-400/50 p-6 flex flex-col justify-between transition-all duration-300 relative group overflow-hidden"
@@ -240,6 +310,7 @@ export const ProjectsSection: React.FC = () => {
             </div>
           ))}
         </div>
+      )}
 
         {/* Call to Action for Student Projects */}
         <div className="rounded-3xl p-6 sm:p-10 bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-blue-950/30 border border-cyan-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">

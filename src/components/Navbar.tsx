@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ArrowUpRight, ShieldCheck, MessageSquare, FileText, UserRound } from 'lucide-react';
+import { Menu, X, ArrowUpRight, ShieldCheck, MessageSquare, FileText, UserRound, Megaphone } from 'lucide-react';
 import { ClubLogo } from './ClubLogo';
 import { dataService } from '../services/dataService';
+import type { SiteAnnouncement } from '../types';
 
 interface NavbarProps {
   onOpenJoinModal?: () => void;
@@ -17,12 +18,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, o
   const [showEvents, setShowEvents] = useState<boolean>(() => dataService.getSettings().showEventsSection !== false);
   const [showProjects, setShowProjects] = useState<boolean>(() => dataService.getSettings().showProjectsSection !== false);
   const [showFaq, setShowFaq] = useState<boolean>(() => dataService.getSettings().showFaqSection !== false);
+  const [announcement, setAnnouncement] = useState<SiteAnnouncement | undefined>(() => dataService.getSettings().announcement);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (announcement?.text && sessionStorage.getItem('eng_club_announcement_dismissed') === announcement.text) {
+        setDismissed(true);
+      } else {
+        setDismissed(false);
+      }
+    } catch {
+      // ignore
+    }
+  }, [announcement?.text]);
 
   useEffect(() => {
     const unsub = dataService.subscribe(() => {
-      setShowEvents(dataService.getSettings().showEventsSection !== false);
-      setShowProjects(dataService.getSettings().showProjectsSection !== false);
-      setShowFaq(dataService.getSettings().showFaqSection !== false);
+      const s = dataService.getSettings();
+      setShowEvents(s.showEventsSection !== false);
+      setShowProjects(s.showProjectsSection !== false);
+      setShowFaq(s.showFaqSection !== false);
+      setAnnouncement(s.announcement);
     });
     return unsub;
   }, []);
@@ -60,9 +77,65 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, o
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 z-40 px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4 transition-all duration-300">
-      <div
-        className={`max-w-7xl mx-auto rounded-2xl transition-all duration-300 px-3 sm:px-5 py-2 flex items-center justify-between gap-3 ${
+    <header className="fixed top-0 inset-x-0 z-40 transition-all duration-300">
+      {/* Announcement Broadcast Banner */}
+      {announcement?.enabled && announcement?.text && !dismissed && (
+        <aside
+          aria-label="إعلان عاجل من النادي الهندسي"
+          className={`relative z-50 border-b py-2 px-3 sm:px-6 text-xs sm:text-sm font-medium shadow-lg backdrop-blur-md transition-all ${
+            announcement.tone === 'info'
+              ? 'bg-[#0a1b3a]/95 border-cyan-500/40 text-cyan-200'
+              : announcement.tone === 'success'
+              ? 'bg-[#06241b]/95 border-emerald-500/40 text-emerald-200'
+              : 'bg-[#2b1704]/95 border-amber-500/40 text-amber-200'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className="p-1 rounded-lg bg-black/40 shrink-0">
+                <Megaphone className="w-3.5 h-3.5 animate-pulse" />
+              </div>
+              <p className="truncate sm:whitespace-normal leading-relaxed text-xs sm:text-sm font-bold">
+                {announcement.text}
+              </p>
+              {announcement.linkText && (
+                <a
+                  href={announcement.linkUrl || '#'}
+                  onClick={(e) => {
+                    if (announcement.linkUrl?.startsWith('#')) {
+                      e.preventDefault();
+                      handleNavClick(announcement.linkUrl);
+                    }
+                  }}
+                  className="shrink-0 px-2.5 py-0.5 rounded-lg bg-white/15 hover:bg-white/25 text-white border border-white/25 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{announcement.linkText}</span>
+                  <span className="text-[10px]">←</span>
+                </a>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDismissed(true);
+                try {
+                  sessionStorage.setItem('eng_club_announcement_dismissed', announcement.text);
+                } catch {
+                  // ignore
+                }
+              }}
+              className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors shrink-0 cursor-pointer"
+              aria-label="إخفاء الإعلان"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </aside>
+      )}
+
+      <div className={`px-3 sm:px-6 lg:px-8 ${announcement?.enabled && announcement?.text && !dismissed ? 'pt-2 sm:pt-2.5' : 'pt-3 sm:pt-4'}`}>
+        <div
+          className={`max-w-7xl mx-auto rounded-2xl transition-all duration-300 px-3 sm:px-5 py-2 flex items-center justify-between gap-3 ${
           isScrolled
             ? 'glass-panel shadow-[0_10px_35px_-10px_rgba(0,0,0,0.8)] border border-[#7F1AB2]/30'
             : 'bg-[#08041D]/80 backdrop-blur-md border border-white/5'
@@ -209,6 +282,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, o
           </button>
         </div>
       )}
+      </div>
     </header>
   );
 };
