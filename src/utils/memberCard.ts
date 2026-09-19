@@ -306,15 +306,15 @@ export function computeCardValidity(app: CardApplication): {
     };
   }
 
-  // Temporary Membership (فور قبول الطلب: 14 يوماً مؤقتة لحين التثبيت للطلبة الجدد)
+  // Certified Membership with validity date
   if (app.validUntil) {
     const d = new Date(app.validUntil);
     const dateFormatted = d.toLocaleDateString('ar', { day: 'numeric', month: 'long', year: 'numeric' });
     const shortDate = `${d.getDate()}/${d.getMonth() + 1}`;
     return {
-      status: 'temporary',
-      badgeText: `مؤقتة حتى ${shortDate}`,
-      cardletTitle: 'بطاقة العضوية الأولى',
+      status: 'active',
+      badgeText: `صالحة حتى ${shortDate}`,
+      cardletTitle: 'بطاقة عضوية معتمدة',
       validitySubtext: `صالحة حتى ${dateFormatted}`,
     };
   }

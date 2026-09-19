@@ -224,7 +224,7 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
                     <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60 flex items-center gap-3 mb-4">
                       <img
                         src={col.coordinator.avatar || DEFAULT_AVATAR}
-                        alt={col.coordinator.name || 'منسق الكلية'}
+                        alt={col.coordinator.name || 'ممثل الكلية'}
                         className="w-11 h-11 rounded-xl object-cover border border-slate-700 shrink-0 shadow-xs"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
@@ -232,7 +232,7 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs text-slate-400">منسق وممثل الكلية:</span>
+                          <span className="text-xs text-slate-400">ممثل الكلية:</span>
                           {isNamedCoordinator && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-500/40 px-1.5 py-0.5 rounded">
                               <ShieldCheck className="w-3 h-3 text-cyan-400" /> معتمد بالكادر
@@ -240,7 +240,7 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
                           )}
                         </div>
                         <div className="text-xs font-bold text-white truncate mt-0.5">{col.coordinator.name || 'قريباً يُعلن'}</div>
-                        <div className="text-xs text-cyan-400 truncate">{col.coordinator.title || 'منسق الكلية'}</div>
+                        <div className="text-xs text-cyan-400 truncate">{col.coordinator.title || 'ممثل الكلية'}</div>
                       </div>
                     </div>
 
@@ -285,7 +285,7 @@ export const CollegesPanel: React.FC<CollegesPanelProps> = ({
                         type="button"
                         onClick={() => onViewCoordinatorBadge(col)}
                         className="py-2 px-3 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-500/35 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                        title="عرض وطباعة بطاقة التمثيل والاعتماد القيادي لمنسق الكلية"
+                        title="عرض وطباعة بطاقة التمثيل والاعتماد القيادي لممثل الكلية"
                       >
                         <CreditCard className="w-3.5 h-3.5" />
                         <span>بطاقة التمثيل</span>

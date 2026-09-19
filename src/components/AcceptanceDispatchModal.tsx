@@ -52,7 +52,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
   // Message draft editing
   const [customMessageBody, setCustomMessageBody] = useState('');
   const [customSubject, setCustomSubject] = useState('');
-  const [showDraftEditor, setShowDraftEditor] = useState(false);
+  const [showDraftEditor, setShowDraftEditor] = useState(true);
 
   // Update draft whenever app or modal opens
   useEffect(() => {
@@ -64,7 +64,7 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
       setCustomSubject(initial.subject);
       setStatus(null);
       setIsEditingContact(false);
-      setShowDraftEditor(false);
+      setShowDraftEditor(true);
     }
   }, [app?.id, isOpen]);
 
@@ -321,9 +321,10 @@ export const AcceptanceDispatchModal: React.FC<AcceptanceDispatchModalProps> = (
                   className="w-full px-3 py-2.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 focus:outline-none text-white text-xs font-mono leading-relaxed resize-y"
                 />
               </label>
-              <p className="text-xs text-gray-400">
-                أي تعديل هنا سيتم اعتماده عند الإرسال عبر Gmail أو واتساب أو زر إيميل النادي.
-              </p>
+              <div className="p-2.5 rounded-xl bg-cyan-950/50 border border-cyan-500/25 text-xs text-cyan-200 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 shrink-0 text-cyan-400" />
+                <span>أي تعديل هنا يُعتمد فوراً ويُرسل نصياً إلى بريد الطالب عبر إيميل النادي أو واتساب أو Gmail.</span>
+              </div>
             </div>
           ) : (
             <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">

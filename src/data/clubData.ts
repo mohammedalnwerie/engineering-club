@@ -404,7 +404,7 @@ export const LEADERSHIP_MEMBERS: LeaderMember[] = [
   {
     id: 'comm-events',
     name: '',
-    role: 'رئيس لجنة الأنشطة والبرامج',
+    role: 'مسؤول لجنة الأنشطة والبرامج',
     tier: 'committee-lead',
     department: 'لجنة الأنشطة والبرامج',
     avatar: '',
@@ -416,7 +416,7 @@ export const LEADERSHIP_MEMBERS: LeaderMember[] = [
   {
     id: 'comm-training',
     name: '',
-    role: 'رئيس لجنة العلاقات والشراكات',
+    role: 'مسؤول لجنة العلاقات والشراكات',
     tier: 'committee-lead',
     department: 'لجنة العلاقات والشراكات',
     avatar: '',
@@ -428,7 +428,7 @@ export const LEADERSHIP_MEMBERS: LeaderMember[] = [
   {
     id: 'comm-media',
     name: '',
-    role: 'رئيس لجنة الإعلام والاتصال',
+    role: 'مسؤول لجنة الإعلام والاتصال',
     tier: 'committee-lead',
     department: 'لجنة الإعلام والاتصال',
     avatar: '',
@@ -440,7 +440,7 @@ export const LEADERSHIP_MEMBERS: LeaderMember[] = [
   {
     id: 'lead-col-software-ai',
     name: '',
-    role: 'منسق وممثل كلية هندسة برمجيات وذكاء اصطناعي',
+    role: 'ممثل كلية هندسة برمجيات وذكاء اصطناعي',
     tier: 'college-lead',
     department: 'كلية هندسة برمجيات وذكاء اصطناعي',
     avatar: '',
@@ -452,7 +452,7 @@ export const LEADERSHIP_MEMBERS: LeaderMember[] = [
   {
     id: 'lead-col-it-computing',
     name: '',
-    role: 'منسق وممثل كلية تكنولوجيا المعلومات IT',
+    role: 'ممثل كلية تكنولوجيا المعلومات IT',
     tier: 'college-lead',
     department: 'كلية تكنولوجيا المعلومات IT',
     avatar: '',
@@ -464,7 +464,7 @@ export const LEADERSHIP_MEMBERS: LeaderMember[] = [
   {
     id: 'lead-col-applied-urban',
     name: '',
-    role: 'منسق وممثل كلية الهندسة التطبيقية والتخطيط العمراني',
+    role: 'ممثل كلية الهندسة التطبيقية والتخطيط العمراني',
     tier: 'college-lead',
     department: 'كلية الهندسة التطبيقية و التخطيط العمراني',
     avatar: '',

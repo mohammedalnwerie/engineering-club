@@ -80,7 +80,7 @@ export const DEFAULT_COMMITTEE_CRITERIA: CommitteeCriteriaSettings = {
       'الالتزام بالحضور الميداني: التواجد المسبق للتحضير قبل انطلاق البرامج والاستمرار الميداني حتى إتمامها وترتيب الموقع بالكامل.',
     ],
   },
-  pledgeText: 'أقر وأتعهد بأن كافة الشروط والمعايير المذكورة أعلاه تنطبق عليّ، وأدرك تماماً أنه في حال عدم مطابقتها أثناء التقييم والمقابلة، سيتم تحويل طلبي تلقائياً إلى عضوية عامة ببطاقة أولى صالحة لمدة 14 يوماً.',
+  pledgeText: 'أقر وأتعهد بأن كافة الشروط والمعايير المذكورة أعلاه تنطبق عليّ، وأدرك تماماً أنه في حال عدم مطابقتها أثناء التقييم والمقابلة، سيتم تحويل طلبي تلقائياً إلى عضوية عامة ببطاقة رقمية رسمية معتمدة.',
   evaluationNote: 'نظراً لمحدودية المقاعد في اللجان التنظيمية، سيتم فرز المتقدمين من قِبل لجنة تقييم مختصة بناءً على معايير الكفاءة والخبرة وسابقة الأعمال، وبما يضمن التمثيل العادل والمتوازن لكافة الكليات والتخصصات الهندسية. يُسمح بتقديم طلب واحد فقط لكل طالب.',
 };
 
@@ -716,7 +716,7 @@ class DataService {
         name: isNamed ? coord.name.trim() : '',
         avatar: coord.avatar || existing.avatar,
         email: coord.email !== undefined ? coord.email.trim() : (existing.email || ''),
-        role: coord.role && coord.role !== 'لجنة التنسيق والمتابعة الطلابية' ? coord.role : existing.role || `منسق وممثل ${college.name}`,
+        role: coord.role && coord.role !== 'لجنة التنسيق والمتابعة الطلابية' ? coord.role : existing.role || `ممثل ${college.name}`,
         department: college.name,
       };
       this.setContent('leadership', this.upsertById(leadership, updatedLeader));
@@ -724,7 +724,7 @@ class DataService {
       const newLeader: LeaderMember = {
         id: `lead-col-${college.id}`,
         name: isNamed ? coord.name.trim() : '',
-        role: coord.role && coord.role !== 'لجنة التنسيق والمتابعة الطلابية' ? coord.role : `منسق وممثل ${college.name}`,
+        role: coord.role && coord.role !== 'لجنة التنسيق والمتابعة الطلابية' ? coord.role : `ممثل ${college.name}`,
         tier: 'college-lead',
         department: college.name,
         avatar: coord.avatar || '',
@@ -981,6 +981,7 @@ class DataService {
       const isTreasurer = newRole.includes('صندوق');
 
       const isCommitteeHead =
+        newRole.includes('مسؤول اللجنة') || newRole.includes('مسؤول لجنة') ||
         newRole.includes('رئيس اللجنة') || newRole.includes('رئيس لجنة') || (newRole === 'رئيس' && !isPresident);
       const isCollegeRep =
         newRole.includes('ممثل كلية') || newRole.includes('منسق كلية') || targetComm.includes('ممثلو الكليات');

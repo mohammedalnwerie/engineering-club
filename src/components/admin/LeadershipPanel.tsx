@@ -173,8 +173,8 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
                   : leader.tier === 'executive'
                   ? 'الهيئة الإدارية'
                   : leader.tier === 'college-lead'
-                  ? 'ممثلو الكليات / منسق الكلية'
-                  : 'رئيس لجنة تنفيذي'}
+                  ? 'ممثلو الكليات'
+                  : 'مسؤول لجنة تنفيذي'}
               </span>
             </div>
           </div>
@@ -523,7 +523,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
 
         <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-purple-500/25 flex items-center justify-between">
           <div>
-            <div className="text-xs font-mono text-purple-300/90">رؤساء اللجان التنفيذية</div>
+            <div className="text-xs font-mono text-purple-300/90">مسؤولو اللجان التنفيذية</div>
             <div className="text-base font-bold text-white mt-0.5">
               {leadership.filter((l) => l.tier === 'committee-lead').length} لجان
             </div>
@@ -585,7 +585,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            رؤساء اللجان ({leadership.filter((l) => l.tier === 'committee-lead').length})
+            مسؤولو اللجان ({leadership.filter((l) => l.tier === 'committee-lead').length})
           </button>
         </div>
 
@@ -698,7 +698,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
                     <Zap className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">رؤساء اللجان التنفيذية</h4>
+                    <h4 className="text-sm font-bold text-white">مسؤولو اللجان التنفيذية</h4>
                     <p className="text-[11px] text-slate-400">القيادة التشغيلية والميدانية لمسارات الفعاليات، العلاقات، والإعلام</p>
                   </div>
                 </div>

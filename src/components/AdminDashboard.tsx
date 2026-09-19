@@ -204,42 +204,42 @@ const ROLE_TEMPLATES = [
     quote: 'حوكمة الميزانيات وتوجيه الموارد المالية بكفاءة يضمن نجاح واستدامة كل مبادرة.'
   },
   {
-    role: 'رئيس لجنة الأنشطة والبرامج',
+    role: 'مسؤول لجنة الأنشطة والبرامج',
     tier: 'committee-lead' as const,
     department: 'لجنة الأنشطة والبرامج',
     skills: 'إدارة الحشود والفعاليات, تنظيم الهاكاثونات, التخطيط اللوجستي الميداني',
     quote: 'نبتكر فعاليات ومسابقات غير مسبوقة تصنع تجربة هندسية ثرية لجميع الطلاب.'
   },
   {
-    role: 'رئيسة لجنة العلاقات والشراكات',
+    role: 'مسؤول لجنة العلاقات والشراكات',
     tier: 'committee-lead' as const,
     department: 'لجنة العلاقات والشراكات',
     skills: 'الشراكات الاستراتيجية, تطوير المسارات التدريبية, استقطاب الخبراء والمدربين',
     quote: 'نبني جسوراً متينة من الشراكات الصناعية والبرامج التدريبية لتأهيل الكفاءات.'
   },
   {
-    role: 'رئيسة لجنة الإعلام والاتصال',
+    role: 'مسؤول لجنة الإعلام والاتصال',
     tier: 'committee-lead' as const,
     department: 'لجنة الإعلام والاتصال',
     skills: 'صناعة المحتوى الرقمي, التغطيات الإعلامية, الهوية والتصميم والإنتاج المرئي',
     quote: 'نترجم الإنجازات والابتكارات الهندسية إلى قصص بصرية ومحتوى رقمي ملهم.'
   },
   {
-    role: 'منسق وممثل كلية هندسة برمجيات وذكاء اصطناعي',
+    role: 'ممثل كلية هندسة البرمجيات والذكاء الاصطناعي',
     tier: 'college-lead' as const,
     department: 'كلية هندسة برمجيات وذكاء اصطناعي',
     skills: 'تمثيل الكلية, التنسيق الأكاديمي, هندسة البرمجيات والذكاء الاصطناعي',
     quote: 'تمثيل طلبة الكلية والتنسيق الفعّال مع إدارة النادي لإطلاق المبادرات والحلول البرمجية والذكية.'
   },
   {
-    role: 'منسق وممثل كلية تكنولوجيا المعلومات IT',
+    role: 'ممثل كلية تكنولوجيا المعلومات',
     tier: 'college-lead' as const,
     department: 'كلية تكنولوجيا المعلومات IT',
     skills: 'تمثيل الكلية, إدارة النظم والمعلومات, الوسائط الرقمية والتصميم',
     quote: 'تمثيل طلبة تكنولوجيا المعلومات وتفعيل مشاريع قواعد البيانات والوسائط المتعددة بالأنشطة الجامعية.'
   },
   {
-    role: 'منسق وممثل كلية الهندسة التطبيقية والتخطيط العمراني',
+    role: 'ممثل كلية الهندسة التطبيقية والتخطيط العمراني',
     tier: 'college-lead' as const,
     department: 'كلية الهندسة التطبيقية و التخطيط العمراني',
     skills: 'تمثيل الكلية, التصميم المعماري, الهندسة الإنشائية والتخطيط',
@@ -1023,7 +1023,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const handleTransferAppToGeneral = async (app: StoredApplication) => {
     const ok = await confirm({
       title: `قبول وتحويل (${app.fullName}) لعضوية عامة؟`,
-      message: `المتقدم مسجل أساساً في (${app.targetCommittee}). سيتم قبوله كـ "عضو عام" ببطاقة رقمية صالحة لمدة 14 يوماً مع إمكانية إرسال رسالة القبول الموضحة.`,
+      message: `المتقدم مسجل أساساً في (${app.targetCommittee}). سيتم قبوله كـ "عضو عام" ببطاقة رقمية معتمدة مع إمكانية إرسال رسالة القبول الموضحة وتوضيح أسباب التحويل له.`,
       confirmLabel: 'تأكيد القبول والتحويل',
     });
     if (!ok) return;
@@ -3544,7 +3544,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     role:
                       col.coordinator.role && col.coordinator.role !== 'لجنة التنسيق والمتابعة الطلابية'
                         ? col.coordinator.role
-                        : `منسق وممثل ${col.name}`,
+                        : `ممثل ${col.name}`,
                     tier: 'college-lead' as const,
                     department: col.name,
                     avatar: col.coordinator.avatar || '',
@@ -5312,7 +5312,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <input
                       type="text"
                       required
-                      placeholder="مثال: رئيس النادي الهندسي أو رئيس لجنة"
+                      placeholder="مثال: رئيس النادي الهندسي أو مسؤول لجنة"
                       value={leaderForm.role || ''}
                       onChange={(e) => setLeaderForm({ ...leaderForm, role: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
@@ -5335,7 +5335,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
                     >
                       <option value="executive">الرئاسة والهيئة الإدارية (رئيس، نائب، أمين سر، أمين صندوق)</option>
-                      <option value="committee-lead">رئيس لجنة (أنشطة وبرامج، علاقات وشراكات، إعلام واتصال)</option>
+                      <option value="committee-lead">مسؤول لجنة (أنشطة وبرامج، علاقات وشراكات، إعلام واتصال)</option>
                       <option value="college-lead">ممثل كلية (يمثل كليته في النادي)</option>
                     </select>
                   </div>
@@ -5438,12 +5438,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                 <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
                   <div className="font-bold text-cyan-400 font-mono text-xs flex items-center justify-between">
-                    <span>بيانات المنسق الأكاديمي وممثل الكلية في النادي:</span>
+                    <span>بيانات ممثل الكلية في النادي:</span>
                   </div>
 
                   <div className="text-xs text-cyan-300 bg-cyan-950/60 p-2.5 rounded-xl border border-cyan-500/30 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 shrink-0 text-cyan-400" />
-                    <span>تعديل منسق الكلية يُزامن تلقائياً بطاقة ممثل الكلية في «الكادر القيادي» ويصدر بطاقة التكليف المعتمدة فور الحفظ.</span>
+                    <span>تعديل بيانات ممثل الكلية يُزامن تلقائياً بطاقة ممثل الكلية في «الكادر القيادي» ويصدر بطاقة التكليف المعتمدة فور الحفظ.</span>
                   </div>
 
                   {/* Pick Accepted Student from this college */}
@@ -5461,7 +5461,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                 ...editingCollege.coordinator,
                                 name: picked.fullName,
                                 email: picked.email || editingCollege.coordinator.email,
-                                title: `منسق وممثل ${editingCollege.name}`,
+                                title: `ممثل ${editingCollege.name}`,
                               },
                             });
                             showToast(`تم تعيين الطالب (${picked.fullName}) ممثلاً للكلية`);
@@ -5483,10 +5483,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-gray-400 mb-1">اسم المنسق (اختياري):</label>
+                      <label className="block text-gray-400 mb-1">اسم ممثل الكلية (اختياري):</label>
                       <input
                         type="text"
-                        placeholder="اسم المنسق أو اتركه فارغاً"
+                        placeholder="اسم ممثل الكلية أو اتركه فارغاً"
                         value={editingCollege.coordinator.name || ''}
                         onChange={(e) =>
                           setEditingCollege({
@@ -5498,10 +5498,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-400 mb-1">المسمى الأكاديمي (اختياري):</label>
+                      <label className="block text-gray-400 mb-1">المسمى في النادي (اختياري):</label>
                       <input
                         type="text"
-                        placeholder="مثال: منسق وممثل الكلية"
+                        placeholder="مثال: ممثل الكلية"
                         value={editingCollege.coordinator.title || ''}
                         onChange={(e) =>
                           setEditingCollege({
@@ -5532,11 +5532,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     </div>
                   {/* Coordinator Photo Management */}
                   <div>
-                    <label className="block text-gray-400 mb-1.5 font-mono">صورة المنسق الأكاديمي:</label>
+                    <label className="block text-gray-400 mb-1.5 font-mono">صورة ممثل الكلية:</label>
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-black/40 border border-white/10">
                       <img
                         src={editingCollege.coordinator.avatar || DEFAULT_AVATAR}
-                        alt="منسق الكلية"
+                        alt="ممثل الكلية"
                         className="w-14 h-14 rounded-xl object-cover border border-cyan-500/40 shrink-0 bg-white/5"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = DEFAULT_AVATAR;

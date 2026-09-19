@@ -48,7 +48,7 @@ export const AssignModal: React.FC<{
           </select>
         </Field>
 
-        <Field label="المسمى على الكرت" hint="مثال: مصور، مسؤول تصميم، رئيس اللجنة — أو اتركه فارغاً">
+        <Field label="المسمى على الكرت" hint="مثال: مصور، صانع محتوى، مسؤول اللجنة — أو اتركه فارغاً">
           <input
             type="text"
             value={role}
@@ -87,7 +87,7 @@ export const AssignModal: React.FC<{
           </div>
         )}
 
-        {(role.includes('رئيس') || role.includes('ممثل') || role.includes('منسق') || role.includes('صندوق') || role.includes('نائب')) && (
+        {(role.includes('رئيس') || role.includes('مسؤول') || role.includes('ممثل') || role.includes('منسق') || role.includes('صندوق') || role.includes('نائب')) && (
           <div className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-xs text-cyan-300 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 shrink-0 text-cyan-400" />
             <span>سيتم إدراج الطالب تلقائياً في الكادر القيادي والهيكل التنظيمي للنادي عند الحفظ ✓</span>
