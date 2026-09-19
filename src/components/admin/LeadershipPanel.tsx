@@ -16,10 +16,13 @@ import {
   Trash2,
   Users,
   Zap,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import type { LeaderMember, StoredApplication } from '../../types';
 import { downloadCsv } from '../../utils/security';
 import { effectiveCommittee } from '../../data/committees';
+import { LanyardBadgeViewer } from '../member/LanyardBadgeViewer';
 
 const DEFAULT_AVATAR = '/brand/emblem.png';
 
@@ -54,6 +57,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
   const [leaderFilter, setLeaderFilter] = useState<'all' | 'executive' | 'committee-lead' | 'college-lead'>('all');
   const [leaderSearch, setLeaderSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewingLanyardLeader, setViewingLanyardLeader] = useState<LeaderMember | null>(null);
 
   const filteredLeaders = leadership
     .filter((l) => {
@@ -352,6 +356,15 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
           >
             <CreditCard className="w-3.5 h-3.5" />
             <span>بطاقة التكليف</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewingLanyardLeader(leader)}
+            className="py-1 px-2.5 rounded-lg bg-gradient-to-r from-emerald-950/60 to-cyan-950/60 hover:from-emerald-900/60 hover:to-cyan-900/60 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+            title="معاينة وطباعة باج التعليق الرئاسي (Lanyard بوجهين)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>باج Lanyard</span>
           </button>
           <button
             type="button"
@@ -848,6 +861,39 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
           );
         })}
       </div>
+
+      {/* Modal for viewing and printing Lanyard Badge for selected leader */}
+      {viewingLanyardLeader && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-xl max-h-[95vh] overflow-y-auto rounded-3xl glass-panel border border-cyan-500/30 p-6 text-right shadow-2xl animate-in zoom-in-95">
+            <button
+              type="button"
+              onClick={() => setViewingLanyardLeader(null)}
+              className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="mb-4">
+              <span className="text-xs font-mono text-cyan-400 font-bold">باج التعليق الرئاسي القيادي (CR80)</span>
+              <h3 className="text-lg font-bold text-white mt-0.5">{viewingLanyardLeader.name}</h3>
+              <p className="text-xs text-gray-400">{viewingLanyardLeader.role} — {viewingLanyardLeader.department}</p>
+            </div>
+
+            <LanyardBadgeViewer
+              data={{
+                name: viewingLanyardLeader.name,
+                role: viewingLanyardLeader.role,
+                code: viewingLanyardLeader.id.includes('UP-') ? viewingLanyardLeader.id : `EC-${viewingLanyardLeader.id.slice(-3).toUpperCase()}`,
+                academicYear: '2026 - 2027',
+                university: 'University of Palestine',
+                photoUrl: viewingLanyardLeader.avatar || null,
+                verifyUrl: `https://engineering-club-phi.vercel.app/#/verify/${viewingLanyardLeader.id}`,
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

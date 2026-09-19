@@ -26,7 +26,10 @@ import {
 import confetti from 'canvas-confetti';
 import { MemberLoginForm } from './MemberLoginForm';
 import { PasswordCard } from './PasswordCard';
+import { ContactCard } from './ContactCard';
 import { PhotoCard } from './PhotoCard';
+import { LanyardBadgeViewer } from './LanyardBadgeViewer';
+import type { LanyardBadgeData } from '../../utils/lanyardBadgeRenderer';
 import { MemberCard } from '../MemberCard';
 import {
   memberService,
@@ -37,7 +40,7 @@ import {
   type MemberProfile,
 } from '../../services/memberService';
 import { dataService } from '../../services/dataService';
-import { memberCardFor, executiveCardFor, committeeCardFor } from '../../utils/memberCard';
+import { memberCardFor, executiveCardFor, committeeCardFor, isExecutiveLeader } from '../../utils/memberCard';
 import { downloadCardPng, printCard } from '../../utils/cardRenderer';
 import { compressImage } from '../../utils/image';
 import { findCommittee, effectiveCommittee, isExecutivePosition } from '../../data/committees';
@@ -92,8 +95,8 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
   const [isLoading, setIsLoading] = useState(memberService.isLoggedIn && !memberService.currentProfile);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Card tab state: 'standard' | 'executive' | 'committee'
-  const [activeCardTab, setActiveCardTab] = useState<'standard' | 'executive' | 'committee'>('standard');
+  // Card tab state: 'standard' | 'executive' | 'committee' | 'lanyard'
+  const [activeCardTab, setActiveCardTab] = useState<'standard' | 'executive' | 'committee' | 'lanyard'>('standard');
   const [isExporting, setIsExporting] = useState(false);
 
   // Inline Suggestion Accordion
@@ -207,12 +210,28 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
     !effectiveCommittee(appData).includes('عامة');
   const committeeCard = isSpecializedCommittee && appData ? committeeCardFor(appData, { revealCode: true }) : null;
 
+  const lanyardData: LanyardBadgeData | null =
+    (hasExecutiveCard || (appData && isExecutiveLeader(appData))) && profile
+      ? {
+          name: matchedLeader?.name || profile.fullName,
+          role: matchedLeader?.role || profile.organizationalRole || 'عضو الهيئة الإدارية والتنفيذية',
+          code: profile.memberCode || `EC-${profile.studentId.slice(-3)}`,
+          academicYear: '2026 - 2027',
+          university: 'University of Palestine',
+          photoUrl: profile.photoUrl || matchedLeader?.avatar || null,
+          verifyUrl: `https://engineering-club-phi.vercel.app/#/verify/${profile.memberCode || profile.studentId}`,
+        }
+      : null;
+
   // Tabs for switching cards in-page without modals!
-  const cardTabs: { id: 'standard' | 'executive' | 'committee'; label: string; icon: React.ReactNode }[] = [
+  const cardTabs: { id: 'standard' | 'executive' | 'lanyard' | 'committee'; label: string; icon: React.ReactNode }[] = [
     { id: 'standard', label: 'بطاقة العضوية الرسمية', icon: <CreditCard className="w-4 h-4" /> },
   ];
   if (hasExecutiveCard) {
     cardTabs.push({ id: 'executive', label: 'بطاقة التكليف القيادي', icon: <Crown className="w-4 h-4 text-amber-400" /> });
+  }
+  if (lanyardData) {
+    cardTabs.push({ id: 'lanyard', label: 'باج التعليق الرئاسي (وجهين)', icon: <Sparkles className="w-4 h-4 text-emerald-400" /> });
   }
   if (isSpecializedCommittee) {
     cardTabs.push({ id: 'committee', label: 'بطاقة عضو اللجنة', icon: <Award className="w-4 h-4 text-cyan-400" /> });
@@ -456,36 +475,44 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
 
               {/* The Active Card Showcase Container */}
               <div className="p-6 sm:p-10 rounded-3xl glass-panel border border-white/10 flex flex-col items-center justify-center space-y-6 shadow-2xl">
-                {activeCard && (
-                  <div className="w-full max-w-sm transition-all duration-300 animate-in zoom-in-95">
-                    <MemberCard {...activeCard} />
-                  </div>
-                )}
-
-                {profile.membershipState === 'suspended' ? (
-                  <div className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-200 text-xs text-center leading-relaxed max-w-md">
-                    ⚠️ البطاقة معلّقة إدارياً. تم تعطيل حفظ الصورة والطباعة لحين تسوية وضع العضوية مع إدارة النادي.
+                {activeCardTab === 'lanyard' && lanyardData ? (
+                  <div className="w-full">
+                    <LanyardBadgeViewer data={lanyardData} />
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-center justify-center gap-3 w-full max-w-sm">
-                    <button
-                      type="button"
-                      disabled={isExporting}
-                      onClick={handleDownloadActiveCard}
-                      className="flex-1 py-3 px-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-all"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>{isExporting ? 'جاري التحميل…' : 'حفظ الكرت كصورة'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handlePrintActiveCard}
-                      className="py-3 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm border border-white/15 flex items-center justify-center gap-2 cursor-pointer transition-all"
-                    >
-                      <Printer className="w-4 h-4" />
-                      <span>طباعة</span>
-                    </button>
-                  </div>
+                  <>
+                    {activeCard && (
+                      <div className="w-full max-w-sm transition-all duration-300 animate-in zoom-in-95">
+                        <MemberCard {...activeCard} />
+                      </div>
+                    )}
+
+                    {profile.membershipState === 'suspended' ? (
+                      <div className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-200 text-xs text-center leading-relaxed max-w-md">
+                        ⚠️ البطاقة معلّقة إدارياً. تم تعطيل حفظ الصورة والطباعة لحين تسوية وضع العضوية مع إدارة النادي.
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-center gap-3 w-full max-w-sm">
+                        <button
+                          type="button"
+                          disabled={isExporting}
+                          onClick={handleDownloadActiveCard}
+                          className="flex-1 py-3 px-4 rounded-xl bg-emerald-400 hover:bg-emerald-300 disabled:opacity-50 text-black font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-all"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>{isExporting ? 'جاري التحميل…' : 'حفظ الكرت كصورة'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handlePrintActiveCard}
+                          className="py-3 px-5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm border border-white/15 flex items-center justify-center gap-2 cursor-pointer transition-all"
+                        >
+                          <Printer className="w-4 h-4" />
+                          <span>طباعة</span>
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <p className="text-xs text-gray-500 text-center max-w-md">
@@ -611,6 +638,9 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                 <div id="security-section">
                   <PasswordCard passwordSet={Boolean(profile.passwordSet)} />
                 </div>
+
+                {/* Contact Card: Email & Phone */}
+                <ContactCard email={profile.email} phone={profile.phone} onUpdated={handleRefresh} />
 
                 {/* Profile Picture Card */}
                 <PhotoCard photoUrl={profile.photoUrl} name={profile.fullName} />

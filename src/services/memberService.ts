@@ -38,6 +38,7 @@ export interface MemberProfile {
   fullName: string;
   studentId: string;
   email: string;
+  phone?: string | null;
   major: string | null;
   college: string | null;
   academicYear: string | null;
@@ -239,6 +240,27 @@ class MemberService {
         })
       );
       await this.refresh().catch(() => undefined);
+    } catch (err) {
+      throw friendly(err);
+    }
+  }
+
+  /** Allows an authenticated member to update their registered email and phone. */
+  async updateContact(email: string, phone: string): Promise<void> {
+    if (!this.credentials) throw new Error('سجّل الدخول أولاً');
+    try {
+      unwrap(
+        await publicRpc<{ ok: boolean; email?: string; phone?: string } | { error: string }>(
+          'member_update_contact',
+          {
+            ...this.secretArgs(),
+            p_new_email: email.trim().toLowerCase(),
+            p_new_phone: phone.trim(),
+          }
+        )
+      );
+      await this.refresh().catch(() => undefined);
+      this.notify();
     } catch (err) {
       throw friendly(err);
     }

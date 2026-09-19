@@ -93,6 +93,8 @@ import {
   MessageSquare,
   KeyRound,
   Send,
+  Sun,
+  Moon,
   Sliders,
   Power,
   Unlock,
@@ -382,14 +384,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   const [inspectApp, setInspectApp] = useState<StoredApplication | null>(null);
   const [assignCommittee, setAssignCommittee] = useState('');
   const [assignRole, setAssignRole] = useState('');
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [editFullName, setEditFullName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [savingContact, setSavingContact] = useState(false);
 
   useEffect(() => {
-    if (!inspectApp) return;
+    if (!inspectApp) {
+      setIsEditingContact(false);
+      return;
+    }
     setAssignCommittee(findCommittee(effectiveCommittee(inspectApp))?.name || effectiveCommittee(inspectApp));
     setAssignRole(inspectApp.organizationalRole || '');
+    setEditFullName(inspectApp.fullName || '');
+    setEditEmail(inspectApp.email || '');
+    setEditPhone(inspectApp.phone || '');
+    setIsEditingContact(false);
   }, [inspectApp?.id]);
   // Selected application for digital ID badge card modal
   const [viewingBadgeApp, setViewingBadgeApp] = useState<StoredApplication | null>(null);
+
+  // Admin Theme (Dark / Light Mode)
+  const [adminTheme, setAdminTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      return (localStorage.getItem('eng_club_admin_theme') as 'dark' | 'light') || 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  const toggleAdminTheme = () => {
+    const next = adminTheme === 'dark' ? 'light' : 'dark';
+    setAdminTheme(next);
+    try {
+      localStorage.setItem('eng_club_admin_theme', next);
+    } catch {}
+  };
 
   // New Project Form State
   const [showAddProject, setShowAddProject] = useState(false);
@@ -1225,7 +1256,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#08041D] w-screen h-screen overflow-hidden text-right animate-in fade-in duration-200">
+    <div
+      data-admin-theme={adminTheme}
+      className={`fixed inset-0 z-50 flex flex-col ${adminTheme === 'light' ? 'admin-theme-light' : ''} bg-[#08041D] w-screen h-screen overflow-hidden text-right animate-in fade-in duration-200`}
+    >
       <div
         className="relative w-full h-full flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -1237,14 +1271,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             <ClubLogo variant="emblem" size="md" />
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-extrabold text-white text-base">لوحة الإدارة الهندسية المركزية</span>
-                <span className="hidden md:inline-flex items-center gap-1 font-mono text-xs px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold">
-                  {settings.sloganAr || "هندسة اليوم .. تصنع أثر الغد"}
+                <span className="text-base font-black text-white tracking-wide">
+                  {settings.heroTitle || 'النادي الهندسي'}
                 </span>
-                {isAuthenticated && (
-                  <span className="hidden sm:inline-flex items-center gap-1 font-mono text-xs px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    جلسة نشطة
+                <span className="px-2 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 text-[11px] font-mono">
+                  لوحة الإدارة المركزية
+                </span>
+                {adminRole && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 text-[11px] font-mono">
+                    {ROLE_LABELS[adminRole]}
                   </span>
                 )}
               </div>
@@ -1255,6 +1290,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
           </div>
 
           <div className="flex items-center gap-2.5">
+            {/* Theme toggle before login */}
+            <button
+              type="button"
+              onClick={toggleAdminTheme}
+              className="px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-gray-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+              title={adminTheme === 'dark' ? 'التحويل إلى الوضع النهاري (Light Mode)' : 'التحويل إلى الوضع الليلي (Dark Mode)'}
+            >
+              {adminTheme === 'dark' ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">الوضع النهاري</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">الوضع الليلي</span>
+                </>
+              )}
+            </button>
+
             {isAuthenticated && (
               <button
                 onClick={() => void handleLogout()}
@@ -1776,6 +1831,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div className="flex items-center gap-3">
+                  {/* Light / Dark Mode Toggle */}
+                  <button
+                    type="button"
+                    onClick={toggleAdminTheme}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                    title={adminTheme === 'dark' ? 'التحويل إلى الوضع النهاري (Light Mode)' : 'التحويل إلى الوضع الليلي (Dark Mode)'}
+                  >
+                    {adminTheme === 'dark' ? (
+                      <>
+                        <Sun className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="hidden sm:inline">الوضع النهاري</span>
+                      </>
+                    ) : (
+                      <>
+                        <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="hidden sm:inline">الوضع الليلي</span>
+                      </>
+                    )}
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setQuickNavOpen(true)}
@@ -4706,11 +4781,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
               </button>
 
               <div className="mb-4">
-                <span className="font-mono text-xs text-cyan-400">ملف طلب العضوية التفصيلي</span>
-                <h3 className="text-xl font-bold text-white mt-1">{inspectApp.fullName}</h3>
-                <div className="font-mono text-xs text-gray-400 mt-0.5">
-                  ID: {inspectApp.studentId} — {inspectApp.email}
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs text-cyan-400">ملف طلب العضوية التفصيلي</span>
+                  {!isEditingContact && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditFullName(inspectApp.fullName || '');
+                        setEditEmail(inspectApp.email || '');
+                        setEditPhone(inspectApp.phone || '');
+                        setIsEditingContact(true);
+                      }}
+                      className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-bold cursor-pointer transition-colors"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>تعديل بيانات الطالب</span>
+                    </button>
+                  )}
                 </div>
+
+                {!isEditingContact ? (
+                  <>
+                    <h3 className="text-xl font-bold text-white mt-1">{inspectApp.fullName}</h3>
+                    <div className="font-mono text-xs text-gray-400 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span>الرقم: <strong className="text-slate-200">{inspectApp.studentId}</strong></span>
+                      <span>البريد: <strong className="text-slate-200">{inspectApp.email}</strong></span>
+                      <span>الهاتف: <strong className="text-emerald-300 dir-ltr">{inspectApp.phone || '—'}</strong></span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-3 p-3.5 rounded-2xl bg-black/50 border border-cyan-500/40 space-y-2.5 animate-in fade-in">
+                    <div className="text-xs font-bold text-cyan-300 flex items-center gap-1.5 mb-1">
+                      <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>تعديل الاسم وجهات الاتصال المسجلة</span>
+                    </div>
+                    <div>
+                      <span className="block text-[11px] text-gray-400 mb-1">الاسم الكامل للطالب</span>
+                      <input
+                        type="text"
+                        value={editFullName}
+                        onChange={(e) => setEditFullName(e.target.value)}
+                        className="w-full px-3 py-1.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 text-white text-xs"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <span className="block text-[11px] text-gray-400 mb-1">البريد الإلكتروني</span>
+                        <input
+                          type="email"
+                          value={editEmail}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 text-white text-xs font-mono dir-ltr"
+                        />
+                      </div>
+                      <div>
+                        <span className="block text-[11px] text-gray-400 mb-1">رقم الهاتف / الواتساب</span>
+                        <input
+                          type="tel"
+                          value={editPhone}
+                          onChange={(e) => setEditPhone(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl bg-black/60 border border-white/15 focus:border-cyan-400 text-white text-xs font-mono dir-ltr"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        disabled={savingContact || !editFullName.trim() || !editEmail.trim()}
+                        onClick={async () => {
+                          setSavingContact(true);
+                          try {
+                            await dataService.updateApplicationContact(inspectApp.id, {
+                              fullName: editFullName.trim(),
+                              email: editEmail.trim(),
+                              phone: editPhone.trim(),
+                            });
+                            setInspectApp({
+                              ...inspectApp,
+                              fullName: editFullName.trim(),
+                              email: editEmail.trim(),
+                              phone: editPhone.trim(),
+                            });
+                            setApplications(dataService.getApplications());
+                            setIsEditingContact(false);
+                            showToast(`تم تحديث بيانات (${editFullName}) بنجاح`);
+                          } catch (err) {
+                            showToast(`⚠️ تعذر التحديث: ${err instanceof Error ? err.message : 'خطأ'}`);
+                          } finally {
+                            setSavingContact(false);
+                          }
+                        }}
+                        className="px-4 py-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs cursor-pointer transition-all disabled:opacity-50"
+                      >
+                        {savingContact ? 'جاري الحفظ…' : 'حفظ التعديل'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingContact(false)}
+                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs cursor-pointer"
+                      >
+                        إلغاء
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3 text-xs text-gray-300 mb-6">

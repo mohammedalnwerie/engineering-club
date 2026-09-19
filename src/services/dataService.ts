@@ -1051,15 +1051,38 @@ class DataService {
     );
   }
 
-  /** Admin: fix a student's email/phone. Awaited so a following email send reads the new address. */
-  public async updateApplicationContact(id: string, contact: { email: string; phone: string }): Promise<void> {
+  /** Admin: fix a student's email/phone/fullName. Awaited so a following email send reads the new address. */
+  public async updateApplicationContact(
+    id: string,
+    contact: { email: string; phone: string; fullName?: string }
+  ): Promise<void> {
     const app = this.applications.find((a) => a.id === id);
     if (!app) throw new Error('لم يتم العثور على الطلب');
-    const updated: StoredApplication = { ...app, ...contact };
+    const updatedName = contact.fullName?.trim() || app.fullName;
+    const updated: StoredApplication = {
+      ...app,
+      email: contact.email.trim().toLowerCase(),
+      phone: contact.phone.trim(),
+      fullName: updatedName,
+    };
     const { id: _id, studentId: _sid, fullName: _name, status: _status, submittedAt: _at, ...data } = updated;
+    const dataPayload: Record<string, unknown> = {
+      ...data,
+      fullName: updatedName,
+      email: updated.email,
+      phone: updated.phone,
+    };
+
+    const payload: Record<string, unknown> = {
+      email: updated.email,
+      phone: updated.phone,
+      full_name: updatedName,
+      data: dataPayload,
+    };
+
     const { error } = await (await getSupabase())
       .from('club_applications')
-      .update({ email: contact.email, phone: contact.phone, data })
+      .update(payload)
       .eq('id', id);
     if (error) throw new Error(error.message);
     this.applications = this.applications.map((a) => (a.id === id ? updated : a));

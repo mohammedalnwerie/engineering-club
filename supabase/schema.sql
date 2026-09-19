@@ -2303,6 +2303,7 @@ begin
     'fullName', v_member.full_name,
     'studentId', v_member.student_id,
     'email', v_member.email,
+    'phone', coalesce(v_member.phone, v_member.data->>'phone'),
     'major', v_member.data->>'major',
     'college', v_member.data->>'college',
     'academicYear', v_member.data->>'academicYear',
@@ -2344,5 +2345,56 @@ $$;
 revoke all on function public.member_login(text, text) from public;
 grant execute on function public.member_login(text, text) to anon, authenticated;
 
+-- =====================================================================
+-- تحديث 019 — تعديل بيانات التواصل للعضو ذاتياً (البريد ورقم الجوال)
+-- =====================================================================
+create or replace function public.member_update_contact(
+  p_student_id text,
+  p_secret text,
+  p_new_email text,
+  p_new_phone text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_member public.club_applications := public.club_member_by_credentials(p_student_id, p_secret);
+  v_email  text := lower(btrim(coalesce(p_new_email, '')));
+  v_phone  text := btrim(coalesce(p_new_phone, ''));
+  v_data   jsonb;
+begin
+  if v_member is null then
+    return jsonb_build_object('error', 'بيانات الدخول أو كلمة المرور الحالية غير صحيحة');
+  end if;
+
+  if v_email = '' or v_email !~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' then
+    return jsonb_build_object('error', 'يرجى إدخال بريد إلكتروني صحيح');
+  end if;
+
+  if length(v_phone) < 7 or length(v_phone) > 20 then
+    return jsonb_build_object('error', 'يرجى إدخال رقم هاتف صحيح');
+  end if;
+
+  v_data := coalesce(v_member.data, '{}'::jsonb);
+  v_data := jsonb_set(v_data, '{email}', to_jsonb(v_email));
+  v_data := jsonb_set(v_data, '{phone}', to_jsonb(v_phone));
+
+  update public.club_applications
+  set email = v_email,
+      phone = v_phone,
+      data  = v_data,
+      updated_at = now()
+  where id = v_member.id;
+
+  return jsonb_build_object('ok', true, 'email', v_email, 'phone', v_phone);
+end;
+$$;
+
+revoke all on function public.member_update_contact(text, text, text, text) from public;
+grant execute on function public.member_update_contact(text, text, text, text) to anon, authenticated;
+
 notify pgrst, 'reload schema';
+
 

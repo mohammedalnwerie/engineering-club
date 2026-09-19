@@ -262,3 +262,179 @@
     print-color-adjust: exact !important;
   }
 }
+
+/* ==========================================================================
+   Admin Dashboard Light Mode (الوضع النهاري للوحة التحكم)
+   High-contrast, professional, and accessible styles for admin panels.
+   ========================================================================== */
+
+.admin-theme-light {
+  color-scheme: light !important;
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+.admin-theme-light .bg-\[\#08041D\],
+.admin-theme-light .bg-\[\#0A0524\],
+.admin-theme-light .bg-\[\#070319\],
+.admin-theme-light .bg-\[\#050214\],
+.admin-theme-light .bg-\[\#090521\] {
+  background-color: #F8FAFC !important;
+}
+
+.admin-theme-light aside {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+.admin-theme-light aside .border-b,
+.admin-theme-light aside .border-t,
+.admin-theme-light aside .border-l,
+.admin-theme-light aside .border-r {
+  border-color: #E2E8F0 !important;
+}
+
+.admin-theme-light main {
+  background-color: #F8FAFC !important;
+}
+
+.admin-theme-light .glass-panel {
+  background: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.admin-theme-light .text-white {
+  color: #0F172A !important;
+}
+
+.admin-theme-light .text-gray-200,
+.admin-theme-light .text-slate-200 {
+  color: #1E293B !important;
+}
+
+.admin-theme-light .text-gray-300,
+.admin-theme-light .text-slate-300 {
+  color: #334155 !important;
+}
+
+.admin-theme-light .text-gray-400,
+.admin-theme-light .text-slate-400 {
+  color: #64748B !important;
+}
+
+.admin-theme-light .text-gray-500,
+.admin-theme-light .text-slate-500 {
+  color: #94A3B8 !important;
+}
+
+.admin-theme-light .border-white\/10,
+.admin-theme-light .border-white\/15,
+.admin-theme-light .border-white\/5,
+.admin-theme-light .border-white\/20,
+.admin-theme-light .border-white\/\[0\.03\],
+.admin-theme-light .border-white\/\[0\.08\] {
+  border-color: #E2E8F0 !important;
+}
+
+.admin-theme-light .border-slate-800,
+.admin-theme-light .border-slate-700 {
+  border-color: #CBD5E1 !important;
+}
+
+.admin-theme-light .bg-black\/30,
+.admin-theme-light .bg-black\/40,
+.admin-theme-light .bg-black\/50,
+.admin-theme-light .bg-black\/60 {
+  background-color: #F1F5F9 !important;
+}
+
+.admin-theme-light .bg-white\/5,
+.admin-theme-light .bg-white\/10,
+.admin-theme-light .bg-white\/\[0\.02\],
+.admin-theme-light .bg-white\/\[0\.03\],
+.admin-theme-light .bg-white\/\[0\.04\] {
+  background-color: #F8FAFC !important;
+}
+
+.admin-theme-light .hover\:bg-white\/5:hover,
+.admin-theme-light .hover\:bg-white\/10:hover {
+  background-color: #F1F5F9 !important;
+}
+
+.admin-theme-light input,
+.admin-theme-light select,
+.admin-theme-light textarea {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+.admin-theme-light input::placeholder,
+.admin-theme-light textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+.admin-theme-light input:focus,
+.admin-theme-light select:focus,
+.admin-theme-light textarea:focus {
+  border-color: #0EA5E9 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15) !important;
+}
+
+.admin-theme-light table thead tr {
+  background-color: #F1F5F9 !important;
+  border-color: #E2E8F0 !important;
+}
+
+.admin-theme-light table thead th {
+  color: #475569 !important;
+}
+
+.admin-theme-light table tbody tr {
+  border-color: #F1F5F9 !important;
+}
+
+.admin-theme-light table tbody tr:hover {
+  background-color: #F8FAFC !important;
+}
+
+.admin-theme-light .bg-cyan-950\/60,
+.admin-theme-light .bg-cyan-950\/40,
+.admin-theme-light .bg-cyan-950\/80 {
+  background-color: #E0F2FE !important;
+  border-color: #BAE6FD !important;
+  color: #0369A1 !important;
+}
+
+.admin-theme-light .bg-emerald-950\/60,
+.admin-theme-light .bg-emerald-950\/40,
+.admin-theme-light .bg-emerald-950\/80 {
+  background-color: #DCFCE7 !important;
+  border-color: #BBF7D0 !important;
+  color: #15803D !important;
+}
+
+.admin-theme-light .bg-purple-950\/60,
+.admin-theme-light .bg-purple-950\/40 {
+  background-color: #F3E8FF !important;
+  border-color: #E9D5FF !important;
+  color: #7E22CE !important;
+}
+
+.admin-theme-light .bg-amber-950\/60,
+.admin-theme-light .bg-amber-950\/40 {
+  background-color: #FEF3C7 !important;
+  border-color: #FDE68A !important;
+  color: #B45309 !important;
+}
+
+.admin-theme-light .bg-red-950\/60,
+.admin-theme-light .bg-red-950\/40 {
+  background-color: #FEE2E2 !important;
+  border-color: #FECACA !important;
+  color: #B91C1C !important;
+}
+
