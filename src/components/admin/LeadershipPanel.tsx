@@ -766,23 +766,23 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
         </div>
 
         {/* Committees Roster */}
-        {['لجنة الفعاليات', 'لجنة العلاقات والتدريب', 'اللجنة الإعلامية'].map((commGroup) => {
-          const isEvt = commGroup.includes('الفعاليات');
+        {['لجنة الأنشطة والبرامج', 'لجنة العلاقات والشراكات', 'لجنة الإعلام والاتصال'].map((commGroup) => {
+          const isEvt = commGroup.includes('الأنشطة') || commGroup.includes('الفعاليات');
           const isRel = commGroup.includes('العلاقات');
 
           const members = applications.filter((a) => {
             if (a.status !== 'تم القبول') return false;
             const c = a.targetCommittee || '';
-            if (isEvt) return c.includes('فعاليات') || c.includes('events');
-            if (isRel) return c.includes('علاقات') || c.includes('تدريب') || c.includes('training');
-            return c.includes('إعلام') || c.includes('media');
+            if (isEvt) return c.includes('أنشطة') || c.includes('برامج') || c.includes('فعاليات') || c.includes('events');
+            if (isRel) return c.includes('علاقات') || c.includes('شراكات') || c.includes('تدريب') || c.includes('training');
+            return c.includes('إعلام') || c.includes('اعلام') || c.includes('اتصال') || c.includes('media');
           });
 
           const commTitle = isEvt
-            ? 'لجنة الفعاليات والأنشطة الهندسية'
+            ? 'لجنة الأنشطة والبرامج'
             : isRel
-            ? 'لجنة العلاقات العامة والتدريب'
-            : 'اللجنة الإعلامية والإنتاج المرئي';
+            ? 'لجنة العلاقات والشراكات'
+            : 'لجنة الإعلام والاتصال';
 
           const borderAccent = isEvt
             ? 'border-cyan-500/30'

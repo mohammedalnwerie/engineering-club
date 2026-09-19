@@ -11,19 +11,19 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
   owner: 'المالك',
   vp_admin: 'نائب الشؤون الإدارية',
   tech_support: 'لجنة الدعم الفني',
-  media: 'اللجنة الإعلامية',
+  media: 'لجنة الإعلام والاتصال',
 };
 
 export const ROLE_DESCRIPTIONS: Record<AdminRole, string> = {
   owner: 'كل الصلاحيات، ومنح صلاحية المالك.',
   vp_admin: 'كل الصلاحيات: الطلبات، العضويات، الفعاليات، المحتوى، الفريق.',
   tech_support: 'كل الصلاحيات: الطلبات، العضويات، الفعاليات، المحتوى، الفريق.',
-  media: 'طلبات اللجنة الإعلامية وفعالياتها فقط.',
+  media: 'طلبات لجنة الإعلام والاتصال وفعالياتها فقط.',
 };
 
 export const hasFullAccess = (role: AdminRole | null) => role === 'owner' || role === 'vp_admin' || role === 'tech_support';
 
-const MEDIA_COMMITTEE = 'اللجنة الإعلامية';
+const MEDIA_COMMITTEE = 'لجنة الإعلام والاتصال';
 export { MEDIA_COMMITTEE };
 
 function friendlyError(error: unknown, fallback = 'حدث خطأ غير متوقع'): Error {

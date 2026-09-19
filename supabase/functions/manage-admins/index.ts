@@ -24,7 +24,7 @@ const ROLE_LABELS: Record<Role, string> = {
   owner: 'المالك',
   vp_admin: 'نائب الشؤون الإدارية',
   tech_support: 'لجنة الدعم الفني',
-  media: 'اللجنة الإعلامية',
+  media: 'لجنة الإعلام والاتصال',
 };
 
 const json = (body: Record<string, unknown>, status = 200) =>

@@ -204,23 +204,23 @@ const ROLE_TEMPLATES = [
     quote: 'حوكمة الميزانيات وتوجيه الموارد المالية بكفاءة يضمن نجاح واستدامة كل مبادرة.'
   },
   {
-    role: 'رئيس لجنة الفعاليات والأنشطة',
+    role: 'رئيس لجنة الأنشطة والبرامج',
     tier: 'committee-lead' as const,
-    department: 'لجنة الفعاليات والأنشطة',
+    department: 'لجنة الأنشطة والبرامج',
     skills: 'إدارة الحشود والفعاليات, تنظيم الهاكاثونات, التخطيط اللوجستي الميداني',
     quote: 'نبتكر فعاليات ومسابقات غير مسبوقة تصنع تجربة هندسية ثرية لجميع الطلاب.'
   },
   {
-    role: 'رئيسة لجنة العلاقات والتدريب',
+    role: 'رئيسة لجنة العلاقات والشراكات',
     tier: 'committee-lead' as const,
-    department: 'لجنة العلاقات والتدريب',
+    department: 'لجنة العلاقات والشراكات',
     skills: 'الشراكات الاستراتيجية, تطوير المسارات التدريبية, استقطاب الخبراء والمدربين',
     quote: 'نبني جسوراً متينة من الشراكات الصناعية والبرامج التدريبية لتأهيل الكفاءات.'
   },
   {
-    role: 'رئيسة اللجنة الإعلامية',
+    role: 'رئيسة لجنة الإعلام والاتصال',
     tier: 'committee-lead' as const,
-    department: 'اللجنة الإعلامية',
+    department: 'لجنة الإعلام والاتصال',
     skills: 'صناعة المحتوى الرقمي, التغطيات الإعلامية, الهوية والتصميم والإنتاج المرئي',
     quote: 'نترجم الإنجازات والابتكارات الهندسية إلى قصص بصرية ومحتوى رقمي ملهم.'
   },
@@ -905,7 +905,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
           : appStatusFilter === 'unnotified'
           ? app.status === 'تم القبول' && !app.acceptanceEmailSentAt
           : app.status === appStatusFilter;
-      const matchesCommittee = appCommitteeFilter === 'الكل' || effectiveCommittee(app).includes(appCommitteeFilter);
+      const effComm = effectiveCommittee(app);
+      const matchesCommittee =
+        appCommitteeFilter === 'الكل'
+          ? true
+          : appCommitteeFilter === 'events'
+          ? effComm.includes('أنشطة') || effComm.includes('برامج') || effComm.includes('فعاليات')
+          : appCommitteeFilter === 'training'
+          ? effComm.includes('علاقات') || effComm.includes('شراكات') || effComm.includes('تدريب')
+          : appCommitteeFilter === 'media'
+          ? effComm.includes('إعلام') || effComm.includes('اعلام') || effComm.includes('اتصال')
+          : appCommitteeFilter === 'general'
+          ? effComm.includes('عامة')
+          : effComm.includes(appCommitteeFilter);
       const matchesPortfolio = !onlyWithPortfolio || Boolean(app.portfolioUrl);
       return matchesSearch && matchesStatus && matchesCommittee && matchesPortfolio;
     });
@@ -2276,13 +2288,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         {[
                           { id: 'general', name: 'عضوية عامة (عضو بالنادي)', filterKeyword: 'عامة', defaultNotice: 'الاستقطاب مغلق حالياً' },
-                          { id: 'events', name: 'لجنة الفعاليات والأنشطة', filterKeyword: 'فعاليات', defaultNotice: 'اكتملت المقاعد المتاحة للفعاليات' },
-                          { id: 'training', name: 'لجنة العلاقات والتدريب', filterKeyword: 'تدريب', defaultNotice: 'اكتملت المقاعد المتاحة للتدريب' },
-                          { id: 'media', name: 'اللجنة الإعلامية', filterKeyword: 'إعلام', defaultNotice: 'اكتملت المقاعد المتاحة للإعلام' },
+                          { id: 'events', name: 'لجنة الأنشطة والبرامج', filterKeyword: 'أنشطة', defaultNotice: 'اكتملت المقاعد المتاحة للأنشطة والبرامج' },
+                          { id: 'training', name: 'لجنة العلاقات والشراكات', filterKeyword: 'علاقات', defaultNotice: 'اكتملت المقاعد المتاحة للعلاقات والشراكات' },
+                          { id: 'media', name: 'لجنة الإعلام والاتصال', filterKeyword: 'إعلام', defaultNotice: 'اكتملت المقاعد المتاحة للإعلام والاتصال' },
                         ].map((comm) => {
                           const commStatus = recruitmentSettings.committees[comm.id] || { isOpen: true };
                           const isCommOpen = recruitmentSettings.isGlobalRecruitmentOpen && commStatus.isOpen !== false;
-                          const appCount = applications.filter((a) => a.targetCommittee.includes(comm.filterKeyword) || a.targetCommittee.includes(comm.name)).length;
+                          const appCount = applications.filter((a) => {
+                            const tc = a.targetCommittee || '';
+                            return tc.includes(comm.filterKeyword) || tc.includes(comm.name) ||
+                              (comm.id === 'events' && (tc.includes('فعاليات') || tc.includes('برامج'))) ||
+                              (comm.id === 'training' && (tc.includes('تدريب') || tc.includes('شراكات'))) ||
+                              (comm.id === 'media' && (tc.includes('اتصال') || tc.includes('اعلام')));
+                          }).length;
 
                           return (
                             <div key={comm.id} className={`p-3.5 rounded-xl border transition-all ${isCommOpen ? 'bg-black/30 border-white/10' : 'bg-red-950/20 border-red-500/30'}`}>
@@ -2374,7 +2392,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         {/* Training Committee Requirements */}
                         <div className="p-4 rounded-xl bg-black/30 border border-white/10 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-cyan-300">لجنة العلاقات والتدريب</span>
+                            <span className="text-xs font-bold text-cyan-300">لجنة العلاقات والشراكات</span>
                             <span className="text-[10px] text-gray-400 font-mono">شرط في كل سطر</span>
                           </div>
                           <textarea
@@ -2396,7 +2414,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         {/* Media Committee Requirements */}
                         <div className="p-4 rounded-xl bg-black/30 border border-white/10 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-purple-300">اللجنة الإعلامية</span>
+                            <span className="text-xs font-bold text-purple-300">لجنة الإعلام والاتصال</span>
                             <span className="text-[10px] text-gray-400 font-mono">شرط في كل سطر</span>
                           </div>
                           <textarea
@@ -2418,7 +2436,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         {/* Events Committee Requirements */}
                         <div className="p-4 rounded-xl bg-black/30 border border-white/10 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-emerald-300">لجنة الفعاليات والأنشطة</span>
+                            <span className="text-xs font-bold text-emerald-300">لجنة الأنشطة والبرامج</span>
                             <span className="text-[10px] text-gray-400 font-mono">شرط في كل سطر</span>
                           </div>
                           <textarea
@@ -2677,10 +2695,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       className="px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-cyan-300 focus:outline-none cursor-pointer font-medium"
                     >
                       <option value="الكل">كافة اللجان</option>
-                      <option value="فعاليات">لجنة الفعاليات</option>
-                      <option value="علاقات">لجنة العلاقات والتدريب</option>
-                      <option value="إعلام">اللجنة الإعلامية</option>
-                      <option value="عامة">عضوية عامة</option>
+                      <option value="events">لجنة الأنشطة والبرامج</option>
+                      <option value="training">لجنة العلاقات والشراكات</option>
+                      <option value="media">لجنة الإعلام والاتصال</option>
+                      <option value="general">عضوية عامة</option>
                     </select>
                   </div>
 
@@ -5317,7 +5335,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"
                     >
                       <option value="executive">الرئاسة والهيئة الإدارية (رئيس، نائب، أمين سر، أمين صندوق)</option>
-                      <option value="committee-lead">رئيس لجنة (فعاليات وأنشطة، علاقات وتدريب، إعلامية)</option>
+                      <option value="committee-lead">رئيس لجنة (أنشطة وبرامج، علاقات وشراكات، إعلام واتصال)</option>
                       <option value="college-lead">ممثل كلية (يمثل كليته في النادي)</option>
                     </select>
                   </div>
@@ -5326,7 +5344,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     <label className="block text-gray-300 mb-1 font-mono">القسم / اللجنة التابعة (اختياري):</label>
                     <input
                       type="text"
-                      placeholder="مثال: رئاسة النادي أو لجنة الفعاليات والأنشطة"
+                      placeholder="مثال: رئاسة النادي أو لجنة الأنشطة والبرامج"
                       value={leaderForm.department || ''}
                       onChange={(e) => setLeaderForm({ ...leaderForm, department: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl bg-black/50 border border-white/10 text-white focus:outline-none focus:border-cyan-400"

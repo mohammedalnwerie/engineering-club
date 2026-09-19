@@ -29,7 +29,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onJoinClick, onExplore
   const stats = [
     { number: String(collegesCount), label: 'كليات مشاركة', sub: 'برمجيات، تكنولوجيا معلومات، هندسة تطبيقية' },
     { number: String(majorsCount), label: 'تخصصات', sub: 'من البرمجة والذكاء الاصطناعي إلى العمارة والمدني' },
-    { number: String(committeesCount), label: 'لجان عمل', sub: 'فعاليات، علاقات وتدريب، إعلام' },
+    { number: String(committeesCount), label: 'لجان عمل', sub: 'أنشطة وبرامج، علاقات وشراكات، إعلام واتصال' },
     {
       number: `${membership.trialDays || 14} يوماً`,
       label: 'بطاقة عضوية أولية',

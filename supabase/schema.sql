@@ -465,7 +465,13 @@ security definer
 set search_path = public
 as $$
   select public.club_has_full_access()
-      or (public.club_admin_role() = 'media' and coalesce(committee, '') = 'اللجنة الإعلامية');
+      or (public.club_admin_role() = 'media' and (
+            coalesce(committee, '') = 'اللجنة الإعلامية'
+         or coalesce(committee, '') = 'لجنة الإعلام والاتصال'
+         or coalesce(committee, '') ilike '%إعلام%'
+         or coalesce(committee, '') ilike '%اعلام%'
+         or coalesce(committee, '') ilike '%اتصال%'
+      ));
 $$;
 
 drop policy if exists "admins read self" on public.club_admins;
@@ -1812,9 +1818,9 @@ begin
   end if;
 
   v_committee_id := case
-    when v_committee ilike '%فعاليات%' then 'events'
-    when v_committee ilike '%علاقات%' or v_committee ilike '%تدريب%' then 'training'
-    when v_committee ilike '%إعلام%' or v_committee ilike '%اعلام%' then 'media'
+    when v_committee ilike '%فعاليات%' or v_committee ilike '%أنشطة%' or v_committee ilike '%انشطة%' or v_committee ilike '%برامج%' then 'events'
+    when v_committee ilike '%علاقات%' or v_committee ilike '%تدريب%' or v_committee ilike '%شراكات%' then 'training'
+    when v_committee ilike '%إعلام%' or v_committee ilike '%اعلام%' or v_committee ilike '%اتصال%' then 'media'
     when v_committee ilike '%عامة%' then 'general'
     else null end;
 

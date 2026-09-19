@@ -17,21 +17,21 @@ export const COMMITTEES: CommitteeDefinition[] = [
   },
   {
     id: 'events',
-    name: 'لجنة الفعاليات والأنشطة',
+    name: 'لجنة الأنشطة والبرامج',
     code: 'EVT',
-    roles: ['رئيس اللجنة', 'نائب رئيس اللجنة', 'منسق فعاليات', 'مسؤول تنظيم وميدان', 'مسؤول لوجستيات', 'عضو في اللجنة'],
+    roles: ['رئيس اللجنة', 'نائب رئيس اللجنة', 'منسق أنشطة وبرامج', 'مسؤول تنظيم وميدان', 'مسؤول لوجستيات', 'عضو في اللجنة'],
   },
   {
     id: 'training',
-    name: 'لجنة العلاقات والتدريب',
+    name: 'لجنة العلاقات والشراكات',
     code: 'REL',
-    roles: ['رئيس اللجنة', 'نائب رئيس اللجنة', 'منسق تدريب وورش', 'مسؤول علاقات وشراكات', 'مسؤول تواصل مع المدربين', 'عضو في اللجنة'],
+    roles: ['رئيس اللجنة', 'نائب رئيس اللجنة', 'مسؤول علاقات وشراكات', 'منسق تدريب وتطوير', 'مسؤول تواصل واستقطاب', 'عضو في اللجنة'],
   },
   {
     id: 'media',
-    name: 'اللجنة الإعلامية',
+    name: 'لجنة الإعلام والاتصال',
     code: 'MED',
-    roles: ['رئيس اللجنة', 'نائب رئيس اللجنة', 'مصمم جرافيك', 'مصور وموثق', 'صانع محتوى', 'مونتير فيديو', 'مسؤول منصات التواصل', 'عضو في اللجنة'],
+    roles: ['رئيس اللجنة', 'نائب رئيس اللجنة', 'مصمم جرافيك', 'مصور وموثق', 'صانع محتوى', 'مونتير فيديو', 'مسؤول منصات التواصل والاتصال', 'عضو في اللجنة'],
   },
 ];
 
@@ -42,9 +42,9 @@ export function findCommittee(nameOrText?: string): CommitteeDefinition | undefi
   return (
     COMMITTEES.find((c) => c.name === text) ||
     (text.includes('عامة') ? COMMITTEES[0] : undefined) ||
-    (text.includes('فعاليات') ? COMMITTEES[1] : undefined) ||
-    (text.includes('تدريب') || text.includes('علاقات') ? COMMITTEES[2] : undefined) ||
-    (text.includes('إعلام') ? COMMITTEES[3] : undefined)
+    (text.includes('فعاليات') || text.includes('أنشطة') || text.includes('برامج') ? COMMITTEES[1] : undefined) ||
+    (text.includes('تدريب') || text.includes('علاقات') || text.includes('شراكات') ? COMMITTEES[2] : undefined) ||
+    (text.includes('إعلام') || text.includes('اعلام') || text.includes('اتصال') ? COMMITTEES[3] : undefined)
   );
 }
 
