@@ -31,6 +31,7 @@ import { PhotoCard } from './PhotoCard';
 import { LanyardBadgeViewer } from './LanyardBadgeViewer';
 import type { LanyardBadgeData } from '../../utils/lanyardBadgeRenderer';
 import { MemberCard } from '../MemberCard';
+import { SocialLinks } from '../SocialLinks';
 import {
   memberService,
   daysLeft,
@@ -266,6 +267,15 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
     if (!activeCard) return;
     void printCard(activeCard);
   };
+
+  const contactSettings = dataService.getContactSettings();
+  const telegramLink = contactSettings.links?.find((l) => l.platform === 'telegram');
+  const telegramUrl = telegramLink?.url?.trim() || 'https://t.me/upengineeringclub';
+  const showTelegram = telegramLink ? (telegramLink.visible && Boolean(telegramLink.url.trim())) || !telegramLink.url.trim() : true;
+
+  const whatsappLink = contactSettings.links?.find((l) => l.platform === 'whatsapp');
+  const whatsappUrl = whatsappLink?.url?.trim();
+  const showWhatsapp = Boolean(whatsappLink?.visible && whatsappUrl);
 
   return (
     <div className="min-h-screen bg-[#08041D] text-[#F3F4F6] relative selection:bg-cyan-500/30 selection:text-cyan-200">
@@ -655,14 +665,32 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
                     انضم لقنواتنا الرسمية لمتابعة إعلانات الورش الهندسية، الهاكاثونات، ومجموعات العمل التخصصية.
                   </p>
                   <div className="space-y-2 pt-1 text-xs font-semibold">
-                    <a
-                      href="https://t.me/upengineeringclub"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block p-2.5 rounded-xl bg-white/5 hover:bg-cyan-950/40 border border-white/10 text-cyan-300 hover:text-cyan-200 transition-colors text-center cursor-pointer"
-                    >
-                      قناة النادي الرسمية على تليجرام ←
-                    </a>
+                    {showTelegram && (
+                      <a
+                        href={telegramUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-2.5 rounded-xl bg-[#229ED9]/15 hover:bg-[#229ED9]/25 border border-[#229ED9]/30 text-cyan-300 hover:text-cyan-200 transition-colors text-center cursor-pointer font-bold"
+                      >
+                        قناة النادي الرسمية على تليجرام ←
+                      </a>
+                    )}
+                    {showWhatsapp && (
+                      <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 hover:text-emerald-200 transition-colors text-center cursor-pointer font-bold"
+                      >
+                        مجموعة / قناة النادي على واتساب ←
+                      </a>
+                    )}
+                    {contactSettings.links?.some((l) => l.visible && l.url.trim()) && (
+                      <div className="pt-2 border-t border-white/10 flex flex-col items-center gap-2">
+                        <span className="text-[11px] text-gray-400">حسابات النادي الرسمية:</span>
+                        <SocialLinks links={contactSettings.links} className="justify-center" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
