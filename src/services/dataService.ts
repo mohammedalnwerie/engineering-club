@@ -20,9 +20,11 @@ import type {
   ComplaintItem,
   RecruitmentSettings,
   MembershipSettings,
-  ContactSettings
+  ContactSettings,
+  FaqItem
 } from '../types';
 import { SOCIAL_ORDER, type SocialLink } from '../data/socials';
+import { DEFAULT_FAQS } from '../data/faqData';
 
 
 
@@ -93,6 +95,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   showEventsSection: true,
   showProjectsSection: true,
   showLiveFeedSection: true,
+  showFaqSection: true,
 };
 
 
@@ -113,6 +116,7 @@ const CONTENT_KEYS = {
   membership: 'membership',
   contact: 'contact',
   tickets: 'tickets',
+  faqs: 'faqs',
 } as const;
 
 type ContentKey = (typeof CONTENT_KEYS)[keyof typeof CONTENT_KEYS];
@@ -135,6 +139,7 @@ interface ContentCache {
   membership: MembershipSettings;
   contact: ContactSettings;
   tickets: EventTicket[];
+  faqs: FaqItem[];
 }
 
 const defaultContent = (): ContentCache => ({
@@ -150,6 +155,7 @@ const defaultContent = (): ContentCache => ({
   membership: DEFAULT_MEMBERSHIP_SETTINGS,
   contact: DEFAULT_CONTACT_SETTINGS,
   tickets: [],
+  faqs: DEFAULT_FAQS,
 });
 
 interface ApplicationRow {
@@ -641,6 +647,9 @@ class DataService {
       vision: data.vision || DEFAULT_SETTINGS.vision,
       mission: data.mission || DEFAULT_SETTINGS.mission,
       showEventsSection: data.showEventsSection !== false,
+      showProjectsSection: data.showProjectsSection !== false,
+      showLiveFeedSection: data.showLiveFeedSection !== false,
+      showFaqSection: data.showFaqSection !== false,
     };
   }
 
@@ -672,6 +681,27 @@ class DataService {
 
   public deleteEvent(id: string) {
     this.setContent('events', this.getEvents().filter((e) => e.id !== id));
+  }
+
+  // --- FAQS ---
+  public getFaqs(): FaqItem[] {
+    const list = Array.isArray(this.content.faqs) ? this.content.faqs : DEFAULT_FAQS;
+    return [...list].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+  }
+
+  public saveFaq(faq: FaqItem) {
+    const current = this.getFaqs();
+    const next = this.upsertById(current, faq);
+    this.setContent('faqs', next);
+  }
+
+  public saveFaqs(faqs: FaqItem[]) {
+    this.setContent('faqs', faqs);
+  }
+
+  public deleteFaq(id: string) {
+    const next = this.getFaqs().filter((f) => f.id !== id);
+    this.setContent('faqs', next);
   }
 
   // --- TICKETS & ATTENDEES (admin only) ---
@@ -1054,7 +1084,7 @@ class DataService {
   public importDatabaseJSON(jsonStr: string): boolean {
     try {
       const data = JSON.parse(jsonStr);
-      const keys: ContentKey[] = ['projects', 'events', 'courses', 'leadership', 'colleges', 'majors', 'spotlight', 'settings', 'recruitment', 'tickets'];
+      const keys: ContentKey[] = ['projects', 'events', 'courses', 'leadership', 'colleges', 'majors', 'spotlight', 'settings', 'recruitment', 'tickets', 'faqs'];
       for (const key of keys) {
         if (data[key]) this.setContent(key, data[key]);
       }

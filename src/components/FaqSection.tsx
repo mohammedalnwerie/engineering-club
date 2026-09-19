@@ -1,12 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, HelpCircle, MessageSquare, ArrowLeft } from 'lucide-react';
-
-interface FaqItem {
-  id: string;
-  question: string;
-  answer: string;
-  category: string;
-}
+import { dataService } from '../services/dataService';
+import type { FaqItem } from '../types';
 
 interface FaqSectionProps {
   onOpenComplaints?: () => void;
@@ -14,46 +9,37 @@ interface FaqSectionProps {
 }
 
 export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpenJoin }) => {
-  const [openId, setOpenId] = useState<string | null>('faq-1');
+  const [faqsList, setFaqsList] = useState<FaqItem[]>(() => dataService.getFaqs());
+  const [isVisible, setIsVisible] = useState<boolean>(() => {
+    return dataService.getSettings().showFaqSection !== false;
+  });
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  const faqs: FaqItem[] = [
-    {
-      id: 'faq-1',
-      category: 'العضوية والتسجيل',
-      question: 'كيف تتم العضوية وتفعيلها في النادي؟',
-      answer: 'بعد مراجعة وقبول طلب انضمامك، تُصدر لك أولاً بطاقة عضوية رقمية مؤقتة صالحة لمدة 14 يوماً مع رمز دخول خاص بك لصفحة «حسابي». تُمنح هذه البطاقة مؤقتاً لحين استكمال إجراءات الاعتماد والتثبيت الرسمي للعضوية من قِبل إدارة النادي، لتصبح عضويتك معتمدة بشكل دائم وتتيح لك المشاركة في كافة الورش والدورات والهاكاثونات.'
-    },
-    {
-      id: 'faq-2',
-      category: 'التخصصات والكليات',
-      question: 'أنا طالب في كلية الهندسة التطبيقية (عمارة / مدني / ديكور)، كيف يفيدني النادي؟',
-      answer: 'النادي ليس مخصصاً لطلبة البرمجيات فقط، بل هو مظلة طلابية جامعة لكل التخصصات الهندسية. نعمل على تنظيم ورش عمل في برامج النمذجة والتصميم الهندسي (BIM, Revit, AutoCAD)، وإطلاق مسابقات في التصميم المعماري والإنشائي، بالإضافة لتشكيل فرق عمل متكاملة تجمع المعماري والمدني والبرمجي في مشاريع تحاكي بيئة العمل الحقيقية.'
-    },
-    {
-      id: 'faq-3',
-      category: 'الخريجون',
-      question: 'هل يمكن لخريجي جامعة فلسطين الانضمام والاستفادة من النادي؟',
-      answer: 'نعم بكل تأكيد! يرحب النادي بكافة مهندسي ومهندسات جامعة فلسطين الخريجين للانضمام كأعضاء أو مدربين وموجهين للطلبة، والاستفادة من برامج التشبيك المهني والشراكات مع الشركات والمؤسسات وسوق العمل.'
-    },
-    {
-      id: 'faq-4',
-      category: 'العضوية واللجان',
-      question: 'ما الفرق بين «العضوية العامة» وعضوية «اللجان التنفيذية»؟',
-      answer: 'العضوية العامة تمنحك بطاقة العضوية الرسمية وحق حضور كافة ورش العمل والمسابقات والاستفادة من أنشطة النادي بحرية تامة دون أي التزام إداري. أما عضوية اللجان التنفيذية (الأنشطة، العلاقات والتدريب، الإعلام) فهي مخصصة للطلبة الراغبين في المشاركة في إدارة وتنظيم أنشطة النادي وتطوير مهاراتهم القيادية.'
-    },
-    {
-      id: 'faq-5',
-      category: 'البطاقات الرقمية',
-      question: 'كيف أحصل على بطاقتي الرقمية وكيف أتحقق من صحتها؟',
-      answer: 'بمجرد قبول طلب انضمامك، تصدر لك بطاقة عضوية مؤقتة صالحة لمدة 14 يوماً مع كود التحقق الخاص بك، وتصلك تفاصيلها عبر رسالة برابط مباشر لبطاقتك لحين اعتمادها النهائي. ويمكنك دائماً استخدام زر «التحقق من العضوية» في أعلى الموقع بالرقم الجامعي للاستعلام عن بطاقتك وتنزيلها كصورة أو طباعتها.'
-    },
-    {
-      id: 'faq-6',
-      category: 'المشاريع والمقترحات',
-      question: 'لدي فكرة مشروع ريادي أو مقترح ورشة تدريبية، كيف يمكنني تقديمها للنادي؟',
-      answer: 'يسعدنا جداً استقبال أفكاركم ومشاريعكم! يمكنك تقديم مقترحك في أي وقت عبر "صندوق الشكاوى والمقترحات" في الموقع، أو التواصل المباشر مع ممثل كليتك في النادي، وستعمل اللجان المختصة على دراسة الفكرة ودعم تنفيذها.'
+  useEffect(() => {
+    const update = () => {
+      const items = dataService.getFaqs();
+      setFaqsList(items);
+      setIsVisible(dataService.getSettings().showFaqSection !== false);
+    };
+
+    update();
+    const unsub = dataService.subscribe(update);
+    return () => unsub();
+  }, []);
+
+  // Filter out hidden items
+  const publicFaqs = faqsList.filter((f) => !f.hidden);
+
+  // Set initial open ID to first public FAQ
+  useEffect(() => {
+    if (publicFaqs.length > 0 && openId === null) {
+      setOpenId(publicFaqs[0].id);
     }
-  ];
+  }, [publicFaqs, openId]);
+
+  if (!isVisible || publicFaqs.length === 0) {
+    return null;
+  }
 
   const toggleFaq = (id: string) => {
     setOpenId(openId === id ? null : id);
@@ -81,7 +67,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
 
         {/* FAQ Accordion List */}
         <div className="space-y-4 mb-14">
-          {faqs.map((faq) => {
+          {publicFaqs.map((faq) => {
             const isOpen = openId === faq.id;
             return (
               <div
@@ -96,12 +82,15 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
                   type="button"
                   onClick={() => toggleFaq(faq.id)}
                   className="w-full p-5 sm:p-6 text-right flex items-center justify-between gap-4 cursor-pointer"
+                  aria-expanded={isOpen}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-white/5 text-[#3FE7E3] border border-white/5 shrink-0 hidden sm:inline-block">
-                      {faq.category}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-bold text-white text-right">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {faq.category && (
+                      <span className="text-xs font-mono px-2.5 py-1 rounded-md bg-white/5 text-[#3FE7E3] border border-white/5 shrink-0 hidden sm:inline-block">
+                        {faq.category}
+                      </span>
+                    )}
+                    <h3 className="text-base sm:text-lg font-bold text-white text-right leading-snug">
                       {faq.question}
                     </h3>
                   </div>
@@ -117,7 +106,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenComplaints, onOpen
 
                 {isOpen && (
                   <div className="px-5 sm:px-6 pb-6 pt-1 text-sm sm:text-base text-gray-300 leading-relaxed font-light border-t border-white/5 animate-in fade-in duration-200">
-                    <p>{faq.answer}</p>
+                    <p className="whitespace-pre-line">{faq.answer}</p>
                   </div>
                 )}
               </div>

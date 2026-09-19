@@ -22,6 +22,7 @@ import { QuickNav, type QuickNavItem } from './admin/QuickNav';
 import { LeadershipPanel } from './admin/LeadershipPanel';
 import { CollegesPanel } from './admin/CollegesPanel';
 import { ContactPanel } from './admin/ContactPanel';
+import { FaqPanel } from './admin/FaqPanel';
 import { TodoPanel } from './admin/TodoPanel';
 import { InterviewModal } from './admin/InterviewModal';
 import { AssignModal } from './admin/AssignModal';
@@ -66,6 +67,7 @@ import {
   Clock,
   Search,
   Database,
+  HelpCircle,
   RefreshCw,
   Eye,
   EyeOff,
@@ -290,6 +292,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
     | 'activity'
     | 'trash'
     | 'contact'
+    | 'faqs'
     | 'security';
 
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -843,6 +846,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
       { id: 'projects', label: 'المشاريع والمبادرات', group: 'محتوى الموقع', needsFullAccess: true },
       { id: 'leadership', label: 'الكادر القيادي', group: 'محتوى الموقع', needsFullAccess: true },
       { id: 'colleges', label: 'الكليات والتخصصات', group: 'محتوى الموقع', needsFullAccess: true },
+      { id: 'faqs', label: 'الأسئلة الشائعة والإرشاد', group: 'محتوى الموقع', needsFullAccess: true },
       { id: 'settings', label: 'الهوية وإعدادات العرض', group: 'الإعدادات', needsFullAccess: true },
       { id: 'cloud', label: 'السحابة والمشتركون', group: 'الإعدادات', needsFullAccess: true },
       { id: 'contact', label: 'روابط التواصل الرسمية', group: 'الإعدادات', needsFullAccess: true },
@@ -1481,6 +1485,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                           }
                           onClick={() => setActiveTab('complaints')}
                         />
+
+                        <SidebarNavItem
+                          active={activeTab === 'faqs'}
+                          collapsed={isSidebarCollapsed}
+                          icon={<HelpCircle className="w-4 h-4" />}
+                          label="الأسئلة الشائعة"
+                          badge={<span className="text-xs font-mono text-slate-500">{dataService.getFaqs().length}</span>}
+                          onClick={() => setActiveTab('faqs')}
+                        />
                       </>
                     )}
                   </nav>
@@ -1623,6 +1636,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                     {activeTab === 'settings' && 'هوية الموقع وإعدادات العرض'}
                     {activeTab === 'cloud' && 'السحابة والمشتركون والنسخ الاحتياطي'}
                     {activeTab === 'contact' && 'روابط التواصل الرسمية'}
+                    {activeTab === 'faqs' && 'إدارة الأسئلة الشائعة والإرشاد الطلابي'}
                     {activeTab === 'security' && 'الأمان وتغيير كلمة المرور وسجل التدقيق'}
                   </h2>
                 </div>
@@ -3815,6 +3829,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
             {activeTab === 'contact' && fullAccess && (
               <div className="flex-1 overflow-y-auto">
                 <ContactPanel showToast={showToast} />
+              </div>
+            )}
+
+            {activeTab === 'faqs' && fullAccess && (
+              <div className="flex-1 overflow-y-auto">
+                <FaqPanel showToast={showToast} />
               </div>
             )}
 

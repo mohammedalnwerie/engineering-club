@@ -3,7 +3,7 @@ import { RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
 import { listTrash, restoreTrashItem, deleteTrashItem, purgeOldTrash, type TrashRow } from './adminApi';
 import { Badge, Button, EmptyState, ErrorNote, LoadingRows, PageHeader, Panel, formatDateTime } from './ui';
 import { dataService } from '../../services/dataService';
-import type { LeaderMember, ProjectCaseStudy } from '../../types';
+import type { LeaderMember, ProjectCaseStudy, FaqItem } from '../../types';
 
 const TYPE_LABELS: Record<string, string> = {
   application: 'طلب انضمام',
@@ -11,6 +11,7 @@ const TYPE_LABELS: Record<string, string> = {
   event: 'فعالية',
   project: 'مشروع',
   leader: 'عضو قيادة',
+  faq: 'سؤال شائع',
 };
 
 const daysUntilPurge = (deletedAt: string) => Math.max(0, 30 - Math.floor((Date.now() - new Date(deletedAt).getTime()) / 86_400_000));
@@ -46,6 +47,7 @@ export const TrashPanel: React.FC<{ showToast: (m: string) => void; onRestored: 
       // Content items are restored into their JSON list by the app.
       if (result.payload && result.entityType === 'project') dataService.saveProject(result.payload as unknown as ProjectCaseStudy);
       if (result.payload && result.entityType === 'leader') dataService.saveLeader(result.payload as unknown as LeaderMember);
+      if (result.payload && result.entityType === 'faq') dataService.saveFaq(result.payload as unknown as FaqItem);
       showToast(`تمت استعادة ${row.title}`);
       onRestored();
       await load();

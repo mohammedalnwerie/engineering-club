@@ -16,11 +16,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, o
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showEvents, setShowEvents] = useState<boolean>(() => dataService.getSettings().showEventsSection !== false);
   const [showProjects, setShowProjects] = useState<boolean>(() => dataService.getSettings().showProjectsSection !== false);
+  const [showFaq, setShowFaq] = useState<boolean>(() => dataService.getSettings().showFaqSection !== false);
 
   useEffect(() => {
     const unsub = dataService.subscribe(() => {
       setShowEvents(dataService.getSettings().showEventsSection !== false);
       setShowProjects(dataService.getSettings().showProjectsSection !== false);
+      setShowFaq(dataService.getSettings().showFaqSection !== false);
     });
     return unsub;
   }, []);
@@ -40,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenJoinModal, onOpenVerify, o
     ...(showEvents ? [{ label: 'الفعاليات', href: '#events' }] : []),
     ...(showProjects ? [{ label: 'المشاريع', href: '#projects' }] : []),
     { label: 'القيادة', href: '#leadership' },
-    { label: 'الأسئلة الشائعة', href: '#faq' },
+    ...(showFaq ? [{ label: 'الأسئلة الشائعة', href: '#faq' }] : []),
   ];
 
   const handleNavClick = (href: string) => {

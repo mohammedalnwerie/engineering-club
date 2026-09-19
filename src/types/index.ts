@@ -189,6 +189,16 @@ export interface SiteSettings {
   showEventsSection?: boolean;
   showProjectsSection?: boolean;
   showLiveFeedSection?: boolean;
+  showFaqSection?: boolean;
+}
+
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  order?: number;
+  hidden?: boolean;
 }
 
 /** بيانات التواصل والروابط الرسمية التي تظهر في تذييل الموقع */
