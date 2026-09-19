@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { SOCIAL_META } from '../data/socials';
 
 export interface LanyardBadgeData {
   name: string;
@@ -34,6 +35,93 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+/** Draws a crisp vector user silhouette icon on canvas without emojis. */
+function drawUserIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, color: string) {
+  ctx.save();
+  ctx.fillStyle = color;
+  // Head
+  ctx.beginPath();
+  ctx.arc(cx, cy - size * 0.22, size * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+  // Shoulders
+  ctx.beginPath();
+  ctx.arc(cx, cy + size * 0.45, size * 0.42, Math.PI * 1.15, Math.PI * 1.85);
+  ctx.lineTo(cx + size * 0.38, cy + size * 0.42);
+  ctx.lineTo(cx - size * 0.38, cy + size * 0.42);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Draws a crisp vector calendar icon on canvas without emojis. */
+function drawCalendarIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, color: string) {
+  ctx.save();
+  const w = size * 0.85;
+  const h = size * 0.85;
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.4;
+  roundRect(ctx, x, y, w, h, 3);
+  ctx.stroke();
+  // Header divider
+  ctx.beginPath();
+  ctx.moveTo(x, y + h * 0.32);
+  ctx.lineTo(x + w, y + h * 0.32);
+  ctx.stroke();
+  // Two binder rings
+  ctx.beginPath();
+  ctx.moveTo(x + w * 0.28, y - 2.5);
+  ctx.lineTo(x + w * 0.28, y + 2.5);
+  ctx.moveTo(x + w * 0.72, y - 2.5);
+  ctx.lineTo(x + w * 0.72, y + 2.5);
+  ctx.stroke();
+  // Small dot inside calendar
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy + h * 0.16, 1.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** Draws a crisp vector university/institution icon on canvas without emojis. */
+function drawBuildingIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, color: string) {
+  ctx.save();
+  const w = size * 0.9;
+  const h = size * 0.85;
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+  ctx.fillStyle = color;
+  // Roof / pediment triangle
+  ctx.beginPath();
+  ctx.moveTo(cx, y);
+  ctx.lineTo(x + w, y + h * 0.32);
+  ctx.lineTo(x, y + h * 0.32);
+  ctx.closePath();
+  ctx.fill();
+  // Base
+  ctx.fillRect(x, y + h - 2.5, w, 2.5);
+  // Three Columns
+  const colW = 2;
+  const colTop = y + h * 0.36;
+  const colH = h * 0.44;
+  ctx.fillRect(x + w * 0.18 - colW / 2, colTop, colW, colH);
+  ctx.fillRect(cx - colW / 2, colTop, colW, colH);
+  ctx.fillRect(x + w * 0.82 - colW / 2, colTop, colW, colH);
+  ctx.restore();
+}
+
+/** Draws an SVG path with exact scale and color on canvas. */
+function drawSvgIcon(ctx: CanvasRenderingContext2D, pathData: string, x: number, y: number, size: number, color: string) {
+  ctx.save();
+  ctx.translate(x, y);
+  const scale = size / 24;
+  ctx.scale(scale, scale);
+  ctx.fillStyle = color;
+  ctx.fill(new Path2D(pathData));
+  ctx.restore();
 }
 
 /** Translates common club roles to official English titles. */
@@ -321,25 +409,37 @@ export async function renderLanyardFront(data: LanyardBadgeData, scale = 2): Pro
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
 
+  const iconX = boxX + boxW - 24;
+
   // Code
   ctx.font = `800 15px ${MONO}`;
   ctx.fillStyle = '#0F172A';
   ctx.fillText(data.code, boxX + boxW - 55, boxY + 30);
-  ctx.font = `600 14px ${SANS}`;
-  ctx.fillStyle = '#64748B';
-  ctx.fillText('👤', boxX + boxW - 24, boxY + 30);
+  ctx.fillStyle = '#F1F5F9';
+  ctx.beginPath();
+  ctx.arc(iconX, boxY + 30, 13, 0, Math.PI * 2);
+  ctx.fill();
+  drawUserIcon(ctx, iconX, boxY + 30, 15, '#475569');
 
   // Year
   ctx.font = `700 14px ${SANS}`;
   ctx.fillStyle = '#334155';
   ctx.fillText(data.academicYear || '2026 - 2027', boxX + boxW - 55, boxY + 60);
-  ctx.fillText('📅', boxX + boxW - 24, boxY + 60);
+  ctx.fillStyle = '#F1F5F9';
+  ctx.beginPath();
+  ctx.arc(iconX, boxY + 60, 13, 0, Math.PI * 2);
+  ctx.fill();
+  drawCalendarIcon(ctx, iconX, boxY + 60, 15, '#475569');
 
   // University
   ctx.font = `700 13px ${SANS}`;
   ctx.fillStyle = '#334155';
   ctx.fillText(data.university || 'University of Palestine', boxX + boxW - 55, boxY + 90);
-  ctx.fillText('🏛️', boxX + boxW - 24, boxY + 90);
+  ctx.fillStyle = '#F1F5F9';
+  ctx.beginPath();
+  ctx.arc(iconX, boxY + 90, 13, 0, Math.PI * 2);
+  ctx.fill();
+  drawBuildingIcon(ctx, iconX, boxY + 90, 15, '#475569');
 
   // 10. Bottom Navy Bar with Motto
   const barHeight = 68;
@@ -509,16 +609,18 @@ export async function renderLanyardBack(scale = 2): Promise<string> {
   ctx.lineTo(W - 60, bottomY - 30);
   ctx.stroke();
 
-  // Social Icons Placeholder (Instagram, LinkedIn, YouTube)
-  ctx.font = `700 18px ${SANS}`;
-  ctx.fillStyle = '#3FE7E3';
-  ctx.fillText('📸   💼   ▶️', W / 2 - 130, bottomY);
+  // Social Brand Marks (Instagram, LinkedIn, Telegram) - Crisp Vector SVGs
+  const iconY = bottomY - 14;
+  drawSvgIcon(ctx, SOCIAL_META.instagram.path, 60, iconY, 18, '#3FE7E3');
+  drawSvgIcon(ctx, SOCIAL_META.linkedin.path, 92, iconY, 18, '#3FE7E3');
+  drawSvgIcon(ctx, SOCIAL_META.telegram.path, 124, iconY, 18, '#3FE7E3');
 
   // Official Handle
   ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
   ctx.font = `800 15px ${SANS}`;
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('Engineering Club - UP', W - 60, bottomY);
+  ctx.fillText('Engineering Club - UP', W - 60, bottomY - 5);
 
   ctx.restore();
 

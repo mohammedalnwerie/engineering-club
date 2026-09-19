@@ -700,8 +700,19 @@ export const MemberPortal: React.FC<MemberPortalProps> = ({ onClose, onJoin }) =
       </main>
 
       {/* Page Footer */}
-      <footer className="mt-16 py-8 border-t border-white/10 text-center text-xs text-gray-400">
+      <footer className="mt-16 py-8 border-t border-white/10 text-center text-xs text-gray-400 space-y-1.5">
         <p>النادي الهندسي — جامعة فلسطين © 2026. ملتقى مهندسي الغد.</p>
+        <p className="text-gray-500 font-mono text-[11px] flex items-center justify-center gap-1.5">
+          <span>تطوير وبرمجة النظام:</span>
+          <a
+            href="https://github.com/mohammedalnwerie"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 font-bold transition-colors underline underline-offset-4"
+          >
+            م. محمد النويري
+          </a>
+        </p>
       </footer>
     </div>
   );

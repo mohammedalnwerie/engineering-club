@@ -1,5 +1,4 @@
-import React from 'react';
-import { ArrowUp, MapPin, Sparkles } from 'lucide-react';
+import { ArrowUp, MapPin, Sparkles, MessageSquare, ShieldCheck, FileText } from 'lucide-react';
 import { ClubLogo } from './ClubLogo';
 import { dataService } from '../services/dataService';
 import { SocialLinks } from './SocialLinks';
@@ -140,26 +139,29 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
                 <button
                   type="button"
                   onClick={onOpenComplaints}
-                  className="hover:text-amber-400 text-amber-400/90 font-medium transition-colors flex items-center gap-1 cursor-pointer text-xs"
+                  className="hover:text-amber-400 text-amber-400/90 font-medium transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
                 >
-                  <span>صندوق الشكاوى والمقترحات 📨</span>
+                  <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+                  <span>صندوق الشكاوى والمقترحات</span>
                 </button>
               </li>
               <li>
                 <button
                   type="button"
                   onClick={onOpenVerify}
-                  className="hover:text-emerald-400 text-emerald-400/90 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                  className="hover:text-emerald-400 text-emerald-400/90 font-medium transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
                 >
-                  <span>التحقق من بطاقة العضوية 🪪</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>التحقق من بطاقة العضوية</span>
                 </button>
               </li>
               <li>
                 <a
                   href="#/about"
-                  className="hover:text-emerald-400 text-emerald-400/90 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                  className="hover:text-cyan-400 text-cyan-400/90 font-medium transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
                 >
-                  <span>الميثاق التأسيسي والهوية 📄</span>
+                  <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>الميثاق التأسيسي والهوية</span>
                 </a>
               </li>
               <li>
@@ -180,8 +182,21 @@ export const Footer: React.FC<FooterProps> = ({ onOpenVerify, onOpenComplaints }
 
         {/* Bottom Bar: Copyright & Back to Top */}
         <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 font-mono gap-4">
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center sm:text-right">
-            <span>© 2026 النادي الهندسي — جامعة فلسطين (غزة). جميع الحقوق محفوظة.</span>
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-center sm:text-right">
+            <span>© 2026 النادي الهندسي — جامعة فلسطين. جميع الحقوق محفوظة.</span>
+            <span className="text-white/20 hidden sm:inline">•</span>
+            <span className="text-gray-400 flex items-center gap-1.5">
+              <span>تصميم وتطوير وبرمجة:</span>
+              <a
+                href="https://github.com/mohammedalnwerie"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:text-cyan-300 font-bold transition-colors underline underline-offset-4"
+              >
+                م. محمد النويري
+              </a>
+            </span>
+            <span className="text-white/20 hidden sm:inline">•</span>
             {/* Discreet entrance for the team; the dashboard itself still asks for a login. */}
             <a href="#/admin" className="text-gray-600 hover:text-cyan-400 transition-colors">
               دخول الإدارة

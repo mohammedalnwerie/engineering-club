@@ -1,7 +1,8 @@
 {
   "name": "up-engineering-club",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "author": "Eng. Mohammed Al-Nwerie <https://github.com/mohammedalnwerie>",
   "type": "module",
   "scripts": {
     "dev": "vite",

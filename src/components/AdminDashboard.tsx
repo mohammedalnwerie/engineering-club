@@ -1777,6 +1777,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                         <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingData ? 'animate-spin' : ''}`} />
                       </button>
                     </div>
+                    <div className="pt-2 border-t border-white/5 text-[10px] text-slate-500 font-mono text-center">
+                      تطوير وبرمجة:{' '}
+                      <a
+                        href="https://github.com/mohammedalnwerie"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-cyan-400 hover:text-cyan-300 font-bold transition-colors"
+                      >
+                        م. محمد النويري
+                      </a>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
@@ -3523,7 +3534,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                                             'تم تصفير كلمة المرور بنجاح. يمكنك الآن الدخول فوراً باستخدام رمز بطاقتك وتعيين كلمة مرورك الجديدة.'
                                           );
                                           setComplaints(dataService.getComplaints());
-                                          const notifyMsg = `أهلاً بك يا ${matchingMember.fullName}،\nتم تصفير كلمة مرور حسابك في النادي الهندسي بنجاح.\nيمكنك الآن تسجيل الدخول مباشرة برمز بطاقتك:\n${matchingMember.memberCode}\nثم تعيين كلمة مرور جديدة عبر الرابط:\nhttps://engineering-club-phi.vercel.app/?member=1`;
+                                          const origin = typeof window !== 'undefined' ? window.location.origin : 'https://engineering-club-phi.vercel.app';
+                                          const notifyMsg = `أهلاً بك يا ${matchingMember.fullName}،\nتم تصفير كلمة مرور حسابك في النادي الهندسي بنجاح.\nيمكنك الآن تسجيل الدخول مباشرة برمز بطاقتك:\n${matchingMember.memberCode}\nثم تعيين كلمة مرور جديدة عبر الرابط:\n${origin}/#/member`;
                                           navigator.clipboard.writeText(notifyMsg);
                                           showToast(`تم تصفير كلمة المرور لـ ${matchingMember.fullName} ونسخ رسالة الواتساب للحافظة`);
                                         } catch (err) {

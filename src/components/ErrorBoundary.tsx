@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { ShieldAlert, RefreshCw, Download, Terminal } from 'lucide-react';
+import { ShieldAlert, RefreshCw, Download, Terminal, ShieldCheck } from 'lucide-react';
 import { dataService } from '../services/dataService';
 
 interface Props {
@@ -74,8 +74,9 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="space-y-3 mb-6 text-sm text-gray-300 leading-relaxed">
               <p>
                 تم التقاط استثناء برمجي غير متوقع في واجهة العرض لمنع انهيار الصفحة.
-                <strong className="text-emerald-400 block mt-1">
-                  🛡️ جميع بياناتك، وطلبات الانضمام، والتذاكر محفوظة بأمان تام في الذاكرة التخزينية.
+                <strong className="text-emerald-400 flex items-center gap-1.5 mt-1">
+                  <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <span>جميع بياناتك، وطلبات الانضمام، والتذاكر محفوظة بأمان تام في الذاكرة التخزينية.</span>
                 </strong>
               </p>
               <p className="text-xs text-gray-400">
@@ -91,7 +92,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="w-full sm:flex-1 py-3 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>إعادة تشغيل النظام بأمان 🔄</span>
+                <span>إعادة تشغيل النظام بأمان</span>
               </button>
 
               <button
@@ -101,7 +102,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 title="تصدير ملف JSON لبيانات النادي"
               >
                 <Download className="w-4 h-4 text-emerald-400" />
-                <span>حفظ نسخة احتياطية طارئة (JSON) 💾</span>
+                <span>حفظ نسخة احتياطية طارئة (JSON)</span>
               </button>
             </div>
 

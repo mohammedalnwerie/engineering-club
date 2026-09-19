@@ -533,7 +533,8 @@ const MembersList: React.FC<{ members: MemberRow[]; onChanged: () => Promise<voi
                 className="w-full justify-center"
                 icon={<Copy className="w-4 h-4" />}
                 onClick={() => {
-                  const msg = `أهلاً بك يا ${resetSuccessModal.name}،\nتم تصفير كلمة المرور الخاصة بحسابك في النادي الهندسي بنجاح.\nيمكنك الآن تسجيل الدخول مباشرة باستخدام رمز بطاقتك:\n${resetSuccessModal.memberCode}\nثم تعيين كلمة مرور جديدة لحسابك عبر الرابط:\nhttps://engineering-club-phi.vercel.app/?member=1`;
+                  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://engineering-club-phi.vercel.app';
+                  const msg = `أهلاً بك يا ${resetSuccessModal.name}،\nتم تصفير كلمة المرور الخاصة بحسابك في النادي الهندسي بنجاح.\nيمكنك الآن تسجيل الدخول مباشرة باستخدام رمز بطاقتك:\n${resetSuccessModal.memberCode}\nثم تعيين كلمة مرور جديدة لحسابك عبر الرابط:\n${origin}/#/member`;
                   navigator.clipboard.writeText(msg);
                   showToast('تم نسخ رسالة إشعار الطالب للحافظة');
                 }}

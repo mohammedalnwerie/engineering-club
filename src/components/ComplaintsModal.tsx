@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { dataService } from '../services/dataService';
 import type { ComplaintItem, ComplaintPriority } from '../types';
-import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check, Camera, Upload, Trash2 } from 'lucide-react';
+import { X, MessageSquare, Send, Search, CheckCircle2, AlertCircle, Clock, ShieldCheck, Sparkles, Copy, Check, Camera, Upload, Trash2, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
   normalizeCode,
@@ -545,7 +545,7 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                   <div className="flex items-center justify-between">
                     <label className="block text-gray-300 font-mono text-xs flex items-center gap-1.5">
                       <Camera className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>إرفاق صورة أو لقطة شاشة تدعم الطلب (اختياري 📸):</span>
+                      <span>إرفاق صورة أو لقطة شاشة تدعم الطلب (اختياري):</span>
                     </label>
                     {attachmentImage && (
                       <button
@@ -651,7 +651,10 @@ export const ComplaintsModal: React.FC<ComplaintsModalProps> = ({ isOpen, onClos
                   <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
                   <span>الاستعلام برقم التذكرة فقط</span>
                 </span>
-                <span className="text-xs text-gray-500">🔒 خصوصية وسرية مطلقة</span>
+                <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-gray-400" />
+                  <span>خصوصية وسرية مطلقة</span>
+                </span>
               </div>
               <form onSubmit={handleTrack} className="flex gap-2">
                 <input

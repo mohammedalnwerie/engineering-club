@@ -13,7 +13,11 @@ import {
   FileText, 
   GraduationCap, 
   Cpu, 
-  ChevronLeft
+  ChevronLeft,
+  Users,
+  Scale,
+  Handshake,
+  Code2
 } from 'lucide-react';
 import { ClubLogo } from './ClubLogo';
 
@@ -229,17 +233,21 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
 
           {/* Official Core Badges */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs font-medium">
-            <span className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
-              🌱 إطار طلابي تطوعي
+            <span className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center gap-2">
+              <Users className="w-3.5 h-3.5 text-emerald-400" />
+              <span>إطار طلابي تطوعي</span>
             </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300">
-              ⚖️ مستقل وغير مسيّس
+            <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 flex items-center gap-2">
+              <Scale className="w-3.5 h-3.5 text-purple-400" />
+              <span>مستقل وغير مسيّس</span>
             </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
-              🏛️ تحت إشراف عمادة شؤون الطلبة
+            <span className="px-3.5 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 flex items-center gap-2">
+              <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+              <span>تحت إشراف عمادة شؤون الطلبة</span>
             </span>
-            <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300">
-              🤝 تمثيل موحد لجميع التخصصات
+            <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 flex items-center gap-2">
+              <Handshake className="w-3.5 h-3.5 text-purple-400" />
+              <span>تمثيل موحد لجميع التخصصات</span>
             </span>
           </div>
 
@@ -571,6 +579,50 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onClose, onOpenJoin }) => 
                   </span>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 08: المنصة الرقمية والتطوير الهندسي */}
+        <section className="mb-20 scroll-mt-24" id="platform-engineering">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-950/60 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+              <Code2 className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs font-mono text-cyan-400 font-bold tracking-wider">INFRASTRUCTURE & ARCHITECTURE</span>
+              <h2 className="text-xl sm:text-2xl font-black text-white">المنصة الرقمية والبنية التحتية البرمجية</h2>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 sm:p-8 relative overflow-hidden">
+            <div className="space-y-4 text-sm sm:text-base text-gray-300 leading-relaxed">
+              <p>
+                تم تخطيط، وهندسة، وتطوير المنصة الرقمية الرسمية للنادي الهندسي بجامعة فلسطين وأنظمتها المتكاملة (بما تشمله من منظومة الهوية والبطاقات الرقمية المعتمدة، وبوابة الأعضاء، وقواعد البيانات السحابية، ولوحة إدارة النادي، ونظام إدارة الأنشطة والشكاوى) بجهد وبرمجة وإشراف:
+              </p>
+              <div className="p-4 rounded-2xl bg-white/[0.04] border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-black text-sm">
+                    MN
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">م. محمد النويري</h3>
+                    <p className="text-xs text-gray-400 font-mono">Lead Software Engineer & Platform Architect</p>
+                  </div>
+                </div>
+                <a
+                  href="https://github.com/mohammedalnwerie"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:text-cyan-200 text-xs font-bold transition-colors inline-flex items-center gap-1.5 self-start sm:self-center"
+                >
+                  <span>الملف الهندسي على GitHub</span>
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </a>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed font-mono">
+                كافة حقوق التصميم البرمجي والمعماري للمنصة مسجلة وموثقة هندسياً ضمن الملكية الفكرية لمطور النظام، وتخضع لسياسات وتراخيص التطوير البرمجي المعتمدة.
+              </p>
             </div>
           </div>
         </section>
