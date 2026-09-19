@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import type { LeaderMember, StoredApplication } from '../../types';
 import { downloadCsv } from '../../utils/security';
+import { effectiveCommittee } from '../../data/committees';
 
 const DEFAULT_AVATAR = '/brand/emblem.png';
 
@@ -427,7 +428,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
 
   const exportCommitteesCsv = () => {
     const committeeMembers = applications.filter(
-      (a) => a.status === 'تم القبول' && a.targetCommittee && !a.targetCommittee.includes('عامة')
+      (a) => a.status === 'تم القبول' && effectiveCommittee(a) && !effectiveCommittee(a).includes('عامة')
     );
     const headers = [
       'الاسم الكامل',
@@ -444,7 +445,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
     const rows = committeeMembers.map((m) => [
       m.fullName,
       m.studentId,
-      m.targetCommittee,
+      effectiveCommittee(m),
       m.organizationalRole || 'عضو لجنة',
       m.major,
       m.college,
@@ -537,7 +538,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
           <div>
             <div className="text-xs font-mono text-emerald-300/90">كوادر وفرق اللجان</div>
             <div className="text-base font-bold text-white mt-0.5">
-              {applications.filter((a) => a.status === 'تم القبول' && a.targetCommittee && !a.targetCommittee.includes('عامة')).length} عضواً
+              {applications.filter((a) => a.status === 'تم القبول' && effectiveCommittee(a) && !effectiveCommittee(a).includes('عامة')).length} عضواً
             </div>
           </div>
           <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
@@ -760,7 +761,7 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
               <span>تصدير كوادر اللجان (CSV)</span>
             </button>
             <div className="text-xs text-slate-400 font-mono bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800">
-              إجمالي الأعضاء باللجان: <span className="text-cyan-400 font-bold">{applications.filter((a) => a.status === 'تم القبول' && a.targetCommittee && !a.targetCommittee.includes('عامة')).length}</span>
+              إجمالي الأعضاء باللجان: <span className="text-cyan-400 font-bold">{applications.filter((a) => a.status === 'تم القبول' && effectiveCommittee(a) && !effectiveCommittee(a).includes('عامة')).length}</span>
             </div>
           </div>
         </div>
@@ -772,7 +773,8 @@ export const LeadershipPanel: React.FC<LeadershipPanelProps> = ({
 
           const members = applications.filter((a) => {
             if (a.status !== 'تم القبول') return false;
-            const c = a.targetCommittee || '';
+            const c = effectiveCommittee(a);
+            if (!c || c.includes('عامة')) return false;
             if (isEvt) return c.includes('أنشطة') || c.includes('برامج') || c.includes('فعاليات') || c.includes('events');
             if (isRel) return c.includes('علاقات') || c.includes('شراكات') || c.includes('تدريب') || c.includes('training');
             return c.includes('إعلام') || c.includes('اعلام') || c.includes('اتصال') || c.includes('media');

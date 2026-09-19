@@ -115,11 +115,13 @@ export function App() {
   const handleOpenMember = () => {
     setShowMemberPortal(true);
     window.location.hash = '#/member';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCloseMember = () => {
     setShowMemberPortal(false);
     clearRoute('#/member', 'member');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenVerify = () => {
@@ -140,6 +142,11 @@ export function App() {
       setTimeout(scrollToJoin, 150);
       return;
     }
+    if (showMemberPortal) {
+      handleCloseMember();
+      setTimeout(scrollToJoin, 150);
+      return;
+    }
     scrollToJoin();
   };
 
@@ -157,12 +164,15 @@ export function App() {
         )}
         {showComplaintsModal && <ComplaintsModal isOpen onClose={handleCloseComplaints} />}
         {showAdminModal && <AdminDashboard isOpen onClose={handleCloseAdmin} />}
-        {showMemberPortal && <MemberPortal onClose={handleCloseMember} onJoin={handleJoinClick} />}
       </Suspense>
 
       {showAboutPage ? (
         <Suspense fallback={<div className="min-h-screen" />}>
           <AboutPage onClose={handleCloseAbout} onOpenJoin={handleJoinClick} />
+        </Suspense>
+      ) : showMemberPortal ? (
+        <Suspense fallback={<div className="min-h-screen" />}>
+          <MemberPortal onClose={handleCloseMember} onJoin={handleJoinClick} />
         </Suspense>
       ) : (
         <>

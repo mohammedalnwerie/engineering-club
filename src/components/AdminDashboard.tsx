@@ -4720,9 +4720,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose 
                 </div>
 
                 <div>
-                  <span className="text-gray-500">اللجنة والالتزام:</span>
-                  <div className="font-bold text-cyan-300">{inspectApp.targetCommittee} ({inspectApp.weeklyCommitmentHours} ساعات أسبوعياً)</div>
+                  <span className="text-gray-500">اللجنة المطلوبة عند التقديم:</span>
+                  <div className="font-bold text-slate-200">
+                    {inspectApp.targetCommittee || 'عضوية عامة'}
+                    {inspectApp.weeklyCommitmentHours ? ` (${inspectApp.weeklyCommitmentHours} ساعات أسبوعياً)` : ''}
+                  </div>
                 </div>
+
+                {inspectApp.assignedCommittee && inspectApp.assignedCommittee !== inspectApp.targetCommittee && (
+                  <div className="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-500/30">
+                    <span className="text-cyan-400 block text-[11px] font-bold mb-1">اللجنة والصفة المعتمدة حالياً في النادي:</span>
+                    <div className="font-bold text-white flex flex-wrap items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-200 text-xs border border-cyan-400/40">
+                        {inspectApp.assignedCommittee}
+                      </span>
+                      {inspectApp.organizationalRole && (
+                        <span className="text-xs text-gray-300">
+                          بمسمى: ({inspectApp.organizationalRole})
+                        </span>
+                      )}
+                      {inspectApp.assignedCommittee.includes('عامة') && (
+                        <span className="text-[11px] text-emerald-300 font-normal">
+                          ✓ تم قبوله كعضو عام (معفى من ساعات الالتزام الإداري الأسبوعية)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <span className="text-gray-500">المهارات المحددة:</span>

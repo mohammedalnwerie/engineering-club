@@ -38,7 +38,7 @@ export const emailService = {
     const validityLine = isExec
       ? '• صفة الاعتماد: تكليف قيادي وعضوية معتمدة للعام الأكاديمي 2026/2027\n'
       : validUntilStr
-        ? `• صلاحية البطاقة: حتى ${validUntilStr} (مع إمكانية التجديد عبر صفحة حسابي)\n`
+        ? `• صلاحية البطاقة: حتى ${validUntilStr} (لحين استكمال إجراءات التثبيت والاعتماد النهائي للعضوية)\n`
         : '';
 
     const templates = dataService.getMessageTemplates();
